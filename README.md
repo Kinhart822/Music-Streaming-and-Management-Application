@@ -1,1 +1,1 @@
-# Internship-Proposal-Music-Streaming-and-Management-Application-
+# Internship_Proposal (Music Streaming and Management Application)
