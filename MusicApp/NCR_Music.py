@@ -21,19 +21,19 @@ from datetime import datetime
 import pytz
 
 # Spotify API
-CLIENT_ID = ""
-CLIENT_SECRET = ""
+CLIENT_ID = "43a1e91076d24a48b2a8c1a3cb6c8f91"
+CLIENT_SECRET = "97f5a6f636004e6b973d158d266d227a"
 
 # Genius API (Lyrics)
-GENIUS_ACCESS_TOKEN = ""
+GENIUS_ACCESS_TOKEN = "O25c0048MGusObOSDAcJ6PqlLT1p6vTo4w3de-YdvklrZNeUDzNjDr0A_HQwIbNO"
 
 # PostgreSQL
 conn = psycopg2.connect(
     dbname="copyrighted_check",
     user="postgres",
-    password="",
-    host="",
-    port=""
+    password="kinhart822",
+    host="localhost",
+    port="5432"
 )
 cursor = conn.cursor()
 
@@ -426,9 +426,9 @@ def main():
         if "n" in user_input:
             break
         elif "c" in user_input:
-            fetch_playlist_tracks_info("")
+            fetch_playlist_tracks_info("https://open.spotify.com/playlist/3BCmzJOAYUapYwNIt8CAHN")
             while True:
-                tracks = fetch_playlist_tracks("")
+                tracks = fetch_playlist_tracks("https://open.spotify.com/playlist/3BCmzJOAYUapYwNIt8CAHN")
                 track_choice = input(
                     "\n'1...n' - Nhập số bài hát để xem chi tiết\n'D' - Download all the songs'\n'SD' - Specified Download\n'B' - Back\nChoose: ").strip().lower()
 

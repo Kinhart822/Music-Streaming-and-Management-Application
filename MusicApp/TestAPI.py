@@ -4,11 +4,11 @@ import lyricsgenius
 import spotipy
 from spotipy import SpotifyClientCredentials
 
-GENIUS_ACCESS_TOKEN = ""
+GENIUS_ACCESS_TOKEN = "O25c0048MGusObOSDAcJ6PqlLT1p6vTo4w3de-YdvklrZNeUDzNjDr0A_HQwIbNO"
 
 # Spotify API
-CLIENT_ID = ""
-CLIENT_SECRET = ""
+CLIENT_ID = "43a1e91076d24a48b2a8c1a3cb6c8f91"
+CLIENT_SECRET = "97f5a6f636004e6b973d158d266d227a"
 
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET))
 
@@ -63,7 +63,7 @@ def transcribe_lyric(artist_name, song_title, access_token):
         print(f"\n❌ Lỗi khi trích xuất lời bài hát: {e}")
 
 
-track = get_track_info("")
+track = get_track_info("0C1dOJr5ae2tJSUGxMXTcC")
 track_title = track.get('track_title', 'Unknown')
 match = re.match(r'^[a-zA-Z0-9\s]+', track_title)
 title_part = match.group(0).strip() if match else track_title
