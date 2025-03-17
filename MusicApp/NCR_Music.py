@@ -3,7 +3,6 @@ import requests
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import lyricsgenius
-import whisper
 import psycopg2
 import urllib
 import urllib.parse
@@ -14,7 +13,6 @@ from rich.console import Console
 import warnings
 import re
 import os
-import torch
 import shutil
 import time
 from datetime import datetime
@@ -189,7 +187,7 @@ def set_metadata(metadata, file_path):
         raise ValueError(f"❌ Lỗi khi gán metadata: {e}")
 
 
-# TODO: Transcribe the lyric
+# TODO: Get the lyric
 def transcribe_lyric(artist_name, song_title, access_token):
     try:
         genius = lyricsgenius.Genius(access_token)
@@ -216,7 +214,7 @@ def transcribe_lyric(artist_name, song_title, access_token):
         print(f"\n❌ Lỗi khi trích xuất lời bài hát: {e}")
 
 
-# TODO: Transcribe the lyric by Lyrics.ovh
+# TODO: Get the lyric by Lyrics.ovh
 def get_lyrics_from_lyrics_ovh(artist, title):
     try:
         url = f"https://api.lyrics.ovh/v1/{artist}/{title}"
@@ -230,23 +228,6 @@ def get_lyrics_from_lyrics_ovh(artist, title):
 
     except Exception as e:
         return f"❌ Lỗi khi lấy lyrics: {e}"
-
-
-# TODO: Transcribe the lyric by whisper
-def transcribe_lyric_by_whisper(audio_path):
-    """Dùng Whisper để trích xuất lyric từ file nhạc"""
-    try:
-        console.print("[yellow]Đang chuyển đổi audio thành text bằng Whisper...[/yellow]")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = whisper.load_model("medium", device=device)
-        result = model.transcribe(audio_path)
-        lyrics = result["text"]
-
-        console.print("[green]🎤 Lời bài hát được trích xuất thành công![/green]")
-        return lyrics
-    except Exception as e:
-        console.print(f"[red]Lỗi khi trích xuất lời bài hát: {e}[/red]")
-        return None
 
 
 # TODO: Download track

@@ -1,0 +1,15 @@
+# TODO: Transcribe the lyric by whisper
+def transcribe_lyric_by_whisper(audio_path):
+    """Dùng Whisper để trích xuất lyric từ file nhạc"""
+    try:
+        console.print("[yellow]Đang chuyển đổi audio thành text bằng Whisper...[/yellow]")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = whisper.load_model("medium", device=device)
+        result = model.transcribe(audio_path)
+        lyrics = result["text"]
+
+        console.print("[green]🎤 Lời bài hát được trích xuất thành công![/green]")
+        return lyrics
+    except Exception as e:
+        console.print(f"[red]Lỗi khi trích xuất lời bài hát: {e}[/red]")
+        return None
