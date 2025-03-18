@@ -252,6 +252,51 @@ def delete_track(title, artist):
         conn.rollback()
 
 
+# TODO: Delete track duplicates
+def delete_track_duplicates():
+    # Directories where the music files are stored
+    directories = [
+        r"D:\Pycharm_Projects\Python_Projects\music\copyrighted",
+        r"D:\Pycharm_Projects\Python_Projects\music\no_copyrighted"
+    ]
+
+    try:
+        # Delete from database
+        query_find_duplicates = """
+                    SELECT TITLE 
+                    FROM public.songs
+                    GROUP BY TITLE
+                    HAVING COUNT(*) > 1;
+                """
+        cursor.execute(query_find_duplicates)
+        duplicate_titles = cursor.fetchall()
+
+        if not duplicate_titles:
+            print("✅ Không có bài hát trùng lặp để xóa.")
+            return
+
+        for (title,) in duplicate_titles:
+            query_delete = "DELETE FROM public.songs WHERE TITLE = %s"
+            cursor.execute(query_delete, (title,))
+            conn.commit()
+
+            # Xóa file MP3 tương ứng
+            filename = f"{title}.mp3"
+            for directory in directories:
+                file_path = os.path.join(directory, filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"🗑️ Đã xóa file: {file_path}")
+                else:
+                    print(f"⚠️ Không tìm thấy file: {file_path}")
+
+            print(f"✅ Đã xóa bài hát trùng lặp: {title}")
+
+    except Exception as e:
+        print(f"❌ Lỗi khi xóa bài hát: {e}")
+        conn.rollback()
+
+
 # TODO: Check .mp3 files existence
 def check_song_files():
     directories = {
@@ -420,8 +465,9 @@ def clean_temp_folder(folder):
 def main():
     # process_lyrics(GENIUS_ACCESS_TOKEN)
     # get_empty_songs()
-    check_song_files()
+    # check_song_files()
     # download_missing_tracks()
+    delete_track_duplicates()
 
 
 if __name__ == "__main__":
