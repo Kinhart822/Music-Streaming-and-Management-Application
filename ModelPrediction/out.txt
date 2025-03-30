@@ -1,0 +1,35 @@
+For genre Pop
+Total number of songs: 1000
+Total words in the genre: 274313
+Average number of words per song: 274.31
+Average number of unique words per song: 15.61
+Top ten most frequent words: ['I', 'you', 'the', 'to', 'me', 'a', 'my', 'and', 'it', 'in']
+--------------------------------------------------
+For genre Hip-Hop
+Total number of songs: 1000
+Total words in the genre: 521206
+Average number of words per song: 521.21
+Average number of unique words per song: 37.06
+Top ten most frequent words: ['the', 'I', 'you', 'a', 'to', 'my', 'and', "I'm", 'me', 'it']
+--------------------------------------------------
+For genre Rock
+Total number of songs: 1000
+Total words in the genre: 220902
+Average number of words per song: 220.90
+Average number of unique words per song: 17.19
+Top ten most frequent words: ['the', 'I', 'you', 'to', 'a', 'and', 'of', 'in', 'my', 'it']
+--------------------------------------------------
+For genre Country
+Total number of songs: 1000
+Total words in the genre: 194841
+Average number of words per song: 194.84
+Average number of unique words per song: 12.22
+Top ten most frequent words: ['the', 'I', 'you', 'to', 'a', 'and', 'my', 'me', 'of', 'in']
+--------------------------------------------------
+For genre Jazz
+Total number of songs: 1000
+Total words in the genre: 201225
+Average number of words per song: 201.22
+Average number of unique words per song: 13.17
+Top ten most frequent words: ['I', 'the', 'you', 'to', 'a', 'me', 'and', 'my', 'in', 'of']
+--------------------------------------------------
