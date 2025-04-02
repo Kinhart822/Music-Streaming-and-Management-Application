@@ -45,15 +45,15 @@ For further text processing, I also tokenized the lyrics using the **"spacy"** l
 Figure 1: Word Cloud for each genre
 
 ![Image](https://github.com/user-attachments/assets/895512a1-834b-4cc2-93f4-2ec030afe9de)
-<img src="https://prnt.sc/wiC1cLeBC94F">
-<img src="https://prnt.sc/H05AqlOLzN5M">
-<img src="https://prnt.sc/W6JMoU8k2Vi4">
-<img src="https://prnt.sc/f3mk0Lf9IbJd">
+![Image](https://github.com/user-attachments/assets/dad16ac4-c50e-4e0b-a15d-582d3cbf50ce)
+![Image](https://github.com/user-attachments/assets/bce2c526-2be2-4d48-a0e3-230cd74907e0)
+![Image](https://github.com/user-attachments/assets/42943495-a8c1-4563-aa4b-432341890945)
+![Image](https://github.com/user-attachments/assets/9b978a0c-5dd3-4dbb-9275-53bde7ab7f7c)
 
 Figure 2: Analysis of the lyrics data
 
-<img src="">
-<img src="">
+![Image](https://github.com/user-attachments/assets/1132ed10-dcc4-4d5b-9415-9c7207622acc)
+![Image](https://github.com/user-attachments/assets/37719ace-41f6-4dad-87b8-04b82954dadd)
 
 ## Training Model
 
