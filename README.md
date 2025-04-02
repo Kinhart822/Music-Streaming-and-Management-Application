@@ -44,7 +44,7 @@ For further text processing, I also tokenized the lyrics using the **"spacy"** l
 
 Figure 1: Word Cloud for each genre
 
-<img src="https://prnt.sc/zZ06hPZoacDt">
+![Image](https://github.com/user-attachments/assets/895512a1-834b-4cc2-93f4-2ec030afe9de)
 <img src="https://prnt.sc/wiC1cLeBC94F">
 <img src="https://prnt.sc/H05AqlOLzN5M">
 <img src="https://prnt.sc/W6JMoU8k2Vi4">
