@@ -42,8 +42,31 @@ For further text processing, I also tokenized the lyrics using the **"spacy"** l
 
 **2. Data Analysis**
 
+Figure 1: Word Cloud for each genre
+
+<img src="https://prnt.sc/zZ06hPZoacDt">
+<img src="https://prnt.sc/wiC1cLeBC94F">
+<img src="https://prnt.sc/H05AqlOLzN5M">
+<img src="https://prnt.sc/W6JMoU8k2Vi4">
+<img src="https://prnt.sc/f3mk0Lf9IbJd">
+
+Figure 2: Analysis of the lyrics data
+
+<img src="">
+<img src="">
 
 ## Training Model
+
+
+
 ## Result
+
+**Accurancy**
+|  | Logistic Regression | Naive Bayes (Multinomial Naive Bayes) | Decision Tree | Random Forest | SVM (Support Vector Machine) |
+|--------------|-------|------|-------|-------|-------|
+| TF-IDF | 0.6 | 0.60 | 0.48 | 0.63 | 0.61 |
+| Word2Vec  | 0.52 | X | 0.46 | 0.58 | 0.55 |
+
+
 ## Conclusion
 
