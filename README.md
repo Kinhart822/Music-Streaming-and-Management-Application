@@ -174,33 +174,16 @@ Finally, I used `from sklearn.metrics import classification_report` to generate 
 
 
 ## Conclusion
-From the models that we developed and the experiments
-that we conducted we can say that the Convolutional Neural
-Network Model performed significantly well compared to the
-other models. However, the training time for an CNN is very
-high even though pre-trained word embeddings were used
-as feature vectors. In that respect Multi Layer Perceptron,
-SVM and Random Forest perform well. Apart from Hip-
-Hop(as seen from the confusion matrix) other genres might
-be mislabeled at times. Accordingly, the user interface works
-quite well for hip-hop genre lyrics.
-However limited by time, we could produce some signif-
-icant results in the field of music genre classification based
-on lyrics. There is a lot that can be done like better pre-
-processing of data. Adding more data for each of genre
-classes. We might train a model with lyrics as well as audio
-features and it is expected that we can get better results.
-Also, we might train a more complex model which would
-remember order of words like an LSTM, and we can exper-
-iment on our training data.
-Classification by lyrics will always be inherently flawed by
-vague genre boundaries with many genres borrowing lyrics
-and styles from one another. For example one merely need
-consider cover songs which utilise the same lyrics but pro-
-duce songs in vastly different genres, songs which have no
-lyrical content. To produce a state of the art classifier is
-is evident that this classifier must take into account more
-than just the lyrical content of the song. Audio data typi-
-cally performs the strongest and further research could look
-into employing these models to the audio and symbolic data
-and combining with the lyrics to build a stronger classifier
+
+From the models that we developed and the experiments that we conducted we can say that the **Random Forest Model** performed significantly well compared to the other models. However, one major drawback of **Random Forest** is its high training time. Similarly, **SVM** also performed well but required a significant amount of training time, making it less efficient for large-scale applications. Additionally, as observed in the confusion matrix, while **Hip-Hop** was classified accurately, other genres were occasionally mislabeled due to similarities in lyrical content.
+
+Due to time constraints, I was only able to experiment with basic word embeddings such as **TF-IDF** and **Word2Vec** for music genre classification based on lyrics. However, there are several areas for improvement, such as:
+
+* Enhancing data pre-processing to reduce noise and improve model accuracy.
+* Increasing the dataset size to provide better representation for each genre.
+* Incorporating audio features alongside lyrics, which could significantly enhance classification performance.
+* Exploring more advanced models such as **CNNs** and **LSTMs**, along with sophisticated word embeddings like *GloVe**, **BERT**, and **Transformers**, can significantly improve genre classification.
+
+Despite these results, genre classification based based only on lyrics will always have limitations due to the overlapping nature of music genres. Many genres share lyrical themes and styles, making it difficult to define clear boundaries. For instance, cover songs often use the same lyrics but belong to entirely different genres. Additionally, instrumental songs have no lyrics, further complicating classification.
+
+To build a state-of-the-art genre classifier, it is evident that lyrical content alone is not sufficient. The strongest classification models typically rely on audio data, which captures distinct features such as rhythm, melody, and instrumentation. Future research should focus on integrating audio features, symbolic music data, and lyrics to create a hybrid classification model capable of more accurate genre prediction.
