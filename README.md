@@ -153,31 +153,22 @@ Each of these models was trained and evaluated to determine the best-performing 
 
 | Model / Accuracy  | Logistic Regression | Naive Bayes (Multinomial Naive Bayes) | Decision Tree | Random Forest | SVM (Support Vector Machine) |
 |--------------|-------|------|-------|-------|-------|
-| TF-IDF | 0.6 | 0.60 | 0.48 | 0.63 | 0.61 |
+| TF-IDF | 0.6 | 0.6 | 0.48 | 0.63 | 0.61 |
 | Word2Vec  | 0.52 | X | 0.46 | 0.58 | 0.55 |
 
 
-A summarization of the results is demonstrated in the
-figure. We tested for with both TF-IDF vectors and counts
-as our feature vectors. We observe that TF-IDF vectors are
-better representation of the words in the lyrics. And among
-the algorithms, Multi Layer Perceptron performed better
-than the other algorithms with an overall accuracy of 63.5%
-accuracy. SVM comes close second with 61.9% accuracy.
-The confusion matrix shows that Hip-Hop is most accurately
-classified and Jazz is mislabeled most of the times. Then,
-we used word2vec as our feature vector, and applied the
-Extra Trees Classifier and Support Vector Machines, and
-we observed accuracy of 60.3% and 62.4%. Hence the use
-of word2vec did not produce significant improvement in our
-problem.
+The results are summarized in the table, where I compare the performance of models using both **TF-IDF vectors** and **Word2Vec embeddings**. I observe that **TF-IDF** provides better classification results. This may be attributed to the nature of the task, the order of words in the lyrics is less important than their presence. Since **TF-IDF** focuses on word frequency and importance rather than semantic relationships, it proves to be a more effective representation for genre classification.
 
+Among the models, **Random Forest** performed better than the other algorithms with an overall accuracy of 63% accuracy. **SVM** comes close second with 61% accuracy. While both **Logistic Regression** and **Naive Bayes (Multinomial Naive Bayes)** have the same accuracy which 60%, **Decision Tree** provide a poor performance which is 48% accuracy
 
-The best result was achieved by Random Forest with TF-IDF. I was expecting Random Forest with word embedding (Word2Vec) to perform better, but it is probably because for this task, the order of the words is not really important, but their appearance is.
+=> Reason why I choose Random Forest to be the classification model for this task: 
 
-
+* Ability to handle noisy data effectively. Song lyrics often contain high levels of noise due to the repetition of common words and phrases. Additionally, certain words—such as "love",  "baby",  "heart",  and "known"—appear frequently across multiple genres, making it harder for a model to differentiate between them.
+* Unlike a single Decision Tree, which tends to overfit the data, Random Forest trains multiple decision trees on different subsets of the dataset. By averaging the predictions of these trees, Random Forest reduces overfitting and improves generalization, handling noisy text data like lyrics. This ensemble approach allows it to capture patterns that other models might miss, leading to its higher accuracy compared to Logistic Regression, Naïve Bayes, Decision Trees, and even SVM. 
 
 ![Image](https://github.com/user-attachments/assets/3ab6beff-4b2f-4a14-bbd3-738e5afaef9d)
+
+Finally, I used `from sklearn.metrics import classification_report` to generate a detailed performance evaluation of the model. The results showed that **Hip-Hop was the most accurately classified genre**, while **Pop and Rock were occasionally misclassified**. This is understandable, as the lyrics of these genres often share similar themes and vocabulary, making it harder for the model to distinguish between them.
 
 ## DEMO
 
