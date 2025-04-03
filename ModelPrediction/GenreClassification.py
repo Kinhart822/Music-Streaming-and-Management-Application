@@ -1,17 +1,13 @@
 import os
 import re
 import contractions
-import pandas as pd
 import spacy
+import joblib
 import inflect
 import whisper
 import subprocess
 from collections import defaultdict
 from lingua import Language, LanguageDetectorBuilder
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 
 
 def load_remove(path_to_load):
@@ -45,7 +41,7 @@ def lemmatize(text, nlp):
     return " ".join([token.lemma_ for token in doc])
 
 
-def pre_processing(custom_contractions, custom_remove, text):
+def pre_processing(text):
     if text is None:
         return
 
@@ -71,7 +67,6 @@ def pre_processing(custom_contractions, custom_remove, text):
     lyrics_preprocess = re.sub(r"[`’']", "", lyrics_preprocess)
     lyrics_preprocess = re.sub(r"<.*?>", "", lyrics_preprocess)
     lyrics_preprocess = re.sub(r"\[[0-9]*\]", "", lyrics_preprocess)
-    lyrics_preprocess = re.sub(r"\[.*?\]", "", lyrics_preprocess)
     lyrics_preprocess = re.sub(r"\b(chorus|verse)\b", "", lyrics_preprocess, flags=re.IGNORECASE)
     lyrics_preprocess = re.sub(r"[^\w\s]", "", lyrics_preprocess)
     lyrics_preprocess = re.sub(r"[,:?\[\]{}\-+\\/|@#$*^&%~!();\"]", "", lyrics_preprocess)
@@ -134,14 +129,14 @@ def detect_languages_for_lyrics(lyrics_languages):
     }
 
 
-def preprocess_lyrics(text, custom_contractions, custom_remove, multilingual):
+def preprocess_lyrics(text, multilingual):
     if multilingual == "No":
-        lyrics_test = pre_processing(custom_contractions, custom_remove, text)
+        lyrics_test = pre_processing(text)
         return lyrics_test
     return "Không hợp lệ: Văn bản chứa nhiều ngôn ngữ."
 
 
-def tfidf_lyrics(test_lyrics, custom_contractions, custom_remove):
+def tfidf_lyrics(test_lyrics):
     """
         Chuyển đổi lyrics thành vector TF-IDF.
     """
@@ -150,15 +145,14 @@ def tfidf_lyrics(test_lyrics, custom_contractions, custom_remove):
         return None
 
     lyrics_data = detect_languages_for_lyrics(test_lyrics)
-    preprocessed_lyrics = preprocess_lyrics(test_lyrics, custom_contractions, custom_remove,
-                                            lyrics_data["multilingual"])
+    preprocessed_lyrics = preprocess_lyrics(test_lyrics, lyrics_data["multilingual"])
 
     if preprocessed_lyrics != "Không hợp lệ: Văn bản chứa nhiều ngôn ngữ.":
         # Biến lyrics thành vector TF-IDF
-        remix_song_tfidf = vectorizer_tfidf.transform([preprocessed_lyrics])
-        return remix_song_tfidf
+        song_tfidf = vectorizer_tfidf.transform([preprocessed_lyrics])
+        return song_tfidf
 
-    return "Không hợp lệ: Văn bản chứa nhiều ngôn ngữ."
+    return "Error"
 
 
 def transcribe_lyric_by_whisper(audio_path):
@@ -296,74 +290,300 @@ def process_audio(input_file):
     return None
 
 
-def load_model():
-    df = pd.read_csv("data/filtered_lyrics_5000_each_genre.csv", encoding='utf-8')
-    df_train_tfidf = df
-
-    label = LabelEncoder()
-    encoded_genres = label.fit_transform(df_train_tfidf["genre"].values)
-    decoded_genres = label.inverse_transform(encoded_genres)
-
-    X_train, X_test, y_train, y_test = train_test_split(df_train_tfidf["clean_lyrics"], encoded_genres,
-                                                        test_size=0.2, shuffle=True, random_state=42)
-
-    X_train_vectors_tfidf = vectorizer_tfidf.fit_transform(X_train)
-    X_test_vectors_tfidf = vectorizer_tfidf.transform(X_test)
-
-    rf_tfidf = RandomForestClassifier(
-        bootstrap=False,
-        max_depth=None,
-        max_features='sqrt',
-        min_samples_leaf=2,
-        min_samples_split=20,
-        n_estimators=400,
-        criterion='gini',
-        random_state=42
-    )
-    rf_tfidf.fit(X_train_vectors_tfidf, y_train)
-
-    return rf_tfidf, label, encoded_genres, decoded_genres, X_train_vectors_tfidf, X_test_vectors_tfidf
-
-
-def predict_genre(model_prediction, tfidf_vector, label):
+def predict_genre(model_prediction, tfidf_vector):
     """Dự đoán thể loại từ mô hình đã huấn luyện."""
-    predicted_genre_index = model_prediction.predict(tfidf_vector)[0]
-    predicted_genre_name = label.inverse_transform([predicted_genre_index])[0]
+    predicted_genre = model_prediction.predict(tfidf_vector)[0]
+    predicted_genre_name = label.inverse_transform([predicted_genre])[0]
     return predicted_genre_name
-
-# Initialize variable
-vectorizer_tfidf = TfidfVectorizer(use_idf=True)
-
-# Tải mô hình đã train
-rf_model, label_encoder, _, _, _, _ = load_model()
 
 
 def main():
     """Hàm chính để nhập lời bài hát và dự đoán thể loại."""
-    custom_contractions = load_contractions("custom/custom_contractions.txt")
-    custom_remove = load_remove("custom/custom_remove.txt")
 
-    while True:
-        lyrics_input = input("Nhập lời bài hát hoặc đường dẫn file: ").strip()
+    # lyrics_input = input("Nhập lời bài hát hoặc đường dẫn file: ").strip()
+    lyrics_input = """Baby, I'm preying on you tonight
+Hunt you down eat you alive
+Just like animals
+Animals
+Like animals-mals
+Maybe you think that you can hide
+I can smell your scent for miles
+Just like animals
+Animals
+Like animals-mals
+Baby I'm
+So what you trying to do to me
+It's like we can't stop, we're enemies
+But we get along when I'm inside you, eh
+You're like a drug that's killing me
+I cut you out entirely
+But I get so high when I'm inside you
+Yeah, you can start over you can run free
+You can find other fish in the sea
+You can pretend it's meant to be
+But you can't stay away from me
+I can still hear you making that sound
+Taking me down rolling on the ground
+You can pretend that it was me
+But no, oh
+Baby, I'm preying on you tonight
+Hunt you down eat you alive
+Just like animals
+Animals
+Like animals
+Maybe you think that you can hide
+I can smell your scent for miles
+Just like animals
+Animals
+Like animals-mals
+Baby, I'm
+So if I run it's not enough
+You're still in my head forever stuck
+So you can do what you wanna do, eh
+I love your lies I'll eat 'em up
+But don't deny the animal
+That comes alive when I'm inside you
+Yeah, you can start over you can run free
+You can find other fish in the sea
+You can pretend it's meant to be
+But you can't stay away from me
+I can still hear you making that sound
+Taking me down rolling on the ground
+You can pretend that it was me
+But no, oh
+Baby I'm preying on you tonight
+Hunt you down eat you alive
+Just like animals
+Animals
+Like animals-mals
+Maybe you think that you can hide
+I can smell your scent for miles
+Just like animals
+Animals
+Like animals-mals
+Baby, I'm
+Don't tell no lie, lie, lie, lie
+You can't deny-ny-ny-ny
+The beast inside-side-side-side
+Yeah yeah yeah
+No girl, don't lie, lie, lie, lie (no girl don't lie)
+You can't deny, ny-ny-ny (you can't deny)
+The beast inside-side-side-side
+Yeah, yeah, yeah
+Yo
+Whoa
+Whoa
+Just like animals
+Animals
+Like animals-mals
+Just like animals (yeah)
+Animals (yeah)
+Like animals-mals (yeah)
+Ow
+Baby I'm preying on you tonight
+Hunt you down eat you alive
+Just like animals
+Animals
+Like animals-mals
+Maybe you think that you can hide
+I can smell your scent for miles
+Just like animals
+Animals
+Like animals-mals
+Baby I'm
+Don't tell no lie, lie, lie, lie
+You can't deny-ny-ny-ny
+The beast inside-side-side-side
+Yeah yeah yeah
+No girl, don't lie, lie, lie, lie (no, girl don't lie)
+You can't deny-ny-ny-ny (you can't deny)
+The beast inside-side-side-side
+Yeah, yeah, yeah"""    # Animals
+    lyrics_input = """
+Girl, you know I want your love
+Your love was handmade for somebody like me
+Well, come on now, follow my lead
+I may be crazy, don't mind me
+Say, "Boy, let's not talk too much"
+Grab on my waist and put that body on me
+Well, come on now, follow my lead
+Come, come on now, follow my lead, mm
 
-        if lyrics_input.startswith(
-                "D:\\Pycharm_Projects\\Python_Projects\\ModelPrediction\\Music-Streaming-and-Management-Application\\ModelPrediction\\songs_input"):
-            # Nếu nhập đường dẫn file audio
-            if os.path.exists(lyrics_input):  # Kiểm tra file có tồn tại không
-                audio = process_audio(lyrics_input)
-                lyrics_whisper = transcribe_lyric_by_whisper(audio)
-                lyrics_processed = tfidf_lyrics(lyrics_whisper, custom_contractions, custom_remove)
-            else:
-                print("⚠️ Lỗi: Tệp tin không tồn tại.")
-                return
+I'm in love with the shape of you
+We push and pull like a magnet do
+Although my heart is fallin' too
+I'm in love with your body
+And last night, you were in my room
+And now my bed sheets smell like you
+Every day, discoverin' somethin' brand new
+Well, I'm in love with your body
+
+Oh, I, oh, I, oh, I, oh, I
+Well, I'm in love with your body
+Oh, I, oh, I, oh, I, oh, I
+Well, I'm in love with your body
+Oh, I, oh, I, oh, I, oh, I
+Well, I'm in love with your body
+Every day, discoverin' somethin' brand new
+I'm in love with the shape of you
+
+One week in, we let the story begin
+We're goin' out on our first date (Mm)
+You and me are thrifty, so go all-you-can-eat
+Fill up your bag and I fill up a plate (Mm)
+We talk for hours and hours about the sweet and the sour
+And how your family is doin' okay (Mm)
+And leave and get in a taxi, and kiss in the back seat
+Tell the driver make the radio play and I'm singin' like
+
+Girl, you know I want your love
+Your love was handmade for somebody like me
+Well, come on now, follow my lead
+I may be crazy, don't mind me
+Say, "Boy, let's not talk too much"
+Grab on my waist and put that body on me
+Well, come on now, follow my lead
+Come, come on now, follow my lead, mm
+
+Come on, be my baby, come on
+Come on, be my baby, come on
+I'm in love with your body
+Come on, be my baby, come on
+Come on, be my baby, come on
+I'm in love with your body
+Come on, be my baby, come on
+Come on, be my baby, come on
+I'm in love with your body
+Every day, discoverin' somethin' brand new
+I'm in love with the shape of you
+"""    # Shape of you
+    lyrics_input = """
+    Days like this don't get much better
+    Top down, good fam, good weather
+    Days like this, we don't miss, never
+    Yeah, yeah
+    Last night, things got a little bit crazy
+    Pulled up doin' 'bout 180
+    Life goes fast, so there ain't no maybes
+    Yeah, yeah
+
+    Just give me that sunset, give me that ride
+    Give me them stars out, four-wheel drive
+    Takin' that back road, yeah, no lie
+    Man, that sure feels nice
+    Give me them real ones, ones I know
+    Do a little two-step, dosido
+    Turn it up loud, bring in that crowd
+    Take it high, then drop it low
+
+    We do this everywhere we go
+    I think you know
+    This ain't no one horse rodeo
+    I think you know
+    When we pull up, green lights our show
+    I think you know
+    That we gon' run it, run it, run it
+    'Til we runnin' outta road (Oh, yeah)
+
+    Run it, run it, run it
+    'Til we runnin' outta road (Oh, yeah)
+    (Oh, yeah)
+    Run it, run it, run it
+    'Til we runnin' outta road
+
+    Wastin' time ain't overrated
+    Not when you're celebrated
+    Raise that glass, we're all here waitin'
+    Yeah, yeah
+
+    Just give me that sunset, give me that ride
+    Give me that truck, that four-wheel drive
+    Takin' that back road, yeah, no lie
+    Man, that sure feels nice
+    Give me them real ones, ones I know
+    Do a little two-step, dosido
+    Turn it up loud, bring in that crowd
+    Take it up high, then drop it low
+
+    We do this everywhere we go
+    I think you know
+    This ain't no one horse rodeo
+    I think you know
+    When we pull up, green lights our show
+    I think you know
+    That we gon' run it, run it, run it
+    'Til we runnin' outta road (Oh, yeah)
+
+    Run it, run it, run it
+    'Til we runnin' outta road (Oh, yeah)
+    (Oh, yeah)
+    Run it, run it, run it
+    'Til we runnin' outta road (Oh, yeah)
+"""    # Run It
+    lyrics_input = """Ooh
+I, I just woke up from a dream
+Where you and I had to say goodbye
+And I don't know what it all means
+But since I survived, I realized
+Wherever you go, that's where I'll follow
+Nobody's promised tomorrow
+So I'ma love you every night like it's the last night
+Like it's the last night
+If the world was ending, I'd wanna be next to you
+If the party was over and our time on Earth was through
+I'd wanna hold you just for a while and die with a smile
+If the world was ending, I'd wanna be next to you
+Ooh
+Ooh, lost, lost in the words that we scream
+I don't even wanna do this anymore
+'Cause you already know what you mean to me
+And our love's the only war worth fighting for
+Wherever you go, that's where I'll follow
+Nobody's promised tomorrow
+So I'ma love you every night like it's the last night
+Like it's the last night
+If the world was ending, I'd wanna be next to you
+If the party was over and our time on Earth was through
+I'd wanna hold you just for a while and die with a smile
+If the world was ending, I'd wanna be next to you
+Right next to you
+Next to you
+Right next to you
+Oh-oh, oh
+If the world was ending, I'd wanna be next to you
+If the party was over and our time on Earth was through
+I'd wanna hold you just for a while and die with a smile
+If the world was ending, I'd wanna be next to you
+If the world was ending, I'd wanna be next to you
+Ooh
+I'd wanna be next to you
+"""    # Die with a smile
+
+    if lyrics_input.startswith(
+            "D:\\Pycharm_Projects\\Python_Projects\\ModelPrediction\\Music-Streaming-and-Management-Application\\ModelPrediction\\songs_input"):
+        # Nếu nhập đường dẫn file audio
+        if os.path.exists(lyrics_input):  # Kiểm tra file có tồn tại không
+            audio = process_audio(lyrics_input)
+            lyrics_whisper = transcribe_lyric_by_whisper(audio)
+            lyrics_processed = tfidf_lyrics(lyrics_whisper)
         else:
-            # Nếu nhập trực tiếp lời bài hát
-            lyrics_processed = tfidf_lyrics(lyrics_input, custom_contractions, custom_remove)
+            print("⚠️ Lỗi: Tệp tin không tồn tại.")
+            return
+    else:
+        # Nếu nhập trực tiếp lời bài hát
+        lyrics_processed = tfidf_lyrics(lyrics_input)
 
-        # Dự đoán thể loại
-        predicted_genre = predict_genre(rf_model, lyrics_processed, label_encoder)
-        print(f"🎵 Thể loại dự đoán: {predicted_genre}")
+    # Dự đoán thể loại
+    predicted_genre = predict_genre(rf_model_train, lyrics_processed)
+    print(f"\n🎵 Thể loại dự đoán: {predicted_genre}")
 
 
 if __name__ == "__main__":
+    custom_contractions = load_contractions("custom/custom_contractions.txt")
+    custom_remove = load_remove("custom/custom_remove.txt")
+
+    vectorizer_tfidf = joblib.load('vectorizer_tfidf.pkl')
+    label = joblib.load('label_encoder.pkl')
+    rf_model_train = joblib.load('rf_model_tf_idf.pkl')
+
     main()
