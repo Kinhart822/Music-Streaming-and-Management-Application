@@ -67,11 +67,11 @@ As shown in Figure 1, we evaluated the average length of lyrics across each genr
 
 ## Training Model
 
-**1. Word Representation**
+### 1. Word Representation
 
 In text classification tasks, representing words in a numerical format is essential for machine learning models to process and understand the data. I explore and develop two primary techniques for word representation: Bag-of-Words (BoW) and Word Embeddings, each with its own strengths and limitations.
 
-**Bag-of-Words (BoW) and TF-IDF**
+**a) Bag-of-Words (BoW) and TF-IDF**
 
 --- Bag-of-Words (BoW) ---
 
@@ -101,18 +101,30 @@ By using this method, it will reduce the importance of common words (e.g., "the"
 
 However, TF-IDF does not consider word order or semantic meaning. It treats words independently, without recognizing synonyms or relationships between words. To address this, we use Word Embeddings.
 
-**Word Embeddings (Word2Vec)**
+**b) Word Embeddings (Word2Vec)**
 
 Unlike BoW and TF-IDF, word embedding techniques provide a more sophisticated representation of text by capturing the semantic relationships between words. One of the most popular methods for this is Word2Vec.
 Word2Vec
+
 Word2Vec is a neural network-based model that represents words as dense vectors in a continuous space. Each word is mapped to a high-dimensional vector, where:
 Similar words (e.g., "king" and "queen") have similar vector representations.
 Word relationships are preserved through mathematical operations (e.g., "king - man + woman = queen").
+
 A document is then represented as a collection of word vectors, unlike BoW and TF-IDF, which rely on fixed-length vectors based on vocabulary size.
 Word2Vec typically uses two architectures:
-Continuous Bag-of-Words (CBOW) – Predicts a word based on its surrounding context.
-Skip-gram – Predicts surrounding words given a single word.
+
+* Continuous Bag-of-Words (CBOW) – Predicts a word based on its surrounding context.
+
+* Skip-gram – Predicts surrounding words given a single word.
+
+![Image](https://github.com/user-attachments/assets/a9b05f03-4ccd-4529-a259-03c5349c8542)
+
 This technique allows models to understand the context and relationships between words, making it particularly useful for tasks like text classification, sentiment analysis, and machine translation.
+
+### 2. Cosine Similarity
+
+
+
 
 
 ## Result
