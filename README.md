@@ -106,9 +106,7 @@ However, TF-IDF does not consider word order or semantic meaning. It treats word
 Unlike BoW and TF-IDF, word embedding techniques provide a more sophisticated representation of text by capturing the semantic relationships between words. One of the most popular methods for this is Word2Vec.
 Word2Vec
 
-Word2Vec is a neural network-based model that represents words as dense vectors in a continuous space. Each word is mapped to a high-dimensional vector, where:
-Similar words (e.g., "king" and "queen") have similar vector representations.
-Word relationships are preserved through mathematical operations (e.g., "king - man + woman = queen").
+Word2Vec is a neural network-based model that represents words as dense vectors in a continuous space. Each word is assigned a high-dimensional vector, where similar words (e.g., "king" and "queen") have similar vector representations. This technique captures contextual relationships, allowing a document to be represented as a collection of word vectors while preserving word order and meaning.
 
 A document is then represented as a collection of word vectors, unlike BoW and TF-IDF, which rely on fixed-length vectors based on vocabulary size.
 Word2Vec typically uses two architectures:
@@ -123,9 +121,33 @@ This technique allows models to understand the context and relationships between
 
 ### 2. Cosine Similarity
 
+In text classification and information retrieval tasks, it is essential to measure how similar two documents are to check whether the document input whether or not exists in our dataset. Cosine Similarity is a widely used metric for comparing the similarity between two text vectors, particularly in high-dimensional spaces such as those produced by Bag-of-Words, TF-IDF, or Word Embeddings.
 
+Cosine Similarity calculates the cosine of the angle between two vectors in a multi-dimensional space. It ranges from -1 to 1, where:
 
+        1 indicates that the two vectors are identical (i.e., the texts are highly similar).
 
+        0 indicates that the vectors are orthogonal (i.e., no similarity between texts).
+
+        -1 indicates that the vectors are completely opposite.
+    
+![Image](https://github.com/user-attachments/assets/d9c7409a-3640-4602-b82f-3e36d00c0919)
+
+![Image](https://github.com/user-attachments/assets/ea8304ec-9ee8-4760-8d45-c9feae9d8484)
+
+### 3. Models
+
+With our preprocessed dataset, I proceeded to train a classification model by feeding in the extracted features and corresponding labels. To ensure a smooth evaluation, we split the dataset into **80% for training** and **20% for testing**.
+
+For model implementation, we utilized Python’s Scikit-Learn library, which provides efficient machine learning algorithms for text classification. I also applied Grid Search to fine-tune hyperparameters for optimal performance, which it explores different parameter combinations to find the best configuration for each model. We experimented with multiple classification techniques to compare their performance:
+
+* Multinomial Naïve Bayes: A probabilistic algorithm suitable for text classification tasks, particularly effective when using Bag-of-Words or TF-IDF representations.
+* Support Vector Machine (SVM): Applied in the TF-IDF case, this algorithm constructs a hyperplane in a high-dimensional space to separate different genres efficiently.
+* Logistic Regression: A model used to predict the probability of a song belonging to a specific genre based on textual features. To enhance performance in a multi-class setting, we use a One-vs-Rest (OvR) strategy, where a separate logistic regression model is trained for each genre.
+* Decision Tree: A rule-based classifier that splits data into hierarchical decisions, making it interpretable but prone to overfitting.
+* Random Forest: An ensemble learning method that combines multiple decision trees to improve accuracy and reduce overfitting.
+
+Each of these models was trained and evaluated to determine the best-performing approach for song genre classification.
 
 ## Result
 
@@ -157,7 +179,37 @@ The best result was achieved by Random Forest with TF-IDF. I was expecting Rando
 
 ![Image](https://github.com/user-attachments/assets/3ab6beff-4b2f-4a14-bbd3-738e5afaef9d)
 
+## DEMO
 
 
 ## Conclusion
-
+From the models that we developed and the experiments
+that we conducted we can say that the Convolutional Neural
+Network Model performed significantly well compared to the
+other models. However, the training time for an CNN is very
+high even though pre-trained word embeddings were used
+as feature vectors. In that respect Multi Layer Perceptron,
+SVM and Random Forest perform well. Apart from Hip-
+Hop(as seen from the confusion matrix) other genres might
+be mislabeled at times. Accordingly, the user interface works
+quite well for hip-hop genre lyrics.
+However limited by time, we could produce some signif-
+icant results in the field of music genre classification based
+on lyrics. There is a lot that can be done like better pre-
+processing of data. Adding more data for each of genre
+classes. We might train a model with lyrics as well as audio
+features and it is expected that we can get better results.
+Also, we might train a more complex model which would
+remember order of words like an LSTM, and we can exper-
+iment on our training data.
+Classification by lyrics will always be inherently flawed by
+vague genre boundaries with many genres borrowing lyrics
+and styles from one another. For example one merely need
+consider cover songs which utilise the same lyrics but pro-
+duce songs in vastly different genres, songs which have no
+lyrical content. To produce a state of the art classifier is
+is evident that this classifier must take into account more
+than just the lyrical content of the song. Audio data typi-
+cally performs the strongest and further research could look
+into employing these models to the audio and symbolic data
+and combining with the lyrics to build a stronger classifier
