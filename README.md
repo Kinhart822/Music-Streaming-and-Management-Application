@@ -170,9 +170,6 @@ Among the models, **Random Forest** performed better than the other algorithms w
 
 Finally, I used `from sklearn.metrics import classification_report` to generate a detailed performance evaluation of the model. The results showed that **Hip-Hop was the most accurately classified genre**, while **Pop and Rock were occasionally misclassified**. This is understandable, as the lyrics of these genres often share similar themes and vocabulary, making it harder for the model to distinguish between them.
 
-## DEMO
-
-
 ## Conclusion
 
 From the models that we developed and the experiments that we conducted we can say that the **Random Forest Model** performed significantly well compared to the other models. However, one major drawback of **Random Forest** is its high training time. Similarly, **SVM** also performed well but required a significant amount of training time, making it less efficient for large-scale applications. Additionally, as observed in the confusion matrix, while **Hip-Hop** was classified accurately, other genres were occasionally mislabeled due to similarities in lyrical content.
@@ -182,7 +179,7 @@ Due to time constraints, I was only able to experiment with basic word embedding
 * Enhancing data pre-processing to reduce noise and improve model accuracy.
 * Increasing the dataset size to provide better representation for each genre.
 * Incorporating audio features alongside lyrics, which could significantly enhance classification performance.
-* Exploring more advanced models such as **CNNs** and **LSTMs**, along with sophisticated word embeddings like *GloVe**, **BERT**, and **Transformers**, can significantly improve genre classification.
+* Exploring more advanced models such as **CNNs** and **LSTMs**, along with sophisticated word embeddings like **GloVe**, **BERT**, and **Transformers**, can significantly improve genre classification.
 
 Despite these results, genre classification based based only on lyrics will always have limitations due to the overlapping nature of music genres. Many genres share lyrical themes and styles, making it difficult to define clear boundaries. For instance, cover songs often use the same lyrics but belong to entirely different genres. Additionally, instrumental songs have no lyrics, further complicating classification.
 
