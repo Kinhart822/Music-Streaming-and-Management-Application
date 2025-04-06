@@ -53,19 +53,23 @@ public class AccountServiceImpl implements AccountService {
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new BusinessException(ApiResponseCode.USERNAME_EXISTED);
         }
-        Long userId = jwtHelper.getIdUserRequesting();
+
+        Long creatorId = jwtHelper.getIdUserRequesting();
         Instant now = Instant.now();
-        userRepository
-                .save(User.builder()
-                        .email(email)
-                        .password(passwordEncoder.encode(request.getPassword()))
-                        .userType(UserType.ADMIN)
-                        .status(CommonStatus.ACTIVE.getStatus())
-                        .createdBy(userId)
-                        .createdDate(now)
-                        .lastModifiedBy(userId)
-                        .lastModifiedDate(now)
-                        .build());
+
+        User admin = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .userType(UserType.ADMIN)
+                .status(CommonStatus.ACTIVE.getStatus())
+                .createdBy(creatorId)
+                .lastModifiedBy(creatorId)
+                .createdDate(now)
+                .lastModifiedDate(now)
+                .build();
+
+        userRepository.save(admin);
+
         return ApiResponse.ok();
     }
 
@@ -76,29 +80,21 @@ public class AccountServiceImpl implements AccountService {
             throw new BusinessException(ApiResponseCode.USERNAME_EXISTED);
         }
 
-        Long userId = jwtHelper.getIdUserRequesting();
+        Long creatorId = jwtHelper.getIdUserRequesting();
         Instant now = Instant.now();
 
-        // Tạo User
-        User user = userRepository.save(User.builder()
-                .email(email)
-                .password(passwordEncoder.encode(request.getPassword()))
-                .userType(UserType.ARTIST)
-                .status(CommonStatus.ACTIVE.getStatus())
-                .createdBy(userId)
-                .createdDate(now)
-                .lastModifiedBy(userId)
-                .lastModifiedDate(now)
-                .build());
-
-        // Tạo Artist liên kết với User vừa tạo
         Artist artist = new Artist();
-        artist.setId(user.getId());
+        artist.setEmail(email);
+        artist.setPassword(passwordEncoder.encode(request.getPassword()));
+        artist.setUserType(UserType.ARTIST);
+        artist.setStatus(CommonStatus.ACTIVE.getStatus());
+        artist.setCreatedDate(now);
+        artist.setLastModifiedDate(now);
         artist.setDescription(null);
         artist.setImage(null);
         artist.setCountListen(0L);
-
-        // Lưu Artist vào cơ sở dữ liệu
+        artist.setCreatedBy(creatorId);
+        artist.setLastModifiedBy(creatorId);
         artistRepository.save(artist);
 
         return ApiResponse.ok();
@@ -112,10 +108,10 @@ public class AccountServiceImpl implements AccountService {
             throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
         }
 
-        Long userId = jwtHelper.getIdUserRequesting();
+        Long creatorId = jwtHelper.getIdUserRequesting();
         Instant now = Instant.now();
 
-        List<User> artistsToSave = new ArrayList<>();
+        List<Artist> artistsInfoToSave = new ArrayList<>();
         int skipped = 0;
 
         for (CreateArtist artistRequest : artistRequests) {
@@ -126,27 +122,27 @@ public class AccountServiceImpl implements AccountService {
                 continue;
             }
 
-            User artist = User.builder()
-                    .email(email)
-                    .password(passwordEncoder.encode(artistRequest.getPassword()))
-                    .userType(UserType.ARTIST)
-                    .status(CommonStatus.ACTIVE.getStatus())
-                    .createdBy(userId)
-                    .createdDate(now)
-                    .lastModifiedBy(userId)
-                    .lastModifiedDate(now)
-                    .build();
+            // Tạo Artist (kế thừa từ User)
+            Artist artist = new Artist();
+            artist.setEmail(email);
+            artist.setPassword(passwordEncoder.encode(artistRequest.getPassword()));
+            artist.setUserType(UserType.ARTIST);
+            artist.setStatus(CommonStatus.ACTIVE.getStatus());
+            artist.setCreatedDate(now);
+            artist.setLastModifiedDate(now);
+            artist.setDescription(null);
+            artist.setImage(null);
+            artist.setCountListen(0L);
+            artist.setCreatedBy(creatorId);
+            artist.setLastModifiedBy(creatorId);
+            artistRepository.save(artist);
 
-            artistsToSave.add(artist);
-        }
-
-        if (!artistsToSave.isEmpty()) {
-            userRepository.saveAll(artistsToSave);
+            artistsInfoToSave.add(artist);
         }
 
         return ApiResponse.ok(
                 "Bulk Artist Creation Result",
-                "Created " + artistsToSave.size() + " artist(s), skipped " + skipped + " duplicate(s)."
+                "Created " + artistsInfoToSave.size() + " artist(s), skipped " + skipped + " duplicate(s)."
         );
     }
 

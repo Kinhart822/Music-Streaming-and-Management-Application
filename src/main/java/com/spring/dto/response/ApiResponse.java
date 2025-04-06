@@ -34,4 +34,25 @@ public class ApiResponse {
                 .description(description)
                 .build();
     }
+
+    public static ApiResponse error(String description) {
+        return ApiResponse.builder()
+                .status(ApiResponseCode.INTERNAL_SERVER_ERROR.getStatus())
+                .message(ApiResponseCode.INTERNAL_SERVER_ERROR.name())
+                .description(description)
+                .build();
+    }
+
+    public static ApiResponse error(ApiResponseCode code) {
+        return new ApiResponse(code);
+    }
+
+    public static ApiResponse ok(String message) {
+        return ApiResponse.builder()
+                .status(ApiResponseCode.SUCCESS.getStatus())
+                .message(message)
+                .description(null)
+                .build();
+    }
+
 }

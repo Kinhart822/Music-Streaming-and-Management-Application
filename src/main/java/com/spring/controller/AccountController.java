@@ -71,13 +71,13 @@ public class AccountController {
 
     /*
     TODO: ARTIST specific
- */
-    @PostMapping("/artist/create")
+    */
+    @PostMapping("/admin/createArtist")
     public ResponseEntity<ApiResponse> createArtist(@RequestBody @Valid CreateArtist request) {
         return ResponseEntity.ok(accountService.createArtist(request));
     }
 
-    @PostMapping("/artist/create/batch")
+    @PostMapping("/admin/createArtist/batch")
     public ResponseEntity<ApiResponse> createArtistFromList(@RequestBody @Valid CreateArtistFromList request) {
         return ResponseEntity.ok(accountService.createArtistFromList(request));
     }

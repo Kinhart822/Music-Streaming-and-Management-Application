@@ -6,17 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiResponseCode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiResponseCode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/UserType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/UserType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiEndpoints.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiEndpoints.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/AdminPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/AdminPresentation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/ArtistPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/ArtistPresentation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UpdateAccountRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UpdateAccountRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UserPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UserPresentation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/AccountService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/AccountService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ApiResponse.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,6 +22,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -84,11 +80,11 @@
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\entities" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.spring.controller.roles" />
       <recent name="com.spring.entities" />
       <recent name="com.spring.config" />
       <recent name="com.spring.enums" />
       <recent name="com.spring.service" />
-      <recent name="com.spring.filter" />
     </key>
   </component>
   <component name="RunManager">
@@ -125,7 +121,8 @@
       <workItem from="1743688267504" duration="821000" />
       <workItem from="1743787532739" duration="1951000" />
       <workItem from="1743796506056" duration="187000" />
-      <workItem from="1743908896486" duration="5978000" />
+      <workItem from="1743908896486" duration="7678000" />
+      <workItem from="1743954182402" duration="12304000" />
     </task>
     <servers />
   </component>
@@ -157,17 +154,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>314</line>
+          <line>310</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>351</line>
+          <line>347</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>352</line>
+          <line>348</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -197,8 +194,24 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>355</line>
+          <line>351</line>
           <option name="timeStamp" value="17" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
+          <line>242</line>
+          <properties>
+            <option name="lambda-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
+          <line>246</line>
+          <properties>
+            <option name="lambda-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="19" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

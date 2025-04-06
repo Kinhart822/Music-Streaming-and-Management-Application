@@ -8,7 +8,12 @@ public enum ApiEndpoints {
             "/api/v1/auth/sign-in",
             "/api/v1/auth/refresh",
             "/api/v1/account/user/sign-up/**",
-            "/api/v1/account/user/forgot-password/**"
+            "/api/v1/account/user/forgot-password/**",
+            "/api/v1/account/admin/create",
+            "/api/v1/account/admin/createArtist",
+            "/api/v1/account/admin/createArtist/batch",
+            "/api/v1/account/user/forgot-password/**",
+            "/api/v1/artist/song/**"
     );
 
     private final String[] apis;

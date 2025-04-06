@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers(ApiEndpoints.PERMITTED.getApis()).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority(UserType.ADMIN.name())
                         .requestMatchers("/api/v1/user/**").hasAuthority(UserType.USER.name())
+                        .requestMatchers("/api/v1/artist/**").hasAuthority(UserType.ARTIST.name())
                         .anyRequest().authenticated()
                 )
                 // After login, only need jwt to authenticate subsequence requests
