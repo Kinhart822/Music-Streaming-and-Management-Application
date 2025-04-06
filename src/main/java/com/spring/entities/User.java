@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.*;
 import java.time.Instant;
 
@@ -41,11 +42,11 @@ public class User implements Serializable, UserDetails {
     private String lastName;
 
     @Column(name = "gender")
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     private Gender gender;
 
     @Column(name = "dob")
-    private Instant birthDay;
+    private LocalDate birthDay;
 
     @Column(name = "resetKey")
     @JsonIgnore
@@ -60,7 +61,7 @@ public class User implements Serializable, UserDetails {
     private Integer status;
 
     @Column(name = "user_type")
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     private UserType userType;
 
     @Column(name = "phone_number")
@@ -69,7 +70,7 @@ public class User implements Serializable, UserDetails {
     @Column(name = "avatar")
     private String avatar;
 
-    @Column(updatable = false)
+    @Column
     private Long createdBy;
 
     @Column

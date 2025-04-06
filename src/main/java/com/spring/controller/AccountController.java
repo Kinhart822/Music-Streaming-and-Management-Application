@@ -5,12 +5,10 @@ import com.spring.dto.response.ApiResponse;
 import com.spring.entities.Notification;
 import com.spring.security.JwtHelper;
 import com.spring.service.AccountService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +29,7 @@ public class AccountController {
         return ResponseEntity.ok(accountService.resetPasswordRequest(request));
     }
 
-    @GetMapping("/reset-password/check")
+    @PostMapping("/reset-password/check")
     public ResponseEntity<Map<String, Boolean>> resetPasswordCheck(@RequestBody ResetPasswordCheck check) {
         return ResponseEntity.ok(accountService.resetPasswordCheck(check));
     }
@@ -52,8 +50,8 @@ public class AccountController {
     /*
     TODO: Delete account details
     */
-    @PutMapping("/delete")
-    public ResponseEntity<ApiResponse> deleteAccount(HttpServletRequest request) {
+    @DeleteMapping("/delete")
+    public ResponseEntity<ApiResponse> deleteAccount() {
         Long userId = jwtHelper.getIdUserRequesting();
         return ResponseEntity.ok(accountService.deleteAccount(userId));
     }
@@ -64,11 +62,6 @@ public class AccountController {
     @PostMapping("/admin/create")
     public ResponseEntity<ApiResponse> createAdmin(@RequestBody @Valid CreateAdmin request) {
         return ResponseEntity.ok(accountService.createAdmin(request));
-    }
-
-    @PostMapping("/admin/create/batch")
-    public ResponseEntity<ApiResponse> createAdminFromList(@RequestBody @Valid CreateAdminFromList request) {
-        return ResponseEntity.ok(accountService.createAdminFromList(request));
     }
 
     @GetMapping("/admin/profile")
@@ -140,7 +133,7 @@ public class AccountController {
     /*
         TODO: Notification
      */
-    @GetMapping("/user/notification")
+    @GetMapping("/notification")
     public ResponseEntity<List<Notification>> findAllNotifications() {
         return ResponseEntity.ok(accountService.findAllNotifications());
     }

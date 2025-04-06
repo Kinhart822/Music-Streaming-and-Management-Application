@@ -11,8 +11,6 @@ import java.util.Map;
 public interface AccountService {
     ApiResponse createAdmin(CreateAdmin request);
 
-    ApiResponse createAdminFromList(CreateAdminFromList request);
-
     ApiResponse createArtist(CreateArtist request);
 
     ApiResponse createArtistFromList(CreateArtistFromList request);
@@ -58,5 +56,4 @@ public interface AccountService {
 
     // Delete Account Step
     ApiResponse deleteAccount(Long userId);
-
 }

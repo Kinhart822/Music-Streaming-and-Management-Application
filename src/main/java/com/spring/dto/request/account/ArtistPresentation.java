@@ -21,7 +21,7 @@ public class ArtistPresentation {
     private Long countListen;
     private String email;
     private String gender;
-    private Instant birthDay;
+    private String birthDay;
     private String phone;
     private Integer status;
     private Long createdBy;

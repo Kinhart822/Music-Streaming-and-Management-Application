@@ -14,9 +14,6 @@ public class UpdateAccountRequest {
     @NotBlank(message = "avatar must be not blank")
     private String avatar;
 
-    @NotBlank(message = "username must be not blank")
-    private String username;
-
     @NotBlank(message = "firstName must be not blank")
     private String firstName;
 
@@ -27,7 +24,7 @@ public class UpdateAccountRequest {
     private Gender gender;
 
     @NotNull(message = "dateOfBirth must be not null")
-    private Instant dateOfBirth;
+    private String dateOfBirth;
 
     @PhoneNumber(message = "phone invalid format")
     private String phone;

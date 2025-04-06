@@ -20,10 +20,12 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> signIn(@RequestBody SignInRequest signInRequest) {
         return ResponseEntity.ok(authService.signIn(signInRequest));
     }
+
     @PutMapping("/refresh")
     public ResponseEntity<Map<String, String>> refresh(@RequestBody RefreshTokenRequest refreshRequest) {
         return ResponseEntity.ok(authService.refresh(refreshRequest));
     }
+
     @PutMapping("/sign-out")
     public ResponseEntity<ApiResponse> signOut(@RequestHeader("Authorization") String token) {
         return ResponseEntity.ok(authService.signOut(token.replace("Bearer ", "")));

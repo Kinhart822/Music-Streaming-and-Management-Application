@@ -15,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -68,70 +70,37 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ApiResponse createAdminFromList(CreateAdminFromList request) {
-        List<CreateAdmin> adminRequests = request.getAdminList();
-
-        if (adminRequests == null || adminRequests.isEmpty()) {
-            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
-        }
-
-        Long userId = jwtHelper.getIdUserRequesting();
-        Instant now = Instant.now();
-
-        List<User> adminToSave = new ArrayList<>();
-        int skipped = 0;
-
-        for (CreateAdmin adminRequest : adminRequests) {
-            String email = adminRequest.getEmail();
-            if (userRepository.existsByEmailIgnoreCase(email)) {
-                log.warn("Email {} already exists. Skipping admin creation.", email);
-                skipped++;
-                continue;
-            }
-
-            User admin = User.builder()
-                    .email(email)
-                    .password(passwordEncoder.encode(adminRequest.getPassword()))
-                    .userType(UserType.ADMIN)
-                    .status(CommonStatus.ACTIVE.getStatus())
-                    .createdBy(userId)
-                    .createdDate(now)
-                    .lastModifiedBy(userId)
-                    .lastModifiedDate(now)
-                    .build();
-
-            adminToSave.add(admin);
-        }
-
-        if (!adminToSave.isEmpty()) {
-            userRepository.saveAll(adminToSave);
-        }
-
-        return ApiResponse.ok(
-                "Bulk Artist Creation Result",
-                "Created " + adminToSave.size() + " artist(s), skipped " + skipped + " duplicate(s)."
-        );
-    }
-
-    @Override
     public ApiResponse createArtist(CreateArtist request) {
         String email = request.getEmail();
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new BusinessException(ApiResponseCode.USERNAME_EXISTED);
         }
+
         Long userId = jwtHelper.getIdUserRequesting();
         Instant now = Instant.now();
-        userRepository
-                .save(User.builder()
-                        .email(email)
-                        .password(passwordEncoder.encode(request.getPassword()))
-                        .userType(UserType.ARTIST)
-                        .status(CommonStatus.ACTIVE.getStatus())
-                        .createdBy(userId)
-                        .createdDate(now)
-                        .lastModifiedBy(userId)
-                        .lastModifiedDate(now)
-                        .build());
+
+        // Tạo User
+        User user = userRepository.save(User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .userType(UserType.ARTIST)
+                .status(CommonStatus.ACTIVE.getStatus())
+                .createdBy(userId)
+                .createdDate(now)
+                .lastModifiedBy(userId)
+                .lastModifiedDate(now)
+                .build());
+
+        // Tạo Artist liên kết với User vừa tạo
+        Artist artist = new Artist();
+        artist.setId(user.getId());
+        artist.setDescription(null);
+        artist.setImage(null);
+        artist.setCountListen(0L);
+
+        // Lưu Artist vào cơ sở dữ liệu
+        artistRepository.save(artist);
+
         return ApiResponse.ok();
     }
 
@@ -224,15 +193,18 @@ public class AccountServiceImpl implements AccountService {
                 .findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
+        String formattedDateOfBirth = admin.getBirthDay() != null ?
+                admin.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
         return AdminPresentation.builder()
                 .id(admin.getId())
-                .avatar(admin.getAvatar())
-                .firstName(admin.getFirstName())
-                .lastName(admin.getLastName())
+                .avatar(admin.getAvatar() != null ? admin.getAvatar() : "")
+                .firstName(admin.getFirstName() != null ? admin.getFirstName() : "")
+                .lastName(admin.getLastName() != null ? admin.getLastName() : "")
                 .email(admin.getEmail())
-                .gender(admin.getGender().toString())
-                .birthDay(admin.getBirthDay())
-                .phone(admin.getPhoneNumber())
+                .gender(admin.getGender() != null ? admin.getGender().toString() : "")
+                .birthDay(formattedDateOfBirth)
+                .phone(admin.getPhoneNumber() != null ? admin.getPhoneNumber() : "")
                 .status(admin.getStatus())
                 .createdBy(admin.getCreatedBy())
                 .lastModifiedBy(admin.getLastModifiedBy())
@@ -247,15 +219,18 @@ public class AccountServiceImpl implements AccountService {
                 .findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
+        String formattedDateOfBirth = user.getBirthDay() != null ?
+                user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
         return UserPresentation.builder()
                 .id(user.getId())
-                .avatar(user.getAvatar())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
+                .avatar(user.getAvatar() != null ? user.getAvatar() : "")
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
                 .email(user.getEmail())
-                .gender(user.getGender().toString())
-                .birthDay(user.getBirthDay())
-                .phone(user.getPhoneNumber())
+                .gender(user.getGender() != null ? user.getGender().toString() : "")
+                .birthDay(formattedDateOfBirth)
+                .phone(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
                 .status(user.getStatus())
                 .createdBy(user.getCreatedBy())
                 .lastModifiedBy(user.getLastModifiedBy())
@@ -263,6 +238,7 @@ public class AccountServiceImpl implements AccountService {
                 .lastModifiedDate(user.getLastModifiedDate())
                 .build();
     }
+
 
     @Override
     public ArtistPresentation getArtist() {
@@ -274,18 +250,21 @@ public class AccountServiceImpl implements AccountService {
                 .findById(artist.getId())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
+        String formattedDateOfBirth = artist.getBirthDay() != null ?
+                artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
         return ArtistPresentation.builder()
                 .id(artist.getId())
-                .avatar(artist.getAvatar())
-                .firstName(artist.getFirstName())
-                .lastName(artist.getLastName())
-                .description(artist_info.getDescription())
-                .image(artist_info.getImage())
-                .countListen(artist_info.getCountListen())
+                .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
+                .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
+                .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
+                .image(artist_info.getImage() != null ? artist_info.getImage() : "")
+                .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
                 .email(artist.getEmail())
-                .gender(artist.getGender().toString())
-                .birthDay(artist.getBirthDay())
-                .phone(artist.getPhoneNumber())
+                .gender(artist.getGender() != null ? artist.getGender().toString() : "")
+                .birthDay(formattedDateOfBirth)
+                .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
                 .status(artist.getStatus())
                 .createdBy(artist.getCreatedBy())
                 .lastModifiedBy(artist.getLastModifiedBy())
@@ -319,16 +298,23 @@ public class AccountServiceImpl implements AccountService {
             throw new BusinessException(ApiResponseCode.SESSION_ID_NOT_FOUND);
         }
         Instant now = Instant.now();
-        userRepository
-                .save(User.builder()
-                        .email(sessionOtpMap.get(sessionId).getEmail())
-                        .password(passwordEncoder.encode(request.getPassword()))
-                        .userType(UserType.USER)
-                        .status(CommonStatus.ACTIVE.getStatus())
-                        .createdDate(now)
-                        .lastModifiedDate(now)
-                        .build());
-        sessionOtpMap.remove(request.getSessionId());
+        User user = User.builder()
+                .email(sessionOtpMap.get(sessionId).getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .userType(UserType.USER)
+                .status(CommonStatus.ACTIVE.getStatus())
+                .createdDate(now)
+                .lastModifiedDate(now)
+                .build();
+
+        user = userRepository.save(user);
+
+        user.setCreatedBy(user.getId());
+        user.setLastModifiedBy(user.getId());
+
+        userRepository.save(user);
+
+        sessionOtpMap.remove(sessionId);
         return ApiResponse.ok();
     }
 
@@ -367,6 +353,7 @@ public class AccountServiceImpl implements AccountService {
         if (user.isEmpty()) {
             throw new BusinessException(ApiResponseCode.USERNAME_NOT_EXISTED_OR_DEACTIVATED);
         }
+        userRepository.save(user.get());
         emailService.sendResetPasswordMail(user.get());
         return ApiResponse.ok();
     }
@@ -393,6 +380,10 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ApiResponse updateAccount(UpdateAccountRequest request) {
         Long id = jwtHelper.getIdUserRequesting();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate dateOfBirth = LocalDate.parse(request.getDateOfBirth(), formatter);
+
         userRepository
                 .save(userRepository
                         .findById(id)
@@ -402,7 +393,7 @@ public class AccountServiceImpl implements AccountService {
                         .firstName(request.getFirstName())
                         .lastName(request.getLastName())
                         .gender(request.getGender())
-                        .birthDay(request.getDateOfBirth())
+                        .birthDay(dateOfBirth)
                         .phoneNumber(request.getPhone())
                         .lastModifiedBy(id)
                         .lastModifiedDate(Instant.now())
@@ -411,6 +402,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public ApiResponse deleteAccount(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
