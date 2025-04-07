@@ -301,225 +301,225 @@ def main():
     """Hàm chính để nhập lời bài hát và dự đoán thể loại."""
 
     # lyrics_input = input("Nhập lời bài hát hoặc đường dẫn file: ").strip()
-    lyrics_input = """Baby, I'm preying on you tonight
-Hunt you down eat you alive
-Just like animals
-Animals
-Like animals-mals
-Maybe you think that you can hide
-I can smell your scent for miles
-Just like animals
-Animals
-Like animals-mals
-Baby I'm
-So what you trying to do to me
-It's like we can't stop, we're enemies
-But we get along when I'm inside you, eh
-You're like a drug that's killing me
-I cut you out entirely
-But I get so high when I'm inside you
-Yeah, you can start over you can run free
-You can find other fish in the sea
-You can pretend it's meant to be
-But you can't stay away from me
-I can still hear you making that sound
-Taking me down rolling on the ground
-You can pretend that it was me
-But no, oh
-Baby, I'm preying on you tonight
-Hunt you down eat you alive
-Just like animals
-Animals
-Like animals
-Maybe you think that you can hide
-I can smell your scent for miles
-Just like animals
-Animals
-Like animals-mals
-Baby, I'm
-So if I run it's not enough
-You're still in my head forever stuck
-So you can do what you wanna do, eh
-I love your lies I'll eat 'em up
-But don't deny the animal
-That comes alive when I'm inside you
-Yeah, you can start over you can run free
-You can find other fish in the sea
-You can pretend it's meant to be
-But you can't stay away from me
-I can still hear you making that sound
-Taking me down rolling on the ground
-You can pretend that it was me
-But no, oh
-Baby I'm preying on you tonight
-Hunt you down eat you alive
-Just like animals
-Animals
-Like animals-mals
-Maybe you think that you can hide
-I can smell your scent for miles
-Just like animals
-Animals
-Like animals-mals
-Baby, I'm
-Don't tell no lie, lie, lie, lie
-You can't deny-ny-ny-ny
-The beast inside-side-side-side
-Yeah yeah yeah
-No girl, don't lie, lie, lie, lie (no girl don't lie)
-You can't deny, ny-ny-ny (you can't deny)
-The beast inside-side-side-side
-Yeah, yeah, yeah
-Yo
-Whoa
-Whoa
-Just like animals
-Animals
-Like animals-mals
-Just like animals (yeah)
-Animals (yeah)
-Like animals-mals (yeah)
-Ow
-Baby I'm preying on you tonight
-Hunt you down eat you alive
-Just like animals
-Animals
-Like animals-mals
-Maybe you think that you can hide
-I can smell your scent for miles
-Just like animals
-Animals
-Like animals-mals
-Baby I'm
-Don't tell no lie, lie, lie, lie
-You can't deny-ny-ny-ny
-The beast inside-side-side-side
-Yeah yeah yeah
-No girl, don't lie, lie, lie, lie (no, girl don't lie)
-You can't deny-ny-ny-ny (you can't deny)
-The beast inside-side-side-side
-Yeah, yeah, yeah"""    # Animals
-    lyrics_input = """
-Girl, you know I want your love
-Your love was handmade for somebody like me
-Well, come on now, follow my lead
-I may be crazy, don't mind me
-Say, "Boy, let's not talk too much"
-Grab on my waist and put that body on me
-Well, come on now, follow my lead
-Come, come on now, follow my lead, mm
-
-I'm in love with the shape of you
-We push and pull like a magnet do
-Although my heart is fallin' too
-I'm in love with your body
-And last night, you were in my room
-And now my bed sheets smell like you
-Every day, discoverin' somethin' brand new
-Well, I'm in love with your body
-
-Oh, I, oh, I, oh, I, oh, I
-Well, I'm in love with your body
-Oh, I, oh, I, oh, I, oh, I
-Well, I'm in love with your body
-Oh, I, oh, I, oh, I, oh, I
-Well, I'm in love with your body
-Every day, discoverin' somethin' brand new
-I'm in love with the shape of you
-
-One week in, we let the story begin
-We're goin' out on our first date (Mm)
-You and me are thrifty, so go all-you-can-eat
-Fill up your bag and I fill up a plate (Mm)
-We talk for hours and hours about the sweet and the sour
-And how your family is doin' okay (Mm)
-And leave and get in a taxi, and kiss in the back seat
-Tell the driver make the radio play and I'm singin' like
-
-Girl, you know I want your love
-Your love was handmade for somebody like me
-Well, come on now, follow my lead
-I may be crazy, don't mind me
-Say, "Boy, let's not talk too much"
-Grab on my waist and put that body on me
-Well, come on now, follow my lead
-Come, come on now, follow my lead, mm
-
-Come on, be my baby, come on
-Come on, be my baby, come on
-I'm in love with your body
-Come on, be my baby, come on
-Come on, be my baby, come on
-I'm in love with your body
-Come on, be my baby, come on
-Come on, be my baby, come on
-I'm in love with your body
-Every day, discoverin' somethin' brand new
-I'm in love with the shape of you
-"""    # Shape of you
-    lyrics_input = """
-    Days like this don't get much better
-    Top down, good fam, good weather
-    Days like this, we don't miss, never
-    Yeah, yeah
-    Last night, things got a little bit crazy
-    Pulled up doin' 'bout 180
-    Life goes fast, so there ain't no maybes
-    Yeah, yeah
-
-    Just give me that sunset, give me that ride
-    Give me them stars out, four-wheel drive
-    Takin' that back road, yeah, no lie
-    Man, that sure feels nice
-    Give me them real ones, ones I know
-    Do a little two-step, dosido
-    Turn it up loud, bring in that crowd
-    Take it high, then drop it low
-
-    We do this everywhere we go
-    I think you know
-    This ain't no one horse rodeo
-    I think you know
-    When we pull up, green lights our show
-    I think you know
-    That we gon' run it, run it, run it
-    'Til we runnin' outta road (Oh, yeah)
-
-    Run it, run it, run it
-    'Til we runnin' outta road (Oh, yeah)
-    (Oh, yeah)
-    Run it, run it, run it
-    'Til we runnin' outta road
-
-    Wastin' time ain't overrated
-    Not when you're celebrated
-    Raise that glass, we're all here waitin'
-    Yeah, yeah
-
-    Just give me that sunset, give me that ride
-    Give me that truck, that four-wheel drive
-    Takin' that back road, yeah, no lie
-    Man, that sure feels nice
-    Give me them real ones, ones I know
-    Do a little two-step, dosido
-    Turn it up loud, bring in that crowd
-    Take it up high, then drop it low
-
-    We do this everywhere we go
-    I think you know
-    This ain't no one horse rodeo
-    I think you know
-    When we pull up, green lights our show
-    I think you know
-    That we gon' run it, run it, run it
-    'Til we runnin' outta road (Oh, yeah)
-
-    Run it, run it, run it
-    'Til we runnin' outta road (Oh, yeah)
-    (Oh, yeah)
-    Run it, run it, run it
-    'Til we runnin' outta road (Oh, yeah)
-"""    # Run It
+#     lyrics_input = """Baby, I'm preying on you tonight
+# Hunt you down eat you alive
+# Just like animals
+# Animals
+# Like animals-mals
+# Maybe you think that you can hide
+# I can smell your scent for miles
+# Just like animals
+# Animals
+# Like animals-mals
+# Baby I'm
+# So what you trying to do to me
+# It's like we can't stop, we're enemies
+# But we get along when I'm inside you, eh
+# You're like a drug that's killing me
+# I cut you out entirely
+# But I get so high when I'm inside you
+# Yeah, you can start over you can run free
+# You can find other fish in the sea
+# You can pretend it's meant to be
+# But you can't stay away from me
+# I can still hear you making that sound
+# Taking me down rolling on the ground
+# You can pretend that it was me
+# But no, oh
+# Baby, I'm preying on you tonight
+# Hunt you down eat you alive
+# Just like animals
+# Animals
+# Like animals
+# Maybe you think that you can hide
+# I can smell your scent for miles
+# Just like animals
+# Animals
+# Like animals-mals
+# Baby, I'm
+# So if I run it's not enough
+# You're still in my head forever stuck
+# So you can do what you wanna do, eh
+# I love your lies I'll eat 'em up
+# But don't deny the animal
+# That comes alive when I'm inside you
+# Yeah, you can start over you can run free
+# You can find other fish in the sea
+# You can pretend it's meant to be
+# But you can't stay away from me
+# I can still hear you making that sound
+# Taking me down rolling on the ground
+# You can pretend that it was me
+# But no, oh
+# Baby I'm preying on you tonight
+# Hunt you down eat you alive
+# Just like animals
+# Animals
+# Like animals-mals
+# Maybe you think that you can hide
+# I can smell your scent for miles
+# Just like animals
+# Animals
+# Like animals-mals
+# Baby, I'm
+# Don't tell no lie, lie, lie, lie
+# You can't deny-ny-ny-ny
+# The beast inside-side-side-side
+# Yeah yeah yeah
+# No girl, don't lie, lie, lie, lie (no girl don't lie)
+# You can't deny, ny-ny-ny (you can't deny)
+# The beast inside-side-side-side
+# Yeah, yeah, yeah
+# Yo
+# Whoa
+# Whoa
+# Just like animals
+# Animals
+# Like animals-mals
+# Just like animals (yeah)
+# Animals (yeah)
+# Like animals-mals (yeah)
+# Ow
+# Baby I'm preying on you tonight
+# Hunt you down eat you alive
+# Just like animals
+# Animals
+# Like animals-mals
+# Maybe you think that you can hide
+# I can smell your scent for miles
+# Just like animals
+# Animals
+# Like animals-mals
+# Baby I'm
+# Don't tell no lie, lie, lie, lie
+# You can't deny-ny-ny-ny
+# The beast inside-side-side-side
+# Yeah yeah yeah
+# No girl, don't lie, lie, lie, lie (no, girl don't lie)
+# You can't deny-ny-ny-ny (you can't deny)
+# The beast inside-side-side-side
+# Yeah, yeah, yeah"""    # Animals
+#     lyrics_input = """
+# Girl, you know I want your love
+# Your love was handmade for somebody like me
+# Well, come on now, follow my lead
+# I may be crazy, don't mind me
+# Say, "Boy, let's not talk too much"
+# Grab on my waist and put that body on me
+# Well, come on now, follow my lead
+# Come, come on now, follow my lead, mm
+#
+# I'm in love with the shape of you
+# We push and pull like a magnet do
+# Although my heart is fallin' too
+# I'm in love with your body
+# And last night, you were in my room
+# And now my bed sheets smell like you
+# Every day, discoverin' somethin' brand new
+# Well, I'm in love with your body
+#
+# Oh, I, oh, I, oh, I, oh, I
+# Well, I'm in love with your body
+# Oh, I, oh, I, oh, I, oh, I
+# Well, I'm in love with your body
+# Oh, I, oh, I, oh, I, oh, I
+# Well, I'm in love with your body
+# Every day, discoverin' somethin' brand new
+# I'm in love with the shape of you
+#
+# One week in, we let the story begin
+# We're goin' out on our first date (Mm)
+# You and me are thrifty, so go all-you-can-eat
+# Fill up your bag and I fill up a plate (Mm)
+# We talk for hours and hours about the sweet and the sour
+# And how your family is doin' okay (Mm)
+# And leave and get in a taxi, and kiss in the back seat
+# Tell the driver make the radio play and I'm singin' like
+#
+# Girl, you know I want your love
+# Your love was handmade for somebody like me
+# Well, come on now, follow my lead
+# I may be crazy, don't mind me
+# Say, "Boy, let's not talk too much"
+# Grab on my waist and put that body on me
+# Well, come on now, follow my lead
+# Come, come on now, follow my lead, mm
+#
+# Come on, be my baby, come on
+# Come on, be my baby, come on
+# I'm in love with your body
+# Come on, be my baby, come on
+# Come on, be my baby, come on
+# I'm in love with your body
+# Come on, be my baby, come on
+# Come on, be my baby, come on
+# I'm in love with your body
+# Every day, discoverin' somethin' brand new
+# I'm in love with the shape of you
+# """    # Shape of you
+#     lyrics_input = """
+#     Days like this don't get much better
+#     Top down, good fam, good weather
+#     Days like this, we don't miss, never
+#     Yeah, yeah
+#     Last night, things got a little bit crazy
+#     Pulled up doin' 'bout 180
+#     Life goes fast, so there ain't no maybes
+#     Yeah, yeah
+#
+#     Just give me that sunset, give me that ride
+#     Give me them stars out, four-wheel drive
+#     Takin' that back road, yeah, no lie
+#     Man, that sure feels nice
+#     Give me them real ones, ones I know
+#     Do a little two-step, dosido
+#     Turn it up loud, bring in that crowd
+#     Take it high, then drop it low
+#
+#     We do this everywhere we go
+#     I think you know
+#     This ain't no one horse rodeo
+#     I think you know
+#     When we pull up, green lights our show
+#     I think you know
+#     That we gon' run it, run it, run it
+#     'Til we runnin' outta road (Oh, yeah)
+#
+#     Run it, run it, run it
+#     'Til we runnin' outta road (Oh, yeah)
+#     (Oh, yeah)
+#     Run it, run it, run it
+#     'Til we runnin' outta road
+#
+#     Wastin' time ain't overrated
+#     Not when you're celebrated
+#     Raise that glass, we're all here waitin'
+#     Yeah, yeah
+#
+#     Just give me that sunset, give me that ride
+#     Give me that truck, that four-wheel drive
+#     Takin' that back road, yeah, no lie
+#     Man, that sure feels nice
+#     Give me them real ones, ones I know
+#     Do a little two-step, dosido
+#     Turn it up loud, bring in that crowd
+#     Take it up high, then drop it low
+#
+#     We do this everywhere we go
+#     I think you know
+#     This ain't no one horse rodeo
+#     I think you know
+#     When we pull up, green lights our show
+#     I think you know
+#     That we gon' run it, run it, run it
+#     'Til we runnin' outta road (Oh, yeah)
+#
+#     Run it, run it, run it
+#     'Til we runnin' outta road (Oh, yeah)
+#     (Oh, yeah)
+#     Run it, run it, run it
+#     'Til we runnin' outta road (Oh, yeah)
+# """    # Run It
     lyrics_input = """Ooh
 I, I just woke up from a dream
 Where you and I had to say goodbye
