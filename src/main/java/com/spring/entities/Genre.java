@@ -20,8 +20,8 @@ public class Genre {
     @Column(name = "genre_name")
     private String genresName;
 
-    @Column(name = "image", columnDefinition = "varchar(500)")
-    private String image;
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;
 
     @Column(name = "description", columnDefinition = "text")
     private String description;

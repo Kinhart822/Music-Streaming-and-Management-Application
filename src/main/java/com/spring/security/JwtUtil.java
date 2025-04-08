@@ -21,7 +21,7 @@ public class JwtUtil {
     private static final long ACCESS_EXPIRATION_TIME = Long.parseLong(Objects.requireNonNull(EnvConfig.get("ACCESS_EXPIRATION_TIME")));
     private static final long REFRESH_EXPIRATION_TIME = Long.parseLong(Objects.requireNonNull(EnvConfig.get("REFRESH_EXPIRATION_TIME")));
     private static final String USER_ID_CLAIM = "userId";
-    private static final String ROLES_CLAIM = "roles";
+    private static final String ROLES_CLAIM = "role";
 
     public String generateAccessToken(UserDetails userDetails) {
         return buildToken(userDetails, ACCESS_EXPIRATION_TIME);

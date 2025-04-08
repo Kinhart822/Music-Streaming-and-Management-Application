@@ -5,7 +5,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class SongUploadRequest {
-    private MultipartFile file; // Bạn vẫn cần sử dụng MultipartFile cho file upload
+    private MultipartFile file;
     private String title;
-    private Long artistId;
+    private String lyrics;
+    private MultipartFile image;
+    private Boolean downloadPermission;
+    private String description;
+//    private Long genreId;
 }

@@ -57,39 +57,13 @@ public class AccountController {
     }
 
     /*
-        TODO: ADMIN specific
-     */
+    TODO: Account functionalities
+    */
     @PostMapping("/admin/create")
     public ResponseEntity<ApiResponse> createAdmin(@RequestBody @Valid CreateAdmin request) {
         return ResponseEntity.ok(accountService.createAdmin(request));
     }
 
-    @GetMapping("/admin/profile")
-    public ResponseEntity<AdminPresentation> getAdmin() {
-        return ResponseEntity.ok(accountService.getAdmin());
-    }
-
-    /*
-    TODO: ARTIST specific
-    */
-    @PostMapping("/admin/createArtist")
-    public ResponseEntity<ApiResponse> createArtist(@RequestBody @Valid CreateArtist request) {
-        return ResponseEntity.ok(accountService.createArtist(request));
-    }
-
-    @PostMapping("/admin/createArtist/batch")
-    public ResponseEntity<ApiResponse> createArtistFromList(@RequestBody @Valid CreateArtistFromList request) {
-        return ResponseEntity.ok(accountService.createArtistFromList(request));
-    }
-
-    @GetMapping("/artist/profile")
-    public ResponseEntity<ArtistPresentation> getArtist(){
-        return ResponseEntity.ok(accountService.getArtist());
-    }
-
-    /*
-        TODO: USER specific
-     */
     @GetMapping("/user/sign-up/check-email-existence")
     public ResponseEntity<Map<String, Boolean>> signUpCheckEmailExistence(@RequestParam String query) {
         return ResponseEntity.ok(accountService.signUpCheckEmailExistence(query));
@@ -123,11 +97,6 @@ public class AccountController {
     @PostMapping("/user/forgot-password/finish")
     public ResponseEntity<ApiResponse> forgotPasswordFinish(@RequestBody ForgotPasswordFinish request) {
         return ResponseEntity.ok(accountService.forgotPasswordFinish(request));
-    }
-
-    @GetMapping("/user/profile")
-    public ResponseEntity<UserPresentation> getUser() {
-        return ResponseEntity.ok(accountService.getUser());
     }
 
     /*

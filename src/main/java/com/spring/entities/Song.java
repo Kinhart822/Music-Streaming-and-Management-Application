@@ -30,29 +30,32 @@ public class Song {
     @Column(name = "duration")
     private String duration;
 
-    @Column(name = "art_small_url")
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;    // Song image url from Cloudinary
+
+    @Column(name = "art_small_url", columnDefinition = "text")
     private String artSmallUrl;
 
-    @Column(name = "art_medium_url")
+    @Column(name = "art_medium_url", columnDefinition = "text")
     private String artMediumUrl;
 
-    @Column(name = "art_big_url")
+    @Column(name = "art_big_url", columnDefinition = "text")
     private String artBigUrl;
 
     @Column(name = "download_permission")
     private Boolean downloadPermission;
 
-    @Column(name = "media_url")
-    private String mediaUrl;
-
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "count_listen")
     private Long countListen;
 
+    @Column(name = "video_url", columnDefinition = "text")
+    private String videoUrl;        // Song file url from Cloudinary
+
     @Column(name = "track_url", columnDefinition = "text")
-    private String trackUrl;
+    private String trackUrl;       // Song url from Spotify_API
 
     @OneToMany(mappedBy = "artistSongId.song", cascade = CascadeType.ALL)
     private List<ArtistSong> artistSongs;

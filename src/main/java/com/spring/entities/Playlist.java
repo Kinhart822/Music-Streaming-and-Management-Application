@@ -21,6 +21,9 @@ public class Playlist {
     @Column(name = "playlist_time_length")
     private Float playlistTimeLength;
 
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;
+
     @Column(name = "description", columnDefinition = "text")
     private String description;
 

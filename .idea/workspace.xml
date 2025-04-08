@@ -5,12 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiEndpoints.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiEndpoints.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ApiResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/SongUploadController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/artist/SongUploadController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/roles/AdminController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/roles/ArtistController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/roles/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/music/artist/SongUploadRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/music/artist/SongUploadRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Album.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Album.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Artist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Artist.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Genre.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Genre.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Playlist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Playlist.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Song.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Song.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtUtil.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongUploadServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongUploadServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -21,8 +36,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Enum" />
         <option value="Interface" />
+        <option value="Enum" />
         <option value="Class" />
       </list>
     </option>
@@ -30,6 +45,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
+  <component name="KubernetesApiProvider"><![CDATA[{
+  "isMigrated": true
+}]]></component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -58,13 +77,13 @@
     "Spring Boot.MsmaApplication.executor": "Run",
     "git-widget-placeholder": "Kinhart822__Backend",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Code/MSMA/Music-Streaming-and-Management-Application",
+    "last_opened_file_path": "D:/Code/MSMA/Music-Streaming-and-Management-Application/MSMA/src/main/resources",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "configurable.group.editor",
+    "settings.editor.selected.configurable": "reference.projectsettings.compiler.annotationProcessors",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -75,13 +94,14 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\resources" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\dto" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\service\impl" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\entities" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="com.spring.controller.roles" />
       <recent name="com.spring.entities" />
+      <recent name="com.spring.controller.roles" />
       <recent name="com.spring.config" />
       <recent name="com.spring.enums" />
       <recent name="com.spring.service" />
@@ -123,6 +143,9 @@
       <workItem from="1743796506056" duration="187000" />
       <workItem from="1743908896486" duration="7678000" />
       <workItem from="1743954182402" duration="12304000" />
+      <workItem from="1744030526406" duration="10620000" />
+      <workItem from="1744046705466" duration="234000" />
+      <workItem from="1744046969723" duration="16646000" />
     </task>
     <servers />
   </component>
@@ -145,7 +168,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java</url>
-          <line>136</line>
+          <line>105</line>
           <properties class="com.spring.controller.AccountController" method="findAllNotifications">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -154,17 +177,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>310</line>
+          <line>311</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>347</line>
+          <line>348</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>348</line>
+          <line>349</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -194,12 +217,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>351</line>
+          <line>352</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>242</line>
+          <line>243</line>
           <properties>
             <option name="lambda-ordinal" value="-1" />
           </properties>
@@ -207,7 +230,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>246</line>
+          <line>247</line>
           <properties>
             <option name="lambda-ordinal" value="-1" />
           </properties>

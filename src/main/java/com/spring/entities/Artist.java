@@ -14,11 +14,14 @@ public class Artist extends User{
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "image", columnDefinition = "varchar(500)")
-    private String image;
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;
 
     @Column(name = "count_listen")
     private Long countListen;
+
+    @Column(name = "followers")
+    private Long numberOfFollowers;
 
     @OneToMany(mappedBy = "artistSongId.artist")
     private List<ArtistSong> artistSongs;

@@ -33,8 +33,8 @@ public class Album {
     @Column(name = "total_listen")
     private int totalListen;
 
-    @Column(name = "image", columnDefinition = "varchar(500)")
-    private String image;
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;
 
     @Column(name = "download_permission")
     private boolean downloadPermission;

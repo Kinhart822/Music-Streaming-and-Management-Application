@@ -91,8 +91,9 @@ public class AccountServiceImpl implements AccountService {
         artist.setCreatedDate(now);
         artist.setLastModifiedDate(now);
         artist.setDescription(null);
-        artist.setImage(null);
+        artist.setImageUrl(null);
         artist.setCountListen(0L);
+        artist.setNumberOfFollowers(0L);
         artist.setCreatedBy(creatorId);
         artist.setLastModifiedBy(creatorId);
         artistRepository.save(artist);
@@ -131,7 +132,7 @@ public class AccountServiceImpl implements AccountService {
             artist.setCreatedDate(now);
             artist.setLastModifiedDate(now);
             artist.setDescription(null);
-            artist.setImage(null);
+            artist.setImageUrl(null);
             artist.setCountListen(0L);
             artist.setCreatedBy(creatorId);
             artist.setLastModifiedBy(creatorId);
@@ -255,7 +256,7 @@ public class AccountServiceImpl implements AccountService {
                 .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                 .lastName(artist.getLastName() != null ? artist.getLastName() : "")
                 .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
-                .image(artist_info.getImage() != null ? artist_info.getImage() : "")
+                .image(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
                 .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
                 .email(artist.getEmail())
                 .gender(artist.getGender() != null ? artist.getGender().toString() : "")
