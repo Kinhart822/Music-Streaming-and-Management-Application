@@ -1,6 +1,5 @@
 import re
 from uuid import uuid4
-
 import contractions
 import inflect
 import spacy
@@ -14,12 +13,15 @@ import os
 import shutil
 import joblib
 import uvicorn
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = FastAPI()
 
-# === Load model, vectorizer, label encoder ===
+# === Load model, vectorizer, tfidf_matrix ===
 vectorizer_tfidf = joblib.load('pkl/vectorizer_tfidf.pkl')
 rf_model_train = joblib.load('pkl/rf_model_tf_idf.pkl')
+tfidf_matrix = joblib.load('pkl/tfidf_matrix.pkl')
+vectorizer_tfidf_similarity = joblib.load('pkl/tfidf_similarity.pkl')
 
 
 def load_remove(path_to_load):
@@ -168,6 +170,21 @@ def tfidf_lyrics(test_lyrics):
     return song_tfidf
 
 
+def tfidf_lyrics_similarity(test_lyrics):
+    """
+        Chuyển đổi lyrics thành vector TF-IDF.
+    """
+    if not test_lyrics:
+        print("🚫 Không có lyrics.")
+        return None
+
+    lyrics_data = detect_languages_for_lyrics(test_lyrics)
+    preprocessed_lyrics = preprocess_lyrics(test_lyrics, lyrics_data["multilingual"])
+
+    # Biến lyrics thành vector TF-IDF
+    song_tfidf = vectorizer_tfidf_similarity.transform([preprocessed_lyrics])
+    return song_tfidf
+
 def transcribe_lyric_by_whisper(audio_path):
     """Dùng Whisper để trích xuất lyric từ file nhạc"""
     try:
@@ -305,6 +322,13 @@ def predict_genre(model_prediction, tfidf_vector):
     return predicted_genre
 
 
+def check_similarity(tfidf_vector, tfidf_matrix_vector):
+    if tfidf_vector is None:
+        return None
+    similarity_scores = cosine_similarity(tfidf_vector, tfidf_matrix_vector)[0]
+    return similarity_scores.max()
+
+
 @app.post("/predict-genre")
 async def predict_genre_api(lyrics: str = Form(None), audio_file: UploadFile = None):
     try:
@@ -329,11 +353,73 @@ async def predict_genre_api(lyrics: str = Form(None), audio_file: UploadFile = N
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
             return {"genre": predicted_genre}
-
         elif lyrics:
             lyrics_processed = tfidf_lyrics(lyrics)
             predicted_genre = predict_genre(rf_model_train, lyrics_processed)
             return {"genre": predicted_genre}
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/check-similarity")
+async def similarity_api(
+        lyrics: str = Form(None),
+        audio_file: UploadFile = None
+):
+    try:
+        if audio_file:
+            request_id = str(uuid4())
+            temp_dir = f"temp/{request_id}"
+
+            os.makedirs(temp_dir, exist_ok=True)
+            file_location = f"{temp_dir}/{audio_file.filename}"
+
+            with open(file_location, "wb") as buffer:
+                shutil.copyfileobj(audio_file.file, buffer)
+
+            audio = process_audio(file_location, request_id)
+            lyrics_from_audio = transcribe_lyric_by_whisper(audio)
+            lyrics_processed = tfidf_lyrics_similarity(lyrics_from_audio)
+
+            similarity_score = check_similarity(lyrics_processed, tfidf_matrix)
+
+            if similarity_score is None:
+                return JSONResponse(
+                    status_code=200,
+                    content={"match": False, "message": "Không thể xác định độ tương đồng."}
+                )
+
+            match = bool(similarity_score >= 0.75)
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "match": match,
+                    "similarity_score": float(round(similarity_score, 4)),
+                    "message": "Bài hát đã bị trùng." if match else "Không có bài hát nào trùng khớp."
+                }
+            )
+        elif lyrics:
+            lyrics_processed = tfidf_lyrics_similarity(lyrics)
+            similarity_score = check_similarity(lyrics_processed, tfidf_matrix)
+
+            if similarity_score is None:
+                return JSONResponse(
+                    status_code=200,
+                    content={"match": False, "message": "Không thể xác định độ tương đồng!"}
+                )
+
+            match = bool(similarity_score >= 0.75)
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "match": match,
+                    "similarity_score": float(round(similarity_score, 4)),
+                    "message": "Bài hát đã bị trùng." if match else "Không có bài hát nào trùng khớp!"
+                }
+            )
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
