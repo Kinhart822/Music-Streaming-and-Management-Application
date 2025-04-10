@@ -11,11 +11,11 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Embeddable
 public class PlaylistSongId implements Serializable {
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "song_id")
     private Song song;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "playlist_id")
-    private Playlist playList;
+    private Playlist playlist;
 }

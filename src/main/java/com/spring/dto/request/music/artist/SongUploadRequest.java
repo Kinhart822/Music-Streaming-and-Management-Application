@@ -3,6 +3,8 @@ package com.spring.dto.request.music.artist;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Data
 public class SongUploadRequest {
     private MultipartFile file;
@@ -11,5 +13,5 @@ public class SongUploadRequest {
     private MultipartFile image;
     private Boolean downloadPermission;
     private String description;
-//    private Long genreId;
+    private List<Long> genreId;
 }

@@ -43,10 +43,6 @@ public class ApiResponse {
                 .build();
     }
 
-    public static ApiResponse error(ApiResponseCode code) {
-        return new ApiResponse(code);
-    }
-
     public static ApiResponse ok(String message) {
         return ApiResponse.builder()
                 .status(ApiResponseCode.SUCCESS.getStatus())

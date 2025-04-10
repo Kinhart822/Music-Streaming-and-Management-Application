@@ -19,6 +19,7 @@ public class ArtistPresentation {
     private String description;
     private String image;
     private Long countListen;
+    private Long numberOfFollowers;
     private String email;
     private String gender;
     private String birthDay;

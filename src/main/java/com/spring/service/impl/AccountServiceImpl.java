@@ -11,30 +11,24 @@ import com.spring.repository.*;
 import com.spring.security.JwtHelper;
 import com.spring.service.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.RandomStringGenerator;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
     private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final HistoryListenRepository historyListenRepository;
-    private final UserFileRepository userFileRepository;
     private final SongRepository songRepository;
-    private final AlbumRepository albumRepository;
-    private final PlayListRepository playListRepository;
-    private final PlayListSongRepository playListSongRepository;
     private final JwtHelper jwtHelper;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
@@ -93,7 +87,6 @@ public class AccountServiceImpl implements AccountService {
         artist.setDescription(null);
         artist.setImageUrl(null);
         artist.setCountListen(0L);
-        artist.setNumberOfFollowers(0L);
         artist.setCreatedBy(creatorId);
         artist.setLastModifiedBy(creatorId);
         artistRepository.save(artist);
@@ -118,7 +111,6 @@ public class AccountServiceImpl implements AccountService {
         for (CreateArtist artistRequest : artistRequests) {
             String email = artistRequest.getEmail();
             if (userRepository.existsByEmailIgnoreCase(email)) {
-                log.warn("Email {} already exists. Skipping artist creation.", email);
                 skipped++;
                 continue;
             }
@@ -143,7 +135,7 @@ public class AccountServiceImpl implements AccountService {
 
         return ApiResponse.ok(
                 "Bulk Artist Creation Result",
-                "Created " + artistsInfoToSave.size() + " artist(s), skipped " + skipped + " duplicate(s)."
+                "Created " + artistsInfoToSave.size() + " artist(s), skipped " + skipped + " duplicate(s)!"
         );
     }
 
@@ -182,6 +174,21 @@ public class AccountServiceImpl implements AccountService {
         return notificationRepository.findAllByUserOrderByCreatedDateDesc(userRepository
                 .findById(userId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND.setDescription(String.format("User not found with id: %d", userId)))));
+    }
+
+    @Override
+    public Long countArtists() {
+        return artistRepository.countAllArtists();
+    }
+
+    @Override
+    public Long countUsers() {
+        return userRepository.countAllUsers();
+    }
+
+    @Override
+    public Long countSongs() {
+        return songRepository.countAllSongs();
     }
 
     @Override
@@ -269,6 +276,88 @@ public class AccountServiceImpl implements AccountService {
                 .lastModifiedDate(artist.getLastModifiedDate())
                 .build();
     }
+
+    @Override
+    public List<AdminPresentation> getAllAdmin() {
+        List<User> admins = userRepository.findByUserType(UserType.ADMIN);
+
+        return admins.stream().map(admin -> {
+            String formattedDate = admin.getBirthDay() != null
+                    ? admin.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            return AdminPresentation.builder()
+                    .id(admin.getId())
+                    .avatar(admin.getAvatar() != null ? admin.getAvatar() : "")
+                    .firstName(admin.getFirstName() != null ? admin.getFirstName() : "")
+                    .lastName(admin.getLastName() != null ? admin.getLastName() : "")
+                    .email(admin.getEmail())
+                    .gender(admin.getGender() != null ? admin.getGender().toString() : "")
+                    .birthDay(formattedDate)
+                    .phone(admin.getPhoneNumber() != null ? admin.getPhoneNumber() : "")
+                    .status(admin.getStatus())
+                    .createdBy(admin.getCreatedBy())
+                    .lastModifiedBy(admin.getLastModifiedBy())
+                    .createdDate(admin.getCreatedDate())
+                    .lastModifiedDate(admin.getLastModifiedDate())
+                    .build();
+        }).toList();
+    }
+
+    @Override
+    public List<UserPresentation> getAllUser() {
+        List<User> users = userRepository.findByUserType(UserType.USER);
+
+        return users.stream().map(user -> {
+            String formattedDate = user.getBirthDay() != null
+                    ? user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            return UserPresentation.builder()
+                    .id(user.getId())
+                    .avatar(user.getAvatar() != null ? user.getAvatar() : "")
+                    .firstName(user.getFirstName() != null ? user.getFirstName() : "")
+                    .lastName(user.getLastName() != null ? user.getLastName() : "")
+                    .email(user.getEmail())
+                    .gender(user.getGender() != null ? user.getGender().toString() : "")
+                    .birthDay(formattedDate)
+                    .phone(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+                    .status(user.getStatus())
+                    .createdBy(user.getCreatedBy())
+                    .lastModifiedBy(user.getLastModifiedBy())
+                    .createdDate(user.getCreatedDate())
+                    .lastModifiedDate(user.getLastModifiedDate())
+                    .build();
+        }).toList();
+    }
+
+    @Override
+    public List<ArtistPresentation> getAllArtist() {
+        List<Artist> artists = artistRepository.findAll();
+
+        return artists.stream().map(artist -> {
+            String formattedDate = artist.getBirthDay() != null
+                    ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            return ArtistPresentation.builder()
+                    .id(artist.getId())
+                    .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
+                    .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
+                    .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                    .email(artist.getEmail())
+                    .gender(artist.getGender() != null ? artist.getGender().toString() : "")
+                    .birthDay(formattedDate)
+                    .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
+                    .status(artist.getStatus())
+                    .createdBy(artist.getCreatedBy())
+                    .lastModifiedBy(artist.getLastModifiedBy())
+                    .createdDate(artist.getCreatedDate())
+                    .lastModifiedDate(artist.getLastModifiedDate())
+                    .description(artist.getDescription() != null ? artist.getDescription() : "")
+                    .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
+                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .build();
+        }).toList();
+    }
+
 
     // Sign Up Request
     @Override
@@ -425,51 +514,31 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private void handleUserDeletion(User user) {
-        refreshTokenRepository.deleteAllByUser(user);
-        notificationRepository.deleteAllByUser(user);
-        historyListenRepository.deleteAllByUser(user);
-        userFileRepository.deleteAllByUser(user);
-
-        for (Playlist playlist : user.getPlaylists()) {
-            playListSongRepository.deleteByPlaylistId(playlist.getId());
-            playListRepository.deleteById(playlist.getId());
-        }
-
         user.setStatus(CommonStatus.DELETED.getStatus());
         user.setLastModifiedDate(Instant.now());
-        userRepository.delete(user);
+        userRepository.save(user); // Chỉ cập nhật trạng thái
+    }
 
-        log.info("User [{}] deleted permanently.", user.getId());
+    @Scheduled(fixedRate = 60000) // Chạy mỗi 1 phút
+    public void deleteUsersMarkedAsDeleted() {
+        Instant tenMinutesAgo = Instant.now().minus(Duration.ofMinutes(10));
+        List<User> usersToDelete = userRepository.findAllByStatusAndLastModifiedDateBefore(
+                CommonStatus.DELETED.getStatus(), tenMinutesAgo
+        );
+
+        // Hibernate tự xóa cả liên quan nếu cascade đúng
+        userRepository.deleteAll(usersToDelete);
     }
 
     private void handleArtistDeletion(User user) {
-        List<Song> songs = songRepository.findByArtist(user);
-        for (Song song : songs) {
-            song.setDownloadPermission(false);
-            song.setCountListen(0L);
-            songRepository.save(song);
-        }
-
-        List<Album> albums = albumRepository.findByArtist(user);
-        for (Album album : albums) {
-            album.setDownloadPermission(false);
-            album.setCountListen(0L);
-            album.setTotalListen(0);
-            albumRepository.save(album);
-        }
-
         user.setStatus(CommonStatus.INACTIVE.getStatus());
         user.setLastModifiedDate(Instant.now());
         userRepository.save(user);
-
-        log.info("Artist [{}] marked inactive. Songs/Albums hidden from client.", user.getId());
     }
 
     private void handleAdminDeactivation(User user) {
         user.setStatus(CommonStatus.LOCKED.getStatus());
         user.setLastModifiedDate(Instant.now());
         userRepository.save(user);
-
-        log.warn("Admin [{}] marked as LOCKED. Admin deletion is not permitted.", user.getId());
     }
 }

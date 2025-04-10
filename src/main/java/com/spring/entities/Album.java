@@ -1,5 +1,6 @@
 package com.spring.entities;
 
+import com.spring.constants.PlaylistAndAlbumStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,21 +31,16 @@ public class Album {
     @Column(name = "album_time_length")
     private Float albumTimeLength;
 
-    @Column(name = "total_listen")
-    private int totalListen;
-
     @Column(name = "image_url", columnDefinition = "text")
     private String imageUrl;
 
-    @Column(name = "download_permission")
-    private boolean downloadPermission;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private PlaylistAndAlbumStatus playlistAndAlbumStatus;
 
-    @OneToMany(mappedBy = "artistAlbumId.album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "artistAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistAlbum> artistAlbums;
 
-    @OneToMany(mappedBy = "albumSongId.album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "albumSongId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AlbumSong> albumSongs;
-
-    @Column(name = "count_listen")
-    private Long countListen;
 }

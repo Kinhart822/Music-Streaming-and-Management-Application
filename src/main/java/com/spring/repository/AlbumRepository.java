@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AlbumRepository extends JpaRepository<Album, Integer> {
+public interface AlbumRepository extends JpaRepository<Album, Long> {
     @Query("SELECT aa.artistAlbumId.album FROM ArtistAlbum aa WHERE aa.artistAlbumId.artist = :artist")
     List<Album> findByArtist(@Param("artist") User artist);
 }

@@ -16,11 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
     private final AccountService accountService;
 
-    @GetMapping("/profile")
-    public ResponseEntity<AdminPresentation> getAdmin() {
-        return ResponseEntity.ok(accountService.getAdmin());
-    }
-
     /*
     TODO: ARTIST specific
     */
@@ -32,5 +27,15 @@ public class AdminController {
     @PostMapping("/createArtist/batch")
     public ResponseEntity<ApiResponse> createArtistFromList(@RequestBody @Valid CreateArtistFromList request) {
         return ResponseEntity.ok(accountService.createArtistFromList(request));
+    }
+
+    @GetMapping("/countArtist")
+    public ResponseEntity<Long> getTotalArtists() {
+        return ResponseEntity.ok(accountService.countArtists());
+    }
+
+    @GetMapping("/countUser")
+    public ResponseEntity<Long> getTotalUser() {
+        return ResponseEntity.ok(accountService.countUsers());
     }
 }

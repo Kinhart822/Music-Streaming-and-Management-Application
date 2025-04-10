@@ -8,6 +8,7 @@ import com.spring.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.apache.commons.text.RandomStringGenerator;
 
@@ -56,6 +57,12 @@ public class UserServiceImpl implements UserService {
     public Optional<User> resetPasswordCheck(String resetKey) {
         return userRepository
                 .findByResetKeyAndStatusAndResetDueDateIsAfter(resetKey, CommonStatus.ACTIVE.getStatus(), Instant.now());
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
     }
 
     @Override

@@ -86,14 +86,32 @@ public class User implements Serializable, UserDetails {
     @Column
     private Instant lastModifiedDate;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserFile> userFiles;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistoryListen> historyListens;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Playlist> playlists;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RefreshToken> refreshTokens;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "artistUserFollowId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistUserFollow> artistUserFollows;
+
+    @OneToMany(mappedBy = "userSongLikeId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSongLike> userSongLikes;
+
+    @OneToMany(mappedBy = "userSongDownloadId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSongDownload> userSongDownloads;
+
+    @OneToMany(mappedBy = "userSongCountId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSongCount> userSongCounts;
+
+    @OneToMany(mappedBy = "userPlaylistId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserPlaylist> userPlaylists;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

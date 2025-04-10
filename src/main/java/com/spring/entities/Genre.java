@@ -23,12 +23,12 @@ public class Genre {
     @Column(name = "image_url", columnDefinition = "text")
     private String imageUrl;
 
-    @Column(name = "description", columnDefinition = "text")
-    private String description;
+    @Column(name = "brief_description", columnDefinition = "text")
+    private String briefDescription;
 
-    @OneToMany(mappedBy = "genreSongId.genre", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Column(name = "full_description", columnDefinition = "text")
+    private String fullDescription;
+
+    @OneToMany(mappedBy = "genreSongId.genre", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GenreSong> genreSongs;
-
-    @Column(name = "count_listen")
-    private Long countListen;
 }

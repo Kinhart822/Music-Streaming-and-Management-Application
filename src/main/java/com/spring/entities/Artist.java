@@ -20,12 +20,15 @@ public class Artist extends User{
     @Column(name = "count_listen")
     private Long countListen;
 
-    @Column(name = "followers")
-    private Long numberOfFollowers;
-
-    @OneToMany(mappedBy = "artistSongId.artist")
+    @OneToMany(mappedBy = "artistSongId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistSong> artistSongs;
 
-    @OneToMany(mappedBy = "artistAlbumId.artist")
+    @OneToMany(mappedBy = "artistAlbumId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistAlbum> artistAlbums;
+
+    @OneToMany(mappedBy = "artistUserFollowId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistUserFollow> artistUserFollows;
+
+    @OneToMany(mappedBy = "artistPlaylistId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistPlaylist> artistPlaylists;
 }

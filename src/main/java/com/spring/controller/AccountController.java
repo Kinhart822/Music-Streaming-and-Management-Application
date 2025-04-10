@@ -2,9 +2,11 @@ package com.spring.controller;
 
 import com.spring.dto.request.account.*;
 import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.SongResponse;
 import com.spring.entities.Notification;
 import com.spring.security.JwtHelper;
 import com.spring.service.AccountService;
+import com.spring.service.SongService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class AccountController {
     private final AccountService accountService;
     private final JwtHelper jwtHelper;
+    private final SongService songService;
 
     /*
         TODO: Reset Password
@@ -105,5 +108,91 @@ public class AccountController {
     @GetMapping("/notification")
     public ResponseEntity<List<Notification>> findAllNotifications() {
         return ResponseEntity.ok(accountService.findAllNotifications());
+    }
+
+    /*
+        TODO: Profile
+    */
+    @GetMapping("/profile/admin")
+    public ResponseEntity<AdminPresentation> getAdmin() {
+        return ResponseEntity.ok(accountService.getAdmin());
+    }
+
+    @GetMapping("/profile/artist")
+    public ResponseEntity<ArtistPresentation> getArtist() {
+        return ResponseEntity.ok(accountService.getArtist());
+    }
+
+    @GetMapping("/profile/user")
+    public ResponseEntity<UserPresentation> getUser() {
+        return ResponseEntity.ok(accountService.getUser());
+    }
+
+    @GetMapping("/profile/infoAll/admin")
+    public ResponseEntity<List<AdminPresentation>> getAllAdmins() {
+        return ResponseEntity.ok(accountService.getAllAdmin());
+    }
+
+    @GetMapping("/profile/infoAll/user")
+    public ResponseEntity<List<UserPresentation>> getAllUsers() {
+        return ResponseEntity.ok(accountService.getAllUser());
+    }
+
+    @GetMapping("/profile/infoAll/artist")
+    public ResponseEntity<List<ArtistPresentation>> getAllArtists() {
+        return ResponseEntity.ok(accountService.getAllArtist());
+    }
+
+    /*
+        TODO: Song
+    */
+    @GetMapping("/song/infoAll")
+    public ResponseEntity<List<SongResponse>> getAllSongs() {
+        return ResponseEntity.ok(songService.getAllSongs());
+    }
+
+    @GetMapping("/song/info/{id}")
+    public ResponseEntity<SongResponse> getSongById(@PathVariable Long id) {
+        return ResponseEntity.ok(songService.getSongById(id));
+    }
+
+    @GetMapping("/song/genre/{genreId}")
+    public ResponseEntity<List<SongResponse>> getSongsByGenre(@PathVariable Long genreId) {
+        return ResponseEntity.ok(songService.getSongsByGenre(genreId));
+    }
+
+    @GetMapping("/song/listeners/{songId}")
+    public ResponseEntity<ApiResponse> getNumberOfListener(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getNumberOfListener(songId));
+    }
+
+    @GetMapping("/song/downloads/{songId}")
+    public ResponseEntity<ApiResponse> getNumberOfDownload(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getNumberOfDownload(songId));
+    }
+
+    @GetMapping("/song/likes/{songId}")
+    public ResponseEntity<ApiResponse> getNumberOfUserLike(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getNumberOfUserLike(songId));
+    }
+
+    @GetMapping("/song/count-listen/{songId}")
+    public ResponseEntity<ApiResponse> getCountListen(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getCountListen(songId));
+    }
+
+    @GetMapping("/song/trending")
+    public ResponseEntity<List<SongResponse>> getTrendingSongs() {
+        return ResponseEntity.ok(songService.getTrendingSongs());
+    }
+
+    @GetMapping("/song/top15/{genreId}")
+    public ResponseEntity<List<SongResponse>> getTop15BestSongEachGenre(@PathVariable Long genreId) {
+        return ResponseEntity.ok(songService.getTop15BestSongEachGenre(genreId));
+    }
+
+    @GetMapping("/song/status/{status}")
+    public ResponseEntity<List<SongResponse>> getSongsByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(songService.getSongsByStatus(status));
     }
 }

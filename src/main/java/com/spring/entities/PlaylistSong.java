@@ -12,5 +12,5 @@ import jakarta.persistence.*;
 @Table(name = "playlist_songs")
 public class PlaylistSong {
     @EmbeddedId
-    private PlaylistSongId playListSongId;
+    private PlaylistSongId playlistSongId;
 }

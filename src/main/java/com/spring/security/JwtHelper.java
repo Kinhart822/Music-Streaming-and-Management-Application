@@ -35,6 +35,27 @@ public class JwtHelper {
     }
 
     /**
+     * Extracts the user role from the Bearer token in the current HTTP request's Authorization header.
+     *
+     * @return the user role associated with the token
+     * @throws BusinessException BusinessException if the token is missing, invalid, or expired
+     */
+    public String getUserRoleRequesting() {
+        HttpServletRequest hsRequest = getCurrentHttpRequest();
+        if (hsRequest == null) {
+            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
+        }
+
+        String authHeader = hsRequest.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST_HEADER);
+        }
+
+        String accessToken = authHeader.substring(7);
+        return jwtUtil.extractRole(accessToken);
+    }
+
+    /**
      * Retrieves the current HttpServletRequest from the RequestContextHolder.
      *
      * @return the current HttpServletRequest

@@ -8,7 +8,9 @@ import lombok.*;
 @NoArgsConstructor
 @Builder(toBuilder = true)
 public class GenreResponse {
+    private Long id;
     private String name;
     private String imageUrl;
-    private String description;
+    private String briefDescription;
+    private String fullDescription;
 }

@@ -1,7 +1,10 @@
 package com.spring.entities;
 
+import com.spring.constants.PlaylistAndAlbumStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,10 +30,16 @@ public class Playlist {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private PlaylistAndAlbumStatus playlistAndAlbumStatus;
 
-    @Column(name = "count_listen")
-    private Long countListen;
+    @OneToMany(mappedBy = "playlistSongId.playlist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlaylistSong> playlistSongs;
+
+    @OneToMany(mappedBy = "artistPlaylistId.playlist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistPlaylist> artistPlaylists;
+
+    @OneToMany(mappedBy = "userPlaylistId.playlist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserPlaylist> userPlaylists;
 }

@@ -6,19 +6,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.*;
 
-import java.time.Instant;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @Entity
-@Table(name = "user_artist_follows")
-public class UserArtistFollow {
+@Table(name = "user_song_count")
+public class UserSongCount {
     @EmbeddedId
-    private UserArtistFollowId  userArtistFollowId;
+    private UserSongCountId userSongCountId;
 
-    @Column(name = "followed_at")
-    private Instant followedAt;
+    @Column(name = "count_listen")
+    private Long countListen;
+
+    @Column(name = "count_listener")
+    private Long countListener;
 }

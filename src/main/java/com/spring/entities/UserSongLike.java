@@ -17,7 +17,7 @@ import java.time.Instant;
 @Table(name = "user_song_likes")
 public class UserSongLike {
     @EmbeddedId
-    private UserArtistFollowId  userArtistFollowId;
+    private UserSongLikeId  userSongLikeId;
 
     @Column(name = "liked_at")
     private Instant likedAt;

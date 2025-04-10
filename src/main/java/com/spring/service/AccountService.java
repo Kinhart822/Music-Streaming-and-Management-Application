@@ -21,12 +21,24 @@ public interface AccountService {
 
     List<Notification> findAllNotifications();
 
+    Long countArtists();
+
+    Long countUsers();
+
+    Long countSongs();
+
     // Account Information
     AdminPresentation getAdmin();
 
     UserPresentation getUser();
 
     ArtistPresentation getArtist();
+
+    List<AdminPresentation> getAllAdmin();
+
+    List<UserPresentation> getAllUser();
+
+    List<ArtistPresentation> getAllArtist();
 
     // Sign Up Steps
     Map<String, Boolean> signUpCheckEmailExistence(String query);
