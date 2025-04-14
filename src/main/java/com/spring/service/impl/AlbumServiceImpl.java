@@ -3,6 +3,7 @@ package com.spring.service.impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.spring.constants.ApiResponseCode;
+import com.spring.constants.ManageProcess;
 import com.spring.constants.PlaylistAndAlbumStatus;
 import com.spring.constants.SongStatus;
 import com.spring.dto.request.music.artist.AddSongRequest;
@@ -15,6 +16,7 @@ import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
 import com.spring.security.JwtHelper;
 import com.spring.service.AlbumService;
+import com.spring.service.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,41 +36,7 @@ public class AlbumServiceImpl implements AlbumService {
     private final ArtistAlbumRepository artistAlbumRepository;
     private final SongRepository songRepository;
     private final JwtHelper jwtHelper;
-    private final Cloudinary cloudinary;
-
-    private String uploadToCloudinary(MultipartFile file, String resourceType, String folder) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        Map uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "resource_type", resourceType,
-                        "public_id", folder + "/" + UUID.randomUUID() + "_" + originalFilename
-                )
-        );
-        return (String) uploadResult.get("secure_url");
-    }
-
-    private String imageUpload(MultipartFile imageUpload) {
-        try {
-            if (imageUpload != null && !imageUpload.isEmpty()) {
-                String imageOriginalFilename = imageUpload.getOriginalFilename();
-                List<String> allowedExtensions = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff");
-
-                boolean isValidImage = allowedExtensions.stream()
-                        .anyMatch(ext -> imageOriginalFilename.toLowerCase().endsWith(ext));
-
-                if (!isValidImage) {
-                    throw new IllegalArgumentException("Ảnh phải là một trong các định dạng: jpg, jpeg, png, gif, webp, bmp, tiff!");
-                }
-
-                return uploadToCloudinary(imageUpload, "image", "covers");
-            }
-
-            return null; // if imageUpload is null or empty
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage(), e);
-        }
-    }
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public AlbumResponse createAlbum(AlbumRequest request) {
@@ -80,7 +48,7 @@ public class AlbumServiceImpl implements AlbumService {
         album.setAlbumName(request.getName());
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            String imageUrl = imageUpload(request.getImage());
+            String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
             album.setImageUrl(imageUrl);
         }
 
@@ -112,7 +80,7 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            album.setImageUrl(imageUpload(request.getImage()));
+            album.setImageUrl(cloudinaryService.uploadImageToCloudinary(request.getImage()));
         }
 
         return convertToResponse(albumRepository.save(album));
@@ -123,6 +91,11 @@ public class AlbumServiceImpl implements AlbumService {
     public ApiResponse deleteAlbum(Long albumId) {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (album.getPlaylistAndAlbumStatus() == PlaylistAndAlbumStatus.PUBLIC){
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        }
+
         albumRepository.delete(album);
         return ApiResponse.ok("Album deleted successfully");
     }
@@ -318,6 +291,26 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         return ApiResponse.ok("Playlist uploaded successfully!");
+    }
+
+    @Override
+    public ApiResponse manageUploadAlbum(Long id, String manageProcess) {
+        Album album = albumRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (album.getPlaylistAndAlbumStatus() != PlaylistAndAlbumStatus.PENDING) {
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        }
+
+        if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
+            album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.PUBLIC);
+            albumRepository.save(album);
+            return ApiResponse.ok("Album accepted successfully!");
+        } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
+            return ApiResponse.ok("Album declined! Please check your album before uploading again.");
+        } else {
+            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
+        }
     }
 
     private AlbumResponse convertToResponse(Album album) {

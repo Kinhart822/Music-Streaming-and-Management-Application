@@ -46,7 +46,7 @@ public class AccountController {
         TODO: Update account details
      */
     @PutMapping("/update")
-    public ResponseEntity<ApiResponse> updateAccount(@RequestBody @Valid UpdateAccountRequest request) {
+    public ResponseEntity<ApiResponse> updateAccount(@ModelAttribute @Valid UpdateAccountRequest request) {
         return ResponseEntity.ok(accountService.updateAccount(request));
     }
 

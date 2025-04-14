@@ -1,13 +1,11 @@
 package com.spring.controller.artist;
 
+import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.SongResponse;
 import com.spring.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,5 +28,30 @@ public class ArtistController {
     ) {
         List<SongResponse> songs = songService.getSongsByStatusAndArtistId(status);
         return ResponseEntity.ok(songs);
+    }
+
+    @GetMapping("/song/genre/{genreId}")
+    public ResponseEntity<List<SongResponse>> getSongsByGenre(@PathVariable Long genreId) {
+        return ResponseEntity.ok(songService.getSongsByGenre(genreId));
+    }
+
+    @GetMapping("/song/listeners/{songId}")
+    public ResponseEntity<ApiResponse> getNumberOfListener(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getNumberOfListener(songId));
+    }
+
+    @GetMapping("/song/downloads/{songId}")
+    public ResponseEntity<ApiResponse> getNumberOfDownload(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getNumberOfDownload(songId));
+    }
+
+    @GetMapping("/song/likes/{songId}")
+    public ResponseEntity<ApiResponse> getNumberOfUserLike(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getNumberOfUserLike(songId));
+    }
+
+    @GetMapping("/song/count-listen/{songId}")
+    public ResponseEntity<ApiResponse> getCountListen(@PathVariable Long songId) {
+        return ResponseEntity.ok(songService.getCountListen(songId));
     }
 }

@@ -21,4 +21,5 @@ public interface AlbumService {
     ApiResponse removeSongFromAlbum(RemoveSongRequest removeSongRequest);
     ApiResponse removeListSongFromAlbum(RemoveSongRequest removeSongRequest);
     ApiResponse uploadAlbum(Long id);
+    ApiResponse manageUploadAlbum(Long id, String manageProcess);
 }

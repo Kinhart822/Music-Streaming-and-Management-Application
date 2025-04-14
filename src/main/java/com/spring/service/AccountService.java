@@ -68,4 +68,11 @@ public interface AccountService {
 
     // Delete Account Step
     ApiResponse deleteAccount(Long userId);
+
+    // Process Delete Request For Artist and Admin cases
+    List<AdminPresentation> getAllAdminByLockedStatus();
+
+    List<ArtistPresentation> getAllArtistByInactiveStatus();
+
+    ApiResponse processingDeleteRequest(Long userId, String manageFunction);
 }

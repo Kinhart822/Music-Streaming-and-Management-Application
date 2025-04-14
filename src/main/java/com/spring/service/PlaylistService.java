@@ -20,4 +20,5 @@ public interface PlaylistService {
     ApiResponse removeSongFromPlaylist(RemoveSongRequest removeSongRequest);
     ApiResponse removeListSongFromPlaylist(RemoveSongRequest removeSongRequest);
     ApiResponse uploadPlaylist(Long id);
+    ApiResponse manageUploadPlaylist(Long id, String manageProcess);
 }

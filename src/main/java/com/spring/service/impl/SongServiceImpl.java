@@ -1,11 +1,12 @@
 package com.spring.service.impl;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.constants.ApiResponseCode;
+import com.spring.constants.ManageProcess;
 import com.spring.constants.SongStatus;
+import org.springframework.context.event.EventListener;
+import com.spring.dto.SongUploadedEvent;
+import com.spring.dto.request.music.admin.AdminAddSongRequest;
 import com.spring.dto.request.music.artist.EditSongRequest;
 import com.spring.dto.request.music.artist.SongUploadRequest;
 import com.spring.dto.response.ApiResponse;
@@ -16,32 +17,35 @@ import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
 import com.spring.security.JwtHelper;
+import com.spring.service.CloudinaryService;
+import com.spring.service.FastApiService;
 import com.spring.service.SongService;
+import com.spring.utils.JavaFileToMultipartFile;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.*;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class SongServiceImpl implements SongService {
     private final SongRepository songRepository;
     private final ArtistRepository artistRepository;
@@ -51,8 +55,11 @@ public class SongServiceImpl implements SongService {
     private final UserSongDownloadRepository userSongDownloadRepository;
     private final UserSongLikeRepository userSongLikeRepository;
     private final UserSongCountRepository userSongCountRepository;
+    private final FastApiService fastApiService;
     private final JwtHelper jwtHelper;
-    private final Cloudinary cloudinary;
+    private final CloudinaryService cloudinaryService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private static final Logger log = LoggerFactory.getLogger(SongServiceImpl.class);
 
     @Value("${file.upload-dir}")
     private String uploadDirPath;
@@ -65,6 +72,7 @@ public class SongServiceImpl implements SongService {
         }
     }
 
+    // TODO: Helper method
     public SongUploadResponse enrichUploadData(SongUploadRequest songUploadRequest) {
         String title = songUploadRequest.getTitle();
         String lyrics = songUploadRequest.getLyrics();
@@ -72,33 +80,13 @@ public class SongServiceImpl implements SongService {
         String description = songUploadRequest.getDescription();
         List<Long> genreId = songUploadRequest.getGenreId();
         MultipartFile image = songUploadRequest.getImage();
-
-        // Upload image if exists
-        String imageUrl = null;
-        try {
-            if (image != null && !image.isEmpty()) {
-                String imageOriginalFilename = image.getOriginalFilename();
-                List<String> allowedExtensions = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff");
-
-                boolean isValidImage = allowedExtensions.stream()
-                        .anyMatch(ext -> imageOriginalFilename.toLowerCase().endsWith(ext));
-
-                if (!isValidImage) {
-                    throw new IllegalArgumentException("Ảnh phải là một trong các định dạng: jpg, jpeg, png, gif, webp, bmp, tiff!");
-                }
-
-                imageUrl = uploadToCloudinary(image, "image", "covers");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage(), e);
-        }
+        String imageUrl = cloudinaryService.uploadImageToCloudinary(image);
 
         List<String> genreNames = genreId.stream()
                 .map(id -> genreRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Genre not found with ID: " + id)))
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
                 .map(Genre::getGenresName)
                 .toList();
-
 
         return SongUploadResponse.builder()
                 .imageUrl(imageUrl)
@@ -108,206 +96,6 @@ public class SongServiceImpl implements SongService {
                 .description(description)
                 .genreNameList(genreNames)
                 .build();
-    }
-
-    public SongUploadResponse uploadAudioFiles(SongUploadRequest songUploadRequest) {
-        try {
-            MultipartFile file = songUploadRequest.getFile();
-
-            // Validate audio file
-            if (file == null || file.isEmpty()) {
-                throw new IllegalArgumentException("File mp3 không được để trống!");
-            }
-
-            String originalFilename = file.getOriginalFilename();
-            if (!originalFilename.toLowerCase().endsWith(".mp3")) {
-                throw new IllegalArgumentException("File phải có định dạng .mp3!");
-            }
-
-            // Upload audio to Cloudinary
-            Map<?, ?> audioUploadResult = cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                            "resource_type", "video",
-                            "public_id", "songs/" + UUID.randomUUID() + "_" + originalFilename
-                    )
-            );
-
-            String audioUrl = (String) audioUploadResult.get("secure_url");
-            Double durationSeconds = (Double) audioUploadResult.get("duration");
-            String formattedDuration = formatDuration(durationSeconds);
-
-            return SongUploadResponse.builder()
-                    .mp3File(file)
-                    .mp3Url(audioUrl)
-                    .duration(formattedDuration)
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi upload bài hát: " + e.getMessage(), e);
-        }
-    }
-
-    // Helper method to upload image to Cloudinary
-    private String uploadToCloudinary(MultipartFile file, String resourceType, String folder) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        Map uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "resource_type", resourceType,
-                        "public_id", folder + "/" + UUID.randomUUID() + "_" + originalFilename
-                )
-        );
-        return (String) uploadResult.get("secure_url");
-    }
-
-    // Helper method
-    private String formatDuration(Double seconds) {
-        if (seconds == null) return "00:00";
-        int totalSeconds = (int) Math.round(seconds);
-        int minutes = totalSeconds / 60;
-        int remainingSeconds = totalSeconds % 60;
-        return String.format("%02d:%02d", minutes, remainingSeconds);
-    }
-
-    private FastApiResponse extractResponseFromJson(String responseBody) {
-        try {
-            if (responseBody == null || (!responseBody.trim().startsWith("{") && !responseBody.trim().startsWith("["))) {
-                throw new IOException("Response is not JSON: " + responseBody);
-            }
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(responseBody);
-
-            String requestId = root.has("request_id") ? root.get("request_id").asText() : null;
-            Boolean match = root.has("match") ? root.get("match").asBoolean() : null;
-            Double similarityScore = root.has("similarity_score") ? root.get("similarity_score").asDouble() : null;
-            String genre = root.has("genre") ? root.get("genre").asText() : null;
-            String message = root.has("message") ? root.get("message").asText() : null;
-
-            return new FastApiResponse(requestId, match, similarityScore, genre, message);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Lỗi khi phân tích JSON: " + e.getMessage(), e);
-        }
-    }
-
-
-    public ResponseEntity<String> predictGenre(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("request_id") String requestId
-    ) {
-        try {
-            // URL FastAPI
-            String fastApiUrl = "http://localhost:8000/predict-genre";
-
-            // Prepare file resource
-            ByteArrayResource fileAsResource = new ByteArrayResource(file.getBytes()) {
-                @NotNull
-                @Override
-                public String getFilename() {
-                    return file.getOriginalFilename();
-                }
-            };
-
-            // Prepare multipart form
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("audio_file", fileAsResource);
-            body.add("request_id", requestId);
-
-            // Headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            // Request
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            RestTemplate restTemplate = new RestTemplate();
-
-            // Call FastAPI
-            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl, requestEntity, String.class);
-
-            return ResponseEntity.ok(response.getBody());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-        }
-    }
-
-    public ResponseEntity<String> predictGenreByLyrics(@RequestParam("lyrics") String lyrics) {
-        try {
-            String fastApiUrl = "http://localhost:8000/predict-genre";
-
-            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("lyrics", lyrics);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
-            RestTemplate restTemplate = new RestTemplate();
-
-            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl, request, String.class);
-            return ResponseEntity.ok(response.getBody());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-        }
-    }
-
-    public ResponseEntity<String> checkSimilarity(@RequestParam("file") MultipartFile file) {
-        try {
-            // URL FastAPI
-            String fastApiUrl = "http://localhost:8000/check-similarity";
-
-            // Prepare file resource
-            ByteArrayResource fileAsResource = new ByteArrayResource(file.getBytes()) {
-                @NotNull
-                @Override
-                public String getFilename() {
-                    return file.getOriginalFilename();
-                }
-            };
-
-            // Prepare multipart form
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("audio_file", fileAsResource);
-
-            // Headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            // Request
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            RestTemplate restTemplate = new RestTemplate();
-
-            // Call FastAPI
-            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl, requestEntity, String.class);
-
-            return ResponseEntity.ok(response.getBody());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-        }
-    }
-
-    public ResponseEntity<String> checkSimilarityByLyrics(@RequestParam("lyrics") String lyrics) {
-        try {
-            String fastApiUrl = "http://localhost:8000/check-similarity";
-
-            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("lyrics", lyrics);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
-            RestTemplate restTemplate = new RestTemplate();
-
-            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl, request, String.class);
-            return ResponseEntity.ok(response.getBody());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-        }
     }
 
     private SongResponse convertToSongResponse(Song song) {
@@ -329,131 +117,236 @@ public class SongServiceImpl implements SongService {
                 .build();
     }
 
-    // Main function
+    private FastApiResponse extractResponseFromJson(String responseBody) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(responseBody, FastApiResponse.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi khi phân tích JSON: " + e.getMessage(), e);
+        }
+    }
+
+    public Path downloadAudioFromCloudinary(String cloudinaryUrl, String destinationFolder, String name) {
+        try {
+            URL url = new URL(cloudinaryUrl);
+            // Tạo tên file mới
+            String newFileName = name + ".mp3";
+            Path destinationPath = Paths.get(destinationFolder, newFileName);
+
+            Files.createDirectories(Paths.get(destinationFolder));
+
+            try (InputStream in = url.openStream()) {
+                Files.copy(in, destinationPath);
+                log.info("✅ Audio downloaded to: {}", destinationPath.toAbsolutePath());
+            }
+
+            return destinationPath;
+        } catch (IOException e) {
+            log.error("❌ Failed to download audio: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // TODO: Main function
     @Override
     public ApiResponse uploadSong(SongUploadRequest songUploadRequest) {
         Long artistId = jwtHelper.getIdUserRequesting();
 
-        // Step 1: Enrich request data
+        // Upload file lên Cloudinary
+        SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(songUploadRequest.getFile());
+        String audioUrl = uploaded.getMp3Url();
+        String formattedDuration = uploaded.getDuration();
+
+        // Lấy dữ liệu bổ sung từ request
         SongUploadResponse enriched = enrichUploadData(songUploadRequest);
         String title = enriched.getTitle();
+
         String lyrics = enriched.getLyrics();
+        if (lyrics != null && !lyrics.isBlank() && lyrics.length() <= 100) {
+            return ApiResponse.ok("Lyrics of the song is too short, Lyrics must be at least above 100 words!");
+        }
+
         String description = enriched.getDescription();
         Boolean downloadPermission = enriched.getDownloadPermission();
         String imageUrl = enriched.getImageUrl();
-        List<String> genreNameList = enriched.getGenreNameList();
-        String requestId = null;
+
+        // Lưu song
+        Song song = Song.builder()
+                .title(title)
+                .releaseDate(Date.from(Instant.now()))
+                .lyrics(lyrics)
+                .duration(formattedDuration)
+                .imageUrl(imageUrl)
+                .downloadPermission(downloadPermission)
+                .description(description)
+                .mp3Url(audioUrl)
+                .songStatus(SongStatus.PROCESSING)
+                .build();
+        songRepository.save(song);
+
+        // Gán artist cho bài hát
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        artistSongRepository.save(new ArtistSong(new ArtistSongId(artist, song)));
+
+        applicationEventPublisher.publishEvent(new SongUploadedEvent(this, song.getId()));
+
+        return ApiResponse.ok("Upload successful! Your song is pending for processing."
+                + (audioUrl != null ? " Audio URL: " + audioUrl : "")
+                + (imageUrl != null ? " | Image URL: " + imageUrl : ""));
+    }
+
+    @EventListener
+    @Async
+    public CompletableFuture<ApiResponse> processSong(SongUploadedEvent songUploadedEvent) {
+        String message;
+        Long songId = songUploadedEvent.getSongId();
+        Song song = songRepository.findById(songId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (song.getSongStatus() != SongStatus.PROCESSING) {
+            message = "Song with ID [" + songId + "] not in PROCESSING state.";
+            log.warn("❗ {}", message);
+            return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
+        }
+
+        boolean isFirstSong = songRepository.countAllSongs() == 0;
+        Path filePath;
+        File file = null;
 
         try {
-            // Step 2: Check lyric similarity
-            if (lyrics != null && !lyrics.isBlank()) {
-                ResponseEntity<String> lyricsCheckResponse = checkSimilarityByLyrics(lyrics);
-                FastApiResponse similarityResult = extractResponseFromJson(lyricsCheckResponse.getBody());
-
-                if (Boolean.TRUE.equals(similarityResult.getMatch())) {
-                    return ApiResponse.ok("Bài hát có lời trùng khớp với bài khác! Xin mời upload lại!");
-                }
+            filePath = downloadAudioFromCloudinary(song.getMp3Url(), uploadDirPath, song.getTitle());
+            if (filePath == null) {
+                message = "Failed to download audio for Song [" + song.getId() + "]";
+                log.error("❌ {}", message);
+                return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
             }
 
-            // Step 3: Upload audio
-            SongUploadResponse uploaded = uploadAudioFiles(songUploadRequest);
-            MultipartFile mp3File = uploaded.getMp3File();
-            String audioUrl = uploaded.getMp3Url();
-            String formattedDuration = uploaded.getDuration();
-
-            // Step 4: Check audio similarity
-            if (mp3File != null) {
-                ResponseEntity<String> mp3CheckResponse = checkSimilarity(mp3File);
-                FastApiResponse audioSimilarityResult = extractResponseFromJson(mp3CheckResponse.getBody());
-
-                if (Boolean.TRUE.equals(audioSimilarityResult.getMatch())) {
-                    return ApiResponse.ok("Bài hát có file trùng khớp với bài khác! Xin mời upload lại!");
-                }
-
-                requestId = audioSimilarityResult.getRequestId();
+            file = filePath.toFile();
+            if (!file.exists()) {
+                message = "Local file not found: " + filePath;
+                log.error("❗ {}", message);
+                return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
             }
 
-            // Step 5: Create and save Song
-            Song song = Song.builder()
-                    .title(title)
-                    .releaseDate(Date.from(Instant.now()))
-                    .lyrics(lyrics)
-                    .duration(formattedDuration)
-                    .imageUrl(imageUrl)
-                    .downloadPermission(downloadPermission)
-                    .description(description)
-                    .mp3Url(audioUrl)
-                    .songStatus(SongStatus.PENDING)
-                    .build();
+            MultipartFile mp3File = new JavaFileToMultipartFile(file);
+            FastApiResponse fastApiResult;
+            String requestId;
 
-            Song savedSong = songRepository.save(song);
-
-            // Step 6: Link Song with Artist
-            Artist artist = artistRepository.findById(artistId)
-                    .orElseThrow(() -> new RuntimeException("Artist not found with ID: " + artistId));
-
-            ArtistSong artistSong = new ArtistSong();
-            artistSong.setArtistSongId(new ArtistSongId(artist, savedSong));
-            artistSongRepository.save(artistSong);
-
-            // Step 7: Link Song with Genres (if provided)
-            if (genreNameList != null && !genreNameList.isEmpty()) {
-                List<Genre> genres = genreRepository.findByGenresNameIn(genreNameList);
-                List<GenreSong> genreSongs = genres.stream()
-                        .map(genre -> new GenreSong(new GenreSongId(savedSong, genre)))
-                        .collect(Collectors.toList());
-                genreSongRepository.saveAll(genreSongs);
-            } else {
-                // Step 7B: Predict Genre
-                String predictedGenreByLyric = null;
-                String predictedGenreByAudio = null;
-
-                if (lyrics != null && !lyrics.isBlank()) {
-                    ResponseEntity<String> lyricPrediction = predictGenreByLyrics(lyrics);
-                    FastApiResponse lyricGenreResult = extractResponseFromJson(lyricPrediction.getBody());
-                    predictedGenreByLyric = lyricGenreResult.getGenre();
+            if (!isFirstSong) {
+                // 1. Check lyrics similarity
+                if (song.getLyrics() != null && !song.getLyrics().isBlank()) {
+                    fastApiResult = extractResponseFromJson(fastApiService.checkLyricsSimilarity(song.getLyrics()).getBody());
+                    if (Boolean.TRUE.equals(fastApiResult.getMatch())) {
+                        message = "Song [" + song.getId() + "]: Lyrics match another song.";
+                        log.warn("❌ {}", message);
+                        song.setSongStatus(SongStatus.DECLINED);
+                        songRepository.save(song);
+                        return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
+                    }
                 }
 
-                if (mp3File != null) {
-                    ResponseEntity<String> audioPrediction = predictGenre(mp3File, requestId);
-                    FastApiResponse audioGenreResult = extractResponseFromJson(audioPrediction.getBody());
-                    predictedGenreByAudio = audioGenreResult.getGenre();
+                // 2. Check audio similarity
+                fastApiResult = extractResponseFromJson(fastApiService.checkAudioSimilarity(mp3File).getBody());
+                if (Boolean.TRUE.equals(fastApiResult.getMatch())) {
+                    message = "Song [" + song.getId() + "]: Audio matches another song.";
+                    log.warn("❌ {}", message);
+                    song.setSongStatus(SongStatus.DECLINED);
+                    songRepository.save(song);
+                    return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
                 }
 
-                String finalGenre;
-                String audioGenreNorm = predictedGenreByAudio != null ? predictedGenreByAudio.toLowerCase().replace("-", "_").replace(" ", "_") : null;
-                String lyricGenreNorm = predictedGenreByLyric != null ? predictedGenreByLyric.toLowerCase().replace("-", "_").replace(" ", "_") : null;
+                requestId = fastApiResult.getRequestId();
 
-                if (audioGenreNorm != null && audioGenreNorm.equals(lyricGenreNorm)) {
-                    finalGenre = audioGenreNorm;
+                // 3. Lyrics transcription or cross-check
+                String transcribedLyrics = fastApiResult.getLyrics();
+                if (song.getLyrics() == null || song.getLyrics().isBlank()) {
+                    song.setLyrics(transcribedLyrics);
                 } else {
-                    finalGenre = audioGenreNorm != null ? audioGenreNorm : lyricGenreNorm;
+                    FastApiResponse checkResult = extractResponseFromJson(
+                            fastApiService.checkSimilarityBetweenLyricsAndAudio(song.getLyrics(), transcribedLyrics).getBody()
+                    );
+                    if (Boolean.TRUE.equals(checkResult.getIsNotMatch())) {
+                        message = "Song [" + song.getId() + "]: Lyrics and audio do not match.";
+                        log.warn("⚠️ {}", message);
+                        song.setSongStatus(SongStatus.DECLINED);
+                        songRepository.save(song);
+                        return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
+                    }
                 }
+            } else {
+                // Transcribe only
+                fastApiResult = extractResponseFromJson(fastApiService.transcribeLyricsFromAudio(mp3File).getBody());
+                String transcribedLyrics = fastApiResult.getLyrics();
+                requestId = fastApiResult.getRequestId();
 
-                if (finalGenre != null) {
-                    Genre genre = genreRepository.findByGenresNameIgnoreCase(finalGenre)
-                            .orElseThrow(() -> new RuntimeException("Predicted genre not found in database: " + finalGenre));
-
-                    GenreSong genreSong = new GenreSong(new GenreSongId(savedSong, genre));
-                    genreSongRepository.save(genreSong);
+                if (song.getLyrics() == null || song.getLyrics().isBlank()) {
+                    song.setLyrics(transcribedLyrics);
+                } else {
+                    FastApiResponse checkResult = extractResponseFromJson(
+                            fastApiService.checkSimilarityBetweenLyricsAndAudio(song.getLyrics(), transcribedLyrics).getBody()
+                    );
+                    if (Boolean.TRUE.equals(checkResult.getIsNotMatch())) {
+                        message = "Song [" + song.getId() + "]: Lyrics and audio do not match.";
+                        log.warn("⚠️ {}", message);
+                        song.setSongStatus(SongStatus.DECLINED);
+                        songRepository.save(song);
+                        return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
+                    }
                 }
             }
 
-            // Step 8: Return success response
-            return ApiResponse.ok("Upload successful!" +
-                    (audioUrl != null ? " Audio URL: " + audioUrl : "") +
-                    (imageUrl != null ? " | Image URL: " + imageUrl : "") +
-                    " | Duration: " + formattedDuration);
+            // 4. Predict genres & save
+            fastApiService.handleGenres(song, null, song.getLyrics(), mp3File, requestId);
+            song.setSongStatus(SongStatus.PENDING);
+            songRepository.save(song);
+            message = "Song [" + song.getId() + "] processed successfully.";
+            log.info("✅ {}", message);
+        } catch (Exception ex) {
+            message = "Song [" + song.getId() + "] failed with error: " + ex.getMessage();
+            log.error("❗ {}", message, ex);
+        } finally {
+            // Ensure file deletion
+            if (file != null && file.exists()) {
+                boolean deleted = file.delete();
+                if (deleted) {
+                    log.info("🧹 Deleted temporary file: {}", file.getAbsolutePath());
+                } else {
+                    log.warn("⚠️ Failed to delete temporary file: {}", file.getAbsolutePath());
+                }
+            }
+        }
 
-        } catch (Exception e) {
-            return ApiResponse.error("Đã xảy ra lỗi khi upload bài hát: " + e.getMessage());
+        return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing completed", message));
+    }
+
+    @Override
+    public ApiResponse manageUploadSong(Long id, String manageProcess) {
+        Song song = songRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (song.getSongStatus() != SongStatus.PENDING) {
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        }
+
+        if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
+            song.setSongStatus(SongStatus.ACCEPTED);
+            song.setCountListener(0L);
+            songRepository.save(song);
+            return ApiResponse.ok("Song accepted successfully!");
+        } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
+            song.setSongStatus(SongStatus.DECLINED);
+            songRepository.save(song);
+            return ApiResponse.ok("Song declined! Please check your song before uploading again.");
+        } else {
+            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
         }
     }
 
     @Override
     public ApiResponse updateSong(Long id, EditSongRequest request) {
         Song song = songRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Song not found with ID: " + id));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             song.setTitle(request.getTitle());
@@ -474,7 +367,7 @@ public class SongServiceImpl implements SongService {
         if (request.getGenreId() != null && !request.getGenreId().isEmpty()) {
             List<Genre> genres = request.getGenreId().stream()
                     .map(index -> genreRepository.findById(index)
-                            .orElseThrow(() -> new RuntimeException("Genre not found with ID: " + index)))
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
                     .toList();
 
             List<GenreSong> genreSongs = genres.stream()
@@ -485,57 +378,17 @@ public class SongServiceImpl implements SongService {
         }
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            String imageUrl = null;
-            try {
-                String imageOriginalFilename = request.getImage().getOriginalFilename();
-                List<String> allowedExtensions = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff");
-
-                boolean isValidImage = allowedExtensions.stream()
-                        .anyMatch(ext -> imageOriginalFilename.toLowerCase().endsWith(ext));
-
-                if (!isValidImage) {
-                    throw new IllegalArgumentException("Ảnh phải là một trong các định dạng: jpg, jpeg, png, gif, webp, bmp, tiff!");
-                }
-
-                imageUrl = uploadToCloudinary(request.getImage(), "image", "covers");
-
-            } catch (Exception e) {
-                throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage(), e);
-            }
+            String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
             song.setImageUrl(imageUrl);
         }
 
         if (request.getFile() != null && !request.getFile().isEmpty()) {
-            String mp3Url = null;
-            String duration = null;
-            try {
-                // Validate audio file
-                if (request.getFile() == null || request.getFile().isEmpty()) {
-                    throw new IllegalArgumentException("File mp3 không được để trống!");
-                }
+            SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(request.getFile());
+            String audioUrl = uploaded.getMp3Url();
+            String formattedDuration = uploaded.getDuration();
 
-                String originalFilename = request.getFile().getOriginalFilename();
-                if (!originalFilename.toLowerCase().endsWith(".mp3")) {
-                    throw new IllegalArgumentException("File phải có định dạng .mp3!");
-                }
-
-                // Upload audio to Cloudinary
-                Map<?, ?> audioUploadResult = cloudinary.uploader().upload(
-                        request.getFile().getBytes(),
-                        ObjectUtils.asMap(
-                                "resource_type", "video",
-                                "public_id", "songs/" + UUID.randomUUID() + "_" + originalFilename
-                        )
-                );
-
-                mp3Url = (String) audioUploadResult.get("secure_url");
-                Double durationSeconds = (Double) audioUploadResult.get("duration");
-                duration = formatDuration(durationSeconds);
-            } catch (Exception e) {
-                throw new RuntimeException("Lỗi khi upload bài hát: " + e.getMessage(), e);
-            }
-            song.setMp3Url(mp3Url);
-            song.setDuration(duration);
+            song.setMp3Url(audioUrl);
+            song.setDuration(formattedDuration);
         }
 
         songRepository.save(song);
@@ -543,9 +396,10 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
+    @Transactional
     public ApiResponse deleteSong(Long id) {
         Song song = songRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài hát với ID: " + id));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         // Xoá bài hát
         songRepository.delete(song);
@@ -564,7 +418,7 @@ public class SongServiceImpl implements SongService {
     @Override
     public SongResponse getSongById(Long songId) {
         Song song = songRepository.findById(songId)
-                .orElseThrow(() -> new RuntimeException("Song not found with ID: " + songId));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         return convertToSongResponse(song);
     }
@@ -675,10 +529,54 @@ public class SongServiceImpl implements SongService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public ApiResponse getNumberOfUserLike(Long songId) {
         Long count = userSongLikeRepository.countBySongId(songId);
         return ApiResponse.ok(count.toString());
     }
+
+    @Override
+    public ApiResponse addSongRequest(AdminAddSongRequest request) {
+        String title = request.getTitle();
+        String lyrics = request.getLyrics();
+        String duration = request.getDuration();
+
+        // Kiểm tra xem các nghệ sĩ tồn tại ko
+        List<Artist> artists = request.getArtistId().stream()
+                .map(artistId -> artistRepository.findById(artistId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
+                .toList();
+
+        // Kiểm tra xem các thể loại tồn tại ko
+        List<Genre> genres = request.getGenreId().stream()
+                .map(genreId -> genreRepository.findById(genreId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
+                .toList();
+
+        // Tạo bài hát mới
+        Song song = Song.builder()
+                .title(title)
+                .lyrics(lyrics)
+                .duration(duration)
+                .releaseDate(Date.from(Instant.now()))
+                .downloadPermission(false)
+                .songStatus(SongStatus.ACCEPTED)
+                .countListener(0L)
+                .build();
+        song = songRepository.save(song);
+
+        for (Artist artist : artists) {
+            artistSongRepository.save(new ArtistSong(new ArtistSongId(artist, song)));
+        }
+
+        for (Genre genre : genres) {
+            genreSongRepository.save(new GenreSong(new GenreSongId(song, genre)));
+        }
+
+        // Lưu lại bài hát với các thể loại đã liên kết
+        songRepository.save(song);
+
+        return ApiResponse.ok("Thêm bài hát thành công!");
+    }
+
 }

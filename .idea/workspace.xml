@@ -5,62 +5,32 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/artist/SongController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/MsmaApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/MsmaApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiEndpoints.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiEndpoints.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiResponseCode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/ApiResponseCode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/constants/SongStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/constants/SongStatus.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/admin/AdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/admin/AdminController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/admin/GenreController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/admin/GenreController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/admin/AdminController.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/artist/ArtistController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/artist/ArtistController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/artist/SongUploadController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/ArtistPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/ArtistPresentation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UpdateAccountRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UpdateAccountRequest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/music/admin/GenreRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/music/admin/GenreRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/music/artist/SongUploadRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/music/artist/SongUploadRequest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ApiResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/GenreResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/GenreResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Album.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Album.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/AlbumSongId.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/AlbumSongId.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Artist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Artist.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/ArtistSongId.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/ArtistSongId.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Genre.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Genre.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/GenreSongId.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/GenreSongId.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/HistoryListen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/HistoryListen.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Notification.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Notification.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Playlist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Playlist.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/PlaylistSong.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/PlaylistSong.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/PlaylistSongId.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/PlaylistSongId.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/RefreshToken.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/RefreshToken.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Song.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Song.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/FastApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/FastApiResponse.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/UserArtistFollow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/ArtistUserFollow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/UserArtistFollowId.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/ArtistUserFollowId.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/UserSongLike.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/UserSongLikeId.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/AlbumRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/AlbumRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/AlbumSongRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/AlbumSongRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/UserFile.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/exceptions/BusinessException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/exceptions/BusinessException.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistSongRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistSongRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/GenresRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/GenreRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/HistoryListenRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/HistoryListenRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/PlayListRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/PlayListRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/PlayListSongRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/PlayListSongRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/SongRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/SongRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserFileRepository.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtUtil.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/AccountService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/AccountService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/GenreService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/GenreService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/SongUploadService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/SongService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/AlbumService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/AlbumService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/PlaylistService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/PlaylistService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/SongService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/SongService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AlbumServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AlbumServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/GenreServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/GenreServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongUploadServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/UserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/UserServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/PlaylistServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/PlaylistServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,8 +41,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Class" />
         <option value="Interface" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -101,31 +71,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "Spring Boot.MsmaApplication.executor": "Run",
-    "git-widget-placeholder": "Kinhart822__Backend",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Code/MSMA/Music-Streaming-and-Management-Application/MSMA/src/main/java/com/spring/entities",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "reference.projectsettings.compiler.annotationProcessors",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;Spring Boot.MsmaApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Kinhart822__Backend&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Code/MSMA/Music-Streaming-and-Management-Application/MSMA/src/main/java/com/spring/entities&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.annotationProcessors&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "postgresql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;postgresql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\entities" />
@@ -134,11 +104,11 @@
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\service\impl" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.spring.utils" />
+      <recent name="com.spring.dto.request.music.admin" />
       <recent name="com.spring.dto.request.music.artist" />
       <recent name="com.spring.dto.response" />
       <recent name="com.spring.service.impl" />
-      <recent name="com.spring.service" />
-      <recent name="com.spring.controller.artist" />
     </key>
   </component>
   <component name="RunManager">
@@ -183,6 +153,17 @@
       <workItem from="1744168029357" duration="40048000" />
       <workItem from="1744252231991" duration="8639000" />
       <workItem from="1744273733677" duration="8385000" />
+      <workItem from="1744289521858" duration="8151000" />
+      <workItem from="1744299433682" duration="112600000" />
+      <workItem from="1744568586108" duration="10954000" />
+      <workItem from="1744607426968" duration="215000" />
+      <workItem from="1744608081721" duration="5270000" />
+      <workItem from="1744615943507" duration="1016000" />
+      <workItem from="1744618142121" duration="298000" />
+      <workItem from="1744618459082" duration="350000" />
+      <workItem from="1744619123531" duration="2644000" />
+      <workItem from="1744636123036" duration="1007000" />
+      <workItem from="1744637635117" duration="2481000" />
     </task>
     <servers />
   </component>
@@ -205,27 +186,27 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>400</line>
+          <line>398</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>437</line>
+          <line>435</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>438</line>
+          <line>436</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>441</line>
+          <line>439</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>250</line>
+          <line>248</line>
           <properties>
             <option name="lambda-ordinal" value="-1" />
           </properties>
@@ -233,7 +214,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
-          <line>254</line>
+          <line>252</line>
           <properties>
             <option name="lambda-ordinal" value="-1" />
           </properties>
@@ -241,25 +222,180 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AlbumServiceImpl.java</url>
-          <line>82</line>
+          <line>50</line>
           <option name="timeStamp" value="36" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AlbumServiceImpl.java</url>
-          <line>83</line>
+          <line>51</line>
           <option name="timeStamp" value="37" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/PlaylistServiceImpl.java</url>
-          <line>82</line>
+          <line>46</line>
           <option name="timeStamp" value="38" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/PlaylistServiceImpl.java</url>
-          <line>83</line>
+          <line>47</line>
           <option name="timeStamp" value="39" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
+          <line>636</line>
+          <option name="timeStamp" value="40" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
+          <line>633</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java</url>
+          <line>637</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>98</line>
+          <option name="timeStamp" value="232" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>99</line>
+          <option name="timeStamp" value="233" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>100</line>
+          <option name="timeStamp" value="234" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>101</line>
+          <option name="timeStamp" value="235" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>65</line>
+          <option name="timeStamp" value="242" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>66</line>
+          <option name="timeStamp" value="243" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>67</line>
+          <option name="timeStamp" value="244" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>68</line>
+          <option name="timeStamp" value="245" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>132</line>
+          <option name="timeStamp" value="246" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>133</line>
+          <option name="timeStamp" value="247" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>134</line>
+          <option name="timeStamp" value="248" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>135</line>
+          <option name="timeStamp" value="249" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>154</line>
+          <option name="timeStamp" value="250" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>155</line>
+          <option name="timeStamp" value="251" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>156</line>
+          <option name="timeStamp" value="252" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>157</line>
+          <option name="timeStamp" value="253" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>175</line>
+          <option name="timeStamp" value="254" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>176</line>
+          <option name="timeStamp" value="255" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>177</line>
+          <option name="timeStamp" value="256" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>178</line>
+          <option name="timeStamp" value="257" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>211</line>
+          <option name="timeStamp" value="258" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>210</line>
+          <option name="timeStamp" value="259" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>213</line>
+          <option name="timeStamp" value="260" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>212</line>
+          <option name="timeStamp" value="261" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java</url>
+          <line>244</line>
+          <option name="timeStamp" value="262" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java</url>
+          <line>542</line>
+          <option name="timeStamp" value="280" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java</url>
+          <line>543</line>
+          <option name="timeStamp" value="281" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+    <watches-manager>
+      <configuration name="SpringBootApplicationConfigurationType">
+        <watch expression="e" />
+      </configuration>
+    </watches-manager>
   </component>
 </project>

@@ -55,6 +55,9 @@ public class Song {
     @Column(name = "track_url", columnDefinition = "text")
     private String trackUrl;       // Song url from Spotify_API
 
+    @Column(name = "count_listener")
+    private Long countListener;     // Số người nghe
+
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private SongStatus songStatus;

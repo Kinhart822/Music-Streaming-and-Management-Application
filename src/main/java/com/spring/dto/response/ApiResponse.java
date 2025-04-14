@@ -24,9 +24,11 @@ public class ApiResponse {
     public static ApiResponse ok() {
         return new ApiResponse(ApiResponseCode.SUCCESS);
     }
+
     public static ApiResponse badRequest() {
         return new ApiResponse(ApiResponseCode.BAD_REQUEST);
     }
+
     public static ApiResponse ok(String message, String description) {
         return ApiResponse.builder()
                 .status(ApiResponseCode.SUCCESS.getStatus())
@@ -43,6 +45,10 @@ public class ApiResponse {
                 .build();
     }
 
+    public static ApiResponse error(ApiResponseCode code) {
+        return new ApiResponse(code);
+    }
+
     public static ApiResponse ok(String message) {
         return ApiResponse.builder()
                 .status(ApiResponseCode.SUCCESS.getStatus())
@@ -50,5 +56,4 @@ public class ApiResponse {
                 .description(null)
                 .build();
     }
-
 }

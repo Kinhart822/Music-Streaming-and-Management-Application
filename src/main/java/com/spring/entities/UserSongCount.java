@@ -18,8 +18,5 @@ public class UserSongCount {
     private UserSongCountId userSongCountId;
 
     @Column(name = "count_listen")
-    private Long countListen;
-
-    @Column(name = "count_listener")
-    private Long countListener;
+    private Long countListen;   // Số lần nghe của người dùng
 }

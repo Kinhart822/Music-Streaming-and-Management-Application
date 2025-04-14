@@ -1,6 +1,7 @@
 package com.spring.exceptions;
 
 import com.spring.constants.ApiResponseCode;
+import com.spring.dto.response.ApiResponse;
 import lombok.Getter;
 
 @Getter

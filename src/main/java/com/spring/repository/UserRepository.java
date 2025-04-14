@@ -24,6 +24,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findAllByStatusAndLastModifiedDateBefore(Integer status, Instant time);
 
+    List<User> findAllByStatus(Integer status);
+
     @Query("SELECT COUNT(a) FROM User a WHERE LOWER(a.userType) = 'user'")
     Long countAllUsers();
 

@@ -1,8 +1,7 @@
 package com.spring.service.impl;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.spring.constants.ApiResponseCode;
+import com.spring.constants.ManageProcess;
 import com.spring.constants.PlaylistAndAlbumStatus;
 import com.spring.constants.SongStatus;
 import com.spring.dto.request.music.artist.AddSongRequest;
@@ -14,13 +13,12 @@ import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
 import com.spring.security.JwtHelper;
+import com.spring.service.CloudinaryService;
 import com.spring.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,43 +30,9 @@ public class PlaylistServiceImpl implements PlaylistService {
     private final ArtistRepository artistRepository;
     private final ArtistPlaylistRepository artistPlaylistRepository;
     private final SongRepository songRepository;
-    private final JwtHelper jwtHelper;
-    private final Cloudinary cloudinary;
     private final UserRepository userRepository;
-
-    private String uploadToCloudinary(MultipartFile file, String resourceType, String folder) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        Map uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "resource_type", resourceType,
-                        "public_id", folder + "/" + UUID.randomUUID() + "_" + originalFilename
-                )
-        );
-        return (String) uploadResult.get("secure_url");
-    }
-
-    private String imageUpload(MultipartFile imageUpload) {
-        try {
-            if (imageUpload != null && !imageUpload.isEmpty()) {
-                String imageOriginalFilename = imageUpload.getOriginalFilename();
-                List<String> allowedExtensions = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff");
-
-                boolean isValidImage = allowedExtensions.stream()
-                        .anyMatch(ext -> imageOriginalFilename.toLowerCase().endsWith(ext));
-
-                if (!isValidImage) {
-                    throw new IllegalArgumentException("Ảnh phải là một trong các định dạng: jpg, jpeg, png, gif, webp, bmp, tiff!");
-                }
-
-                return uploadToCloudinary(imageUpload, "image", "covers");
-            }
-
-            return null; // if imageUpload is null or empty
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage(), e);
-        }
-    }
+    private final JwtHelper jwtHelper;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public PlaylistResponse createPlaylist(PlaylistRequest request) {
@@ -80,7 +44,7 @@ public class PlaylistServiceImpl implements PlaylistService {
         playlist.setPlaylistName(request.getPlaylistName());
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            String imageUrl = imageUpload(request.getImage());
+            String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
             playlist.setImageUrl(imageUrl);
         }
 
@@ -100,7 +64,7 @@ public class PlaylistServiceImpl implements PlaylistService {
     @Override
     public PlaylistResponse updatePlaylist(Long playlistId, PlaylistRequest request) {
         Playlist playlist = playlistRepository.findById(playlistId)
-                .orElseThrow(() -> new RuntimeException("Genre not found with ID: " + playlistId));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         if (request.getPlaylistName() != null && !request.getPlaylistName().isBlank()) {
             playlist.setPlaylistName(request.getPlaylistName());
@@ -111,7 +75,7 @@ public class PlaylistServiceImpl implements PlaylistService {
         }
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            playlist.setImageUrl(imageUpload(request.getImage()));
+            playlist.setImageUrl(cloudinaryService.uploadImageToCloudinary(request.getImage()));
         }
 
         return convertToResponse(playlistRepository.save(playlist));
@@ -326,6 +290,27 @@ public class PlaylistServiceImpl implements PlaylistService {
         }
 
         return ApiResponse.ok("Playlist uploaded successfully!");
+    }
+
+    @Override
+    public ApiResponse manageUploadPlaylist(Long id, String manageProcess) {
+        Playlist playlist = playlistRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (playlist.getPlaylistAndAlbumStatus() != PlaylistAndAlbumStatus.PENDING) {
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        }
+
+        if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
+            playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.PUBLIC);
+            playlistRepository.save(playlist);
+            return ApiResponse.ok("Playlist accepted successfully!");
+        } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
+            return ApiResponse.ok("Playlist declined! Please check your playlist before uploading again.");
+        } else {
+            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
+        }
+
     }
 
     private PlaylistResponse convertToResponse(Playlist playlist) {

@@ -1,41 +1,45 @@
 package com.spring.controller.admin;
 
-import com.spring.dto.request.account.AdminPresentation;
-import com.spring.dto.request.account.CreateArtist;
-import com.spring.dto.request.account.CreateArtistFromList;
 import com.spring.dto.response.ApiResponse;
 import com.spring.service.AccountService;
-import jakarta.validation.Valid;
+import com.spring.service.AlbumService;
+import com.spring.service.PlaylistService;
+import com.spring.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1/admin/manage")
 @RequiredArgsConstructor
 public class AdminController {
+    private final SongService songService;
+    private final PlaylistService playlistService;
+    private final AlbumService albumService;
     private final AccountService accountService;
 
-    /*
-    TODO: ARTIST specific
-    */
-    @PostMapping("/createArtist")
-    public ResponseEntity<ApiResponse> createArtist(@RequestBody @Valid CreateArtist request) {
-        return ResponseEntity.ok(accountService.createArtist(request));
+    @PostMapping("/songUpload/{id}")
+    public ResponseEntity<ApiResponse> manageSongUpload(@PathVariable Long id, @RequestParam String manageProcess) {
+        return ResponseEntity.ok(songService.manageUploadSong(id, manageProcess));
     }
 
-    @PostMapping("/createArtist/batch")
-    public ResponseEntity<ApiResponse> createArtistFromList(@RequestBody @Valid CreateArtistFromList request) {
-        return ResponseEntity.ok(accountService.createArtistFromList(request));
+    @PostMapping("/playlistUpload/{id}")
+    public ResponseEntity<ApiResponse> managePlaylistUpload(@PathVariable Long id, @RequestParam String manageProcess) {
+        return ResponseEntity.ok(playlistService.manageUploadPlaylist(id, manageProcess));
     }
 
-    @GetMapping("/countArtist")
-    public ResponseEntity<Long> getTotalArtists() {
-        return ResponseEntity.ok(accountService.countArtists());
+    @PostMapping("/albumUpload/{id}")
+    public ResponseEntity<ApiResponse> manageAlbumUpload(@PathVariable Long id, @RequestParam String manageProcess) {
+        return ResponseEntity.ok(albumService.manageUploadAlbum(id, manageProcess));
     }
 
-    @GetMapping("/countUser")
-    public ResponseEntity<Long> getTotalUser() {
-        return ResponseEntity.ok(accountService.countUsers());
+    @PostMapping("/processingDeleteRequest/{id}")
+    public ResponseEntity<ApiResponse> processingDeleteRequest(@PathVariable Long id, @RequestParam String manageProcess) {
+        return ResponseEntity.ok(accountService.processingDeleteRequest(id, manageProcess));
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<ApiResponse> delete(@PathVariable Long id) {
+        return ResponseEntity.ok(songService.deleteSong(id));
     }
 }

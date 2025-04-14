@@ -7,12 +7,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.Instant;
 
 @Data
 public class UpdateAccountRequest {
     @NotBlank(message = "avatar must be not blank")
-    private String avatar;
+    private MultipartFile avatar;
 
     @NotBlank(message = "firstName must be not blank")
     private String firstName;

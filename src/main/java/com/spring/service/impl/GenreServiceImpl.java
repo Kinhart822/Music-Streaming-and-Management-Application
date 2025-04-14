@@ -1,25 +1,19 @@
 package com.spring.service.impl;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
+import com.spring.constants.ApiResponseCode;
 import com.spring.dto.request.music.admin.GenreRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.GenreResponse;
 import com.spring.entities.Genre;
-import com.spring.entities.GenreSong;
+import com.spring.exceptions.BusinessException;
 import com.spring.repository.GenreRepository;
-import com.spring.repository.GenreSongRepository;
+import com.spring.service.CloudinaryService;
 import com.spring.service.GenreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,45 +21,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GenreServiceImpl implements GenreService {
     private final GenreRepository genreRepository;
-    private final Cloudinary cloudinary;
-
-    private String uploadToCloudinary(MultipartFile file, String resourceType, String folder) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        Map uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "resource_type", resourceType,
-                        "public_id", folder + "/" + UUID.randomUUID() + "_" + originalFilename
-                )
-        );
-        return (String) uploadResult.get("secure_url");
-    }
-
-    private String imageUpload(MultipartFile imageUpload) {
-        try {
-            if (imageUpload != null && !imageUpload.isEmpty()) {
-                String imageOriginalFilename = imageUpload.getOriginalFilename();
-                List<String> allowedExtensions = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff");
-
-                boolean isValidImage = allowedExtensions.stream()
-                        .anyMatch(ext -> imageOriginalFilename.toLowerCase().endsWith(ext));
-
-                if (!isValidImage) {
-                    throw new IllegalArgumentException("Ảnh phải là một trong các định dạng: jpg, jpeg, png, gif, webp, bmp, tiff!");
-                }
-
-                return uploadToCloudinary(imageUpload, "image", "covers");
-            }
-
-            return null; // if imageUpload is null or empty
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage(), e);
-        }
-    }
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public GenreResponse createGenre(GenreRequest request) {
-        String imageUrl = imageUpload(request.getImage());
+        String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
 
         Genre genre = Genre.builder()
                 .genresName(request.getName())
@@ -87,7 +47,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public ApiResponse updateGenre(Long id, GenreRequest request) {
         Genre genre = genreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Genre not found with ID: " + id));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         if (request.getName() != null && !request.getName().isBlank()) {
             genre.setGenresName(request.getName());
@@ -102,7 +62,7 @@ public class GenreServiceImpl implements GenreService {
         }
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
-            genre.setImageUrl(imageUpload(request.getImage()));
+            genre.setImageUrl(cloudinaryService.uploadImageToCloudinary(request.getImage()));
         }
 
         genreRepository.save(genre);
@@ -112,7 +72,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public ApiResponse deleteGenre(Long id) {
         Genre genre = genreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Genre not found with ID: " + id));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         genreRepository.delete(genre);
 
@@ -122,7 +82,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public GenreResponse getGenreById(Long id) {
         Genre genre = genreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Genre not found with ID: " + id));
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         return GenreResponse.builder()
                 .id(genre.getId())
