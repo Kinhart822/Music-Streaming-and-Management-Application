@@ -1,9 +1,11 @@
+import hashlib
+import logging
 import re
 from uuid import uuid4
 import contractions
 import inflect
 import spacy
-from fastapi import FastAPI, UploadFile, Form
+from fastapi import FastAPI, Form, UploadFile
 from fastapi.responses import JSONResponse
 from collections import defaultdict
 from lingua import Language, LanguageDetectorBuilder
@@ -13,15 +15,26 @@ import os
 import shutil
 import joblib
 import uvicorn
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+from sqlalchemy import create_engine
+
+# PostgreSQL
+DATABASE_URL = "postgresql://postgres:kinhart822@localhost:5432/msma_database"
+engine = create_engine(DATABASE_URL)
 
 app = FastAPI()
+logging.basicConfig(level=logging.INFO)
 
-# === Load model, vectorizer, tfidf_matrix ===
+# Path
+TFIDF_PICKLE_PATH = "pkl/tfidf_matrix.pkl"
+HASH_PICKLE_PATH = "pkl/lyrics_hash.pkl"
+
+# Load mô hình và vectorizer
 vectorizer_tfidf = joblib.load('pkl/vectorizer_tfidf.pkl')
 rf_model_train = joblib.load('pkl/rf_model_tf_idf.pkl')
-tfidf_matrix = joblib.load('pkl/tfidf_matrix.pkl')
-vectorizer_tfidf_similarity = joblib.load('pkl/tfidf_similarity.pkl')
+vectorizer_tfidf_similarity = TfidfVectorizer(use_idf=True)
 
 
 def load_remove(path_to_load):
@@ -151,7 +164,7 @@ def preprocess_lyrics(text, multilingual):
     if multilingual == "No":
         lyrics_test = pre_processing(text)
         return lyrics_test
-    return JSONResponse(status_code=400, content={"message": "Lyrics contains many languages."})
+    return None
 
 
 def tfidf_lyrics(test_lyrics):
@@ -164,40 +177,26 @@ def tfidf_lyrics(test_lyrics):
 
     lyrics_data = detect_languages_for_lyrics(test_lyrics)
     preprocessed_lyrics = preprocess_lyrics(test_lyrics, lyrics_data["multilingual"])
+    if not preprocessed_lyrics:
+        return None
 
     # Biến lyrics thành vector TF-IDF
     song_tfidf = vectorizer_tfidf.transform([preprocessed_lyrics])
     return song_tfidf
 
 
-def tfidf_lyrics_similarity(test_lyrics):
-    """
-        Chuyển đổi lyrics thành vector TF-IDF.
-    """
-    if not test_lyrics:
-        print("🚫 Không có lyrics.")
-        return None
-
-    lyrics_data = detect_languages_for_lyrics(test_lyrics)
-    preprocessed_lyrics = preprocess_lyrics(test_lyrics, lyrics_data["multilingual"])
-
-    # Biến lyrics thành vector TF-IDF
-    song_tfidf = vectorizer_tfidf_similarity.transform([preprocessed_lyrics])
-    return song_tfidf
-
 def transcribe_lyric_by_whisper(audio_path):
     """Dùng Whisper để trích xuất lyric từ file nhạc"""
     try:
-        print("Đang chuyển đổi audio thành text bằng Whisper...")
+        logging.info(f"Transcribing audio: {audio_path}")
         model_to_load = whisper.load_model("large")
         result = model_to_load.transcribe(audio_path, fp16=False)
         lyrics_transcribe = result["text"]
-
-        print("🎤 Lời bài hát được trích xuất thành công!")
+        logging.info("Lyrics transcribed successfully.")
         return lyrics_transcribe
     except Exception as e:
-        print(f"❌ Lỗi khi trích xuất lời bài hát: {e}")
-        return JSONResponse(status_code=400, content={"message": f"{e}"})
+        logging.error(f"Error transcribing lyrics: {e}")
+        return None
 
 
 def separate_vocals(input_file, output_folder="demucs_output"):
@@ -206,8 +205,7 @@ def separate_vocals(input_file, output_folder="demucs_output"):
     # Kiểm tra file đầu vào có tồn tại không
     if not os.path.exists(input_file):
         print(f"❌ Lỗi: File đầu vào '{input_file}' không tồn tại!")
-        return JSONResponse(status_code=400, content={"message": "Error with input file"})
-
+        return None
     try:
         # Tạo thư mục output nếu chưa tồn tại
         os.makedirs(output_folder, exist_ok=True)
@@ -218,7 +216,7 @@ def separate_vocals(input_file, output_folder="demucs_output"):
         new_vocals_path = os.path.join(vocals_dir, f"{filename}_vocals.mp3")
 
         if os.path.exists(new_vocals_path):
-            print(f"✅ File vocals đã tồn tại: {new_vocals_path}")
+            logging.info(f"Vocals file already exists: {new_vocals_path}")
             return new_vocals_path
 
         # Chạy Demucs để tách giọng hát
@@ -227,23 +225,19 @@ def separate_vocals(input_file, output_folder="demucs_output"):
             "-n", "mdx_extra_q", input_file
         ]
         subprocess.run(command, check=True)
+        logging.info(f"Vocals separated successfully: {output_folder}")
 
-        print(f"✅ Tách giọng hát thành công! Kết quả lưu tại: {output_folder}")
-
-        # Kiểm tra file vocals.mp3 có được tạo ra không
         if not os.path.exists(vocals_path):
-            print(f"❌ Lỗi: File vocals.mp3 không tồn tại trong thư mục {vocals_dir}")
-            return JSONResponse(status_code=400, content={"message": "Error with input file"})
+            logging.error(f"Vocals file not found in {vocals_dir}")
+            return None
 
         # Đổi tên file
         os.rename(vocals_path, new_vocals_path)
-        print(f"✅ Đã đổi tên file thành: {new_vocals_path}")
-
+        logging.info(f"Renamed vocals file to: {new_vocals_path}")
         return new_vocals_path
-
     except subprocess.CalledProcessError as e:
-        print(f"❌ Lỗi khi chạy Demucs: {e}")
-        return JSONResponse(status_code=400, content={"message": f"{e}"})
+        logging.error(f"Error running Demucs: {e}")
+        return None
 
 
 def slow_down_audio_ffmpeg(input_file, output_folder="final_output", speed_factor=0.85):
@@ -275,8 +269,8 @@ def slow_down_audio_ffmpeg(input_file, output_folder="final_output", speed_facto
 
         return result
     except subprocess.CalledProcessError as e:
-        print(f"❌ Lỗi khi chạy FFmpeg: {e}")
-        return JSONResponse(status_code=400, content={"message": f"{e}"})
+        logging.error(f"Error running FFmpeg: {e}")
+        return None
 
 
 def remove_silence(input_audio, output_audio, silence_threshold="-40dB", min_silence_duration="0.5"):
@@ -293,8 +287,8 @@ def remove_silence(input_audio, output_audio, silence_threshold="-40dB", min_sil
         subprocess.run(command, check=True)
         return output_audio
     except subprocess.CalledProcessError as e:
-        print(f"❌ Lỗi khi loại bỏ khoảng lặng: {e}")
-        return JSONResponse(status_code=400, content={"message": f"{e}"})
+        logging.error(f"Error removing silence: {e}")
+        return None
 
 
 def process_audio(input_file, request_id):
@@ -307,59 +301,110 @@ def process_audio(input_file, request_id):
     if vocals_path and os.path.exists(vocals_path):
         processed_audio = slow_down_audio_ffmpeg(vocals_path, final_output_dir)
         if processed_audio:
-            print(f"🎵 Audio đã xử lý thành công: {processed_audio}")
+            logging.info(f"Audio processed successfully: {processed_audio}")
             return processed_audio
         else:
-            print(f"❌ Lỗi khi processing audio cho {vocals_path}")
-            return JSONResponse(status_code=400, content={"message": "Error with input file"})
-    print(f"❌ Lỗi: Không tìm thấy file vocals tại {vocals_path}")
-    return JSONResponse(status_code=400, content={"message": "Error with input file"})
+            logging.error(f"Error processing audio for {vocals_path}")
+            return None
+    logging.error(f"No vocals file found at {vocals_path}")
+    return None
 
 
-def predict_genre(model_prediction, tfidf_vector):
-    """Dự đoán thể loại từ mô hình đã huấn luyện."""
-    predicted_genre = model_prediction.predict(tfidf_vector)[0]
-    return predicted_genre
+def handle_audio_upload(audio_file: UploadFile):
+    """
+    Xử lý audio upload:
+    - Lưu file vào temp folder
+    - Trả về (request_id, temp_dir, audio đã xử lý)
+    """
+    request_id = str(uuid4())
+    temp_dir = f"temp/{request_id}"
+    os.makedirs(temp_dir, exist_ok=True)
+
+    file_location = f"{temp_dir}/{audio_file.filename}"
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(audio_file.file, buffer)
+
+    audio = process_audio(file_location, request_id)
+
+    return request_id, temp_dir, audio
+
+
+def get_lyrics_hash(lyrics_list):
+    all_lyrics = "".join(lyrics_list)
+    return hashlib.md5(all_lyrics.encode("utf-8")).hexdigest()
+
+
+def processing_database():
+    query = "SELECT * FROM songs"
+    df = pd.read_sql(query, engine)
+
+    current_hash = get_lyrics_hash(df["lyrics"].tolist())
+
+    try:
+        old_hash = joblib.load(HASH_PICKLE_PATH)
+        if current_hash == old_hash:
+            logging.info("No change in lyrics. Loading TF-IDF matrix from cache.")
+            return joblib.load(TFIDF_PICKLE_PATH)
+    except FileNotFoundError:
+        pass
+
+    logging.info("Lyrics changed. Rebuilding TF-IDF matrix.")
+    df["clean_lyrics"] = df["lyrics"].apply(pre_processing)
+    documents = df["clean_lyrics"]
+    tfidf_matrix = vectorizer_tfidf_similarity.fit_transform(documents)
+
+    joblib.dump(vectorizer_tfidf_similarity, "pkl/tfidf_similarity_vectorizer.pkl")
+    joblib.dump(tfidf_matrix, TFIDF_PICKLE_PATH)
+    joblib.dump(current_hash, HASH_PICKLE_PATH)
+
+    return tfidf_matrix
+
+
+def tfidf_lyrics_similarity(test_lyrics):
+    """
+        Chuyển đổi lyrics thành vector TF-IDF.
+    """
+    if not test_lyrics:
+        print("🚫 Không có lyrics.")
+        return None
+
+    lyrics_data = detect_languages_for_lyrics(test_lyrics)
+    preprocessed_lyrics = preprocess_lyrics(test_lyrics, lyrics_data["multilingual"])
+    if not preprocessed_lyrics:
+        return None
+
+    # Biến lyrics thành vector TF-IDF
+    song_tfidf = joblib.load("pkl/tfidf_similarity_vectorizer.pkl").transform([preprocessed_lyrics])
+    return song_tfidf
 
 
 def check_similarity(tfidf_vector, tfidf_matrix_vector):
     if tfidf_vector is None:
         return None
+
     similarity_scores = cosine_similarity(tfidf_vector, tfidf_matrix_vector)[0]
     return similarity_scores.max()
 
 
-@app.post("/predict-genre")
-async def predict_genre_api(lyrics: str = Form(None), audio_file: UploadFile = None):
-    try:
-        if audio_file:
-            request_id = str(uuid4())
-            temp_dir = f"temp/{request_id}"
+def tfidf_lyrics_similarity_compare_lyric_with_audio(lyrics_list):
+    vectorizer = joblib.load("pkl/tfidf_similarity_vectorizer.pkl")
+    processed_lyrics = [preprocess_lyrics(lyric, "No") for lyric in lyrics_list if lyric]
+    processed_lyrics = [lyric for lyric in processed_lyrics if lyric]
+    if not processed_lyrics:
+        return []
+    tfidf_matrix = vectorizer.fit_transform(processed_lyrics)
+    return tfidf_matrix.toarray()
 
-            os.makedirs(temp_dir, exist_ok=True)
-            file_location = f"{temp_dir}/{audio_file.filename}"
 
-            with open(file_location, "wb") as buffer:
-                shutil.copyfileobj(audio_file.file, buffer)
+def check_similarity_between_lyrics(v1, v2):
+    return cosine_similarity([v1], [v2])[0][0]
 
-            audio = process_audio(file_location, request_id)
-            lyrics_from_audio = transcribe_lyric_by_whisper(audio)
-            lyrics_processed = tfidf_lyrics(lyrics_from_audio)
 
-            predicted_genre = predict_genre(rf_model_train, lyrics_processed)
-
-            if predicted_genre:
-                # Xoá thư mục tạm theo request_id
-                shutil.rmtree(temp_dir, ignore_errors=True)
-
-            return {"genre": predicted_genre}
-        elif lyrics:
-            lyrics_processed = tfidf_lyrics(lyrics)
-            predicted_genre = predict_genre(rf_model_train, lyrics_processed)
-            return {"genre": predicted_genre}
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+def predict_genre(model_prediction, tfidf_vector):
+    """Dự đoán thể loại từ mô hình đã huấn luyện."""
+    logging.info(f"Making genre prediction.")
+    predicted_genre = model_prediction.predict(tfidf_vector)[0]
+    return predicted_genre
 
 
 @app.post("/check-similarity")
@@ -367,63 +412,174 @@ async def similarity_api(
         lyrics: str = Form(None),
         audio_file: UploadFile = None
 ):
+    logging.info("Starting check-similarity processing")
+    tfidf_matrix = processing_database()
+    logging.info("Finished loading TF-IDF matrix")
     try:
         if audio_file:
-            request_id = str(uuid4())
-            temp_dir = f"temp/{request_id}"
+            request_id, temp_dir, audio = handle_audio_upload(audio_file)
+            logging.info(f"Finished handling audio upload: {audio}")
+            if not audio:
+                return JSONResponse(status_code=400, content={"error": "Audio processing failed."})
 
-            os.makedirs(temp_dir, exist_ok=True)
-            file_location = f"{temp_dir}/{audio_file.filename}"
+            lyrics_transcribe = transcribe_lyric_by_whisper(audio)
+            logging.info("Finished transcribing lyrics")
+            if not lyrics_transcribe:
+                return JSONResponse(status_code=400, content={"error": "Lyrics transcription failed."})
+            with open(f"{temp_dir}/lyrics_transcribe.pkl", "wb") as f:
+                joblib.dump(lyrics_transcribe, f)
 
-            with open(file_location, "wb") as buffer:
-                shutil.copyfileobj(audio_file.file, buffer)
-
-            audio = process_audio(file_location, request_id)
-            lyrics_from_audio = transcribe_lyric_by_whisper(audio)
-            lyrics_processed = tfidf_lyrics_similarity(lyrics_from_audio)
-
+            lyrics_processed = tfidf_lyrics_similarity(lyrics_transcribe)
+            logging.info("Finished processing lyrics to TF-IDF")
             similarity_score = check_similarity(lyrics_processed, tfidf_matrix)
-
-            if similarity_score is None:
-                return JSONResponse(
-                    status_code=200,
-                    content={"match": False, "message": "Không thể xác định độ tương đồng."}
-                )
-
-            match = bool(similarity_score >= 0.75)
+            logging.info("Finished checking similarity")
+            match = bool(similarity_score and similarity_score >= 0.75)
 
             return JSONResponse(
                 status_code=200,
                 content={
+                    "request_id": request_id,
+                    "lyrics": lyrics_transcribe,
                     "match": match,
-                    "similarity_score": float(round(similarity_score, 4)),
-                    "message": "Bài hát đã bị trùng." if match else "Không có bài hát nào trùng khớp."
+                    "similarity_score": float(round(similarity_score or 0, 4)),
+                    "message": "Bài hát đã bị trùng." if match else "Không có bài hát nào trùng khớp!"
                 }
             )
         elif lyrics:
             lyrics_processed = tfidf_lyrics_similarity(lyrics)
+            logging.info("Finished processing lyrics to TF-IDF")
             similarity_score = check_similarity(lyrics_processed, tfidf_matrix)
-
-            if similarity_score is None:
-                return JSONResponse(
-                    status_code=200,
-                    content={"match": False, "message": "Không thể xác định độ tương đồng!"}
-                )
-
-            match = bool(similarity_score >= 0.75)
+            logging.info("Finished checking similarity")
+            match = bool(similarity_score and similarity_score >= 0.75)
 
             return JSONResponse(
                 status_code=200,
                 content={
                     "match": match,
-                    "similarity_score": float(round(similarity_score, 4)),
+                    "similarity_score": float(round(similarity_score or 0, 4)),
                     "message": "Bài hát đã bị trùng." if match else "Không có bài hát nào trùng khớp!"
                 }
             )
-
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Bạn phải cung cấp audio hoặc lyrics."}
+            )
     except Exception as e:
+        logging.error(f"Error in similarity_api: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/predict-genre")
+async def predict_genre_api(
+        request_id: str = Form(None),  # receive request_id
+        lyrics: str = Form(None),
+        audio_file: UploadFile = None
+):
+    try:
+        logging.info("Starting predict-genre processing")
+        if audio_file:
+            if request_id:
+                temp_dir = f"temp/{request_id}"
+
+                with open(f"{temp_dir}/lyrics_transcribe.pkl", "rb") as f:
+                    lyrics_transcribe = joblib.load(f)
+
+                lyrics_processed = tfidf_lyrics(lyrics_transcribe)
+                logging.info("Finished processing lyrics to TF-IDF")
+                predicted_genre = predict_genre(rf_model_train, lyrics_processed)
+
+                if predicted_genre:
+                    # Xoá thư mục tạm theo request_id
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    logging.info(f"Cleaned up temp directory: {temp_dir}")
+
+                logging.info("Finished predicting genre")
+                return {"genre": predicted_genre}
+        elif lyrics:
+            lyrics_processed = tfidf_lyrics(lyrics)
+            logging.info("Finished processing lyrics to TF-IDF")
+            predicted_genre = predict_genre(rf_model_train, lyrics_processed)
+            logging.info("Finished predicting genre")
+            return {"genre": predicted_genre}
+    except Exception as e:
+        logging.error(f"Error in predict_genre_api: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/transcribe-lyrics")
+async def transcribe_lyrics(
+        audio_file: UploadFile = None
+):
+    try:
+        logging.info("Starting transcribe-lyrics processing")
+        if audio_file:
+            request_id, temp_dir, audio = handle_audio_upload(audio_file)
+            logging.info(f"Finished handling audio upload: {audio}")
+            if not audio:
+                return JSONResponse(status_code=400, content={"error": "Audio processing failed."})
+
+            lyrics_transcribe = transcribe_lyric_by_whisper(audio)
+            logging.info("Finished transcribing lyrics")
+            if not lyrics_transcribe:
+                return JSONResponse(status_code=400, content={"error": "Lyrics transcription failed."})
+            with open(f"{temp_dir}/lyrics_transcribe.pkl", "wb") as f:
+                joblib.dump(lyrics_transcribe, f)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "request_id": request_id,
+                    "lyrics": lyrics_transcribe
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Bạn phải cung cấp audio hoặc lyrics."}
+            )
+    except Exception as e:
+        logging.error(f"Error in transcribe_lyrics: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/check-similar-between-input-and-audio")
+async def check_similar_api(
+        lyrics: str = Form(None),
+        lyrics_audio: str = Form(None),
+):
+    try:
+        logging.info("Starting check-similar-between-input-and-audio processing")
+        if not lyrics or not lyrics_audio:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Bạn phải cung cấp cả audio và lyrics để so sánh."}
+            )
+
+        lyrics_pair = [lyrics, lyrics_audio]
+        processed_vectors = tfidf_lyrics_similarity_compare_lyric_with_audio(lyrics_pair)
+        logging.info("Finished processing lyrics to TF-IDF")
+        if len(processed_vectors) != 2:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Không thể xử lý lyrics để so sánh."}
+            )
+
+        similarity_score = check_similarity_between_lyrics(processed_vectors[0], processed_vectors[1])
+        logging.info("Finished checking similarity")
+        isNotMatch = bool(similarity_score <= 0.5)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "isNotMatch": isNotMatch,
+                "similarity_score": float(round(similarity_score, 4)),
+                "message": "Lời bài hát không trùng khớp, not ok!" if isNotMatch else "Lời bài hát trùng khớp, ok!"
+            }
+        )
+    except Exception as e:
+        logging.error(f"Error in check_similar_api: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("Backend:app", host="0.0.0.0", port=8000, reload=True)
