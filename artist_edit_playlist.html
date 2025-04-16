@@ -5,81 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/structure.css">
+    <link rel="stylesheet" href="css/artist_edit_playlist.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <title>Manage Songs</title>
-    <style>
-        .table-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .table-controls label {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        .table-controls select, .table-controls input[type="number"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            min-width: 120px;
-        }
-        .table-controls select {
-            background: #ffffff; /* White background for genre and sort by */
-        }
-        .table-controls input[type="number"] {
-            width: 80px;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .pagination button, .pagination span {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: #fff;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .pagination button:disabled {
-            background: #f0f0f0;
-            cursor: not-allowed;
-        }
-        .pagination span.active {
-            background: #007bff;
-            color: #fff;
-            border-color: #007bff;
-        }
-        .pagination button:hover:not(:disabled) {
-            background: #e0e0e0;
-        }
-        /* Ensure labels are white in dark mode */
-        body.dark .table-controls label {
-            color: #ffffff;
-        }
-        @media (max-width: 600px) {
-            .table-controls {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .table-controls div {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-            .table-controls select, .table-controls input[type="number"] {
-                width: 100%;
-                min-width: unset;
-            }
-        }
-    </style>
+    <title>Edit Playlist</title>
 </head>
 <body>
     <section class="header">
@@ -89,7 +18,7 @@
         </div>
         <div class="search--notification--profile">
             <div class="search">
-                <input type="text" placeholder="Search Songs...">
+                <input type="text" placeholder="Search Playlists...">
                 <button><i class='bx bx-search-alt-2'></i></button>
             </div>
             <div class="notification--profile">
@@ -212,65 +141,39 @@
         </div>
 
         <div class="main--content">
-            <div class="songs">
-                <div class="title">
-                    <h2 class="section--title">Manage Songs</h2>
-                    <a class="add" href="artist_add_song.html"><i class="ri-add-line"></i>Add Song</a>
-                </div>
-                <div class="table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Genre</th>
-                                <th>Duration</th>
-                                <th>Upload Date</th>
-                                <th>Lyrics</th>
-                                <th>Description</th>
-                                <th>Download</th>
-                                <th>Status</th>
-                                <th>Listeners</th>
-                                <th>Settings</th>
-                            </tr>
-                        </thead>
-                        <tbody id="song-table-body">
+            <div class="song-form-container">
+                <h2 class="section--title">Edit Playlist</h2>
+                <form id="edit-playlist-form" class="song-form">
+                    <div class="form-group">
+                        <label for="playlist-title">Title *</label>
+                        <input type="text" id="playlist-title" required>
+                        <div class="error" id="title-error">Title is required</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="playlist-description">Description</label>
+                        <textarea id="playlist-description" placeholder="Describe your playlist here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="playlist-image">Image</label>
+                        <input type="file" id="playlist-image" accept="image/*">
+                        <img id="image-preview" class="background-preview" alt="Image Preview">
+                    </div>
+                    <div class="form-group">
+                        <label>Songs</label>
+                        <div class="song-list" id="song-list">
                             <!-- Songs populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                <div class="pagination">
-                    <!-- Pagination controls populated by JavaScript -->
-                </div>
-                <div class="table-controls">
-                    <div>
-                        <label for="rows-per-page">Rows per page:</label>
-                        <input type="number" id="rows-per-page" min="1" value="10">
+                        </div>
                     </div>
-                    <div>
-                        <label for="genre-filter">Genre:</label>
-                        <select id="genre-filter">
-                            <option value="all">All Genres</option>
-                            <option value="Pop">Pop</option>
-                            <option value="Rock">Rock</option>
-                            <option value="Jazz">Jazz</option>
-                            <option value="Country">Country</option>
-                            <option value="Hip Hop">Hip Hop</option>
-                        </select>
+                    <div class="form-group button-group">
+                        <button type="submit">Save Changes</button>
+                        <button type="button" class="delete-btn" id="delete-playlist">Delete Playlist</button>
+                        <button type="button" class="cancel-btn" onclick="window.location.href='artist_manage_playlist.html'">Cancel</button>
                     </div>
-                    <div>
-                        <label for="sort-by">Sort by:</label>
-                        <select id="sort-by">
-                            <option value="uploadDate-asc">Upload Date (Asc)</option>
-                            <option value="uploadDate-desc">Upload Date (Desc)</option>
-                            <option value="listeners-asc">Listeners (Asc)</option>
-                            <option value="listeners-desc">Listeners (Desc)</option>
-                        </select>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
     </section>
     <script src="js/structure.js"></script>
-    <script src="js/songs.js"></script>
+    <script src="js/artist_edit_playlist.js"></script>
 </body>
 </html>

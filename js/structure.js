@@ -498,6 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="truncate">${song.lyrics || 'No lyrics'}</td>
                     <td class="truncate">${song.description || 'No description'}</td>
                     <td>${song.download}</td>
+                    <td class="truncate">${song.listener || 0}</td>
                     <td class="${song.status.toLowerCase()}">${song.status}</td>
                     <td>
                         ${
@@ -506,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span>
                                         ${
                                             song.status === 'Draft'
-                                                ? `<i class="ri-upload-line publish" data-index="${index}" title="Publish"></i>`
+                                                ? `<i class="ri-upload-line publish" data-index="${index}" style="margin-right: 12px" title="Publish"></i>`
                                                 : ''
                                         }
                                         <i class="ri-edit-line edit" data-index="${index}" title="Edit"></i>
@@ -540,7 +541,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Song deleted successfully.');
                 }
             } else if (e.target.classList.contains('edit')) {
-                alert('Edit functionality not implemented yet.');
+                localStorage.setItem('editSongIndex', index);
+                window.location.href = 'artist_edit_song.html';
             }
         });
     }
@@ -564,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span>
                                         ${
                                             playlist.status === 'Draft'
-                                                ? `<i class="ri-upload-line publish" data-index="${index}" title="Publish"></i>`
+                                                ? `<i class="ri-upload-line publish" data-index="${index}" style="margin-right: 12px" title="Publish"></i>`
                                                 : ''
                                         }
                                         <i class="ri-edit-line edit" data-index="${index}" title="Edit"></i>
@@ -622,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span>
                                         ${
                                             album.status === 'Draft'
-                                                ? `<i class="ri-upload-line publish" data-index="${index}" title="Publish"></i>`
+                                                ? `<i class="ri-upload-line publish" data-index="${index}" style="margin-right: 12px" title="Publish"></i>`
                                                 : ''
                                         }
                                         <i class="ri-edit-line edit" data-index="${index}" title="Edit"></i>
@@ -687,4 +689,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const albums = JSON.parse(localStorage.getItem('albums')) || [];
         totalAlbumsCard.textContent = albums.length;
     }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    let darkModeToggle = document.getElementById('darkModeToggle');
+    let body = document.body;
+    let moonIcon = document.querySelector('.moon-icon');
+    let sunIcon = document.querySelector('.sun-icon');
+    let toggleSwitch = document.querySelector('.switch');
+  
+    // Load dark mode state from localStorage
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (isDarkMode) {
+        body.classList.add('dark');
+        moonIcon.style.display = 'none';
+        sunIcon.style.display = 'block';
+        toggleSwitch.style.left = '28px';
+    } else {
+        body.classList.remove('dark');
+        moonIcon.style.display = 'block';
+        sunIcon.style.display = 'none';
+        toggleSwitch.style.left = '2px';
+    }
+  
+    // Toggle dark mode on click
+    darkModeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark');
+        const isDark = body.classList.contains('dark');
+        localStorage.setItem('darkMode', isDark);
+  
+        if (isDark) {
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+            toggleSwitch.style.left = '28px';
+        } else {
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+            toggleSwitch.style.left = '2px';
+        }
+    });
 });

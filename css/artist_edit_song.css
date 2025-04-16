@@ -1,0 +1,135 @@
+.form-container {
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+.form-container h2 {
+    margin-bottom: 25px;
+    font-size: 28px;
+    text-align: center;
+    color: #333;
+}
+body.dark .form-container h2 {
+    color: #fff;
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #444;
+}
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    background: #f9f9f9;
+    transition: border-color 0.3s ease, background 0.3s ease;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: #007bff;
+    background: #fff;
+    outline: none;
+}
+.form-group textarea {
+    height: 120px;
+    resize: vertical;
+}
+.form-group input[type="number"] {
+    width: 120px;
+}
+.form-group .gender-group {
+    display: flex;
+    gap: 20px;
+}
+.form-group .gender-group label {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+.form-group button, .form-group .delete-btn, .form-group .cancel-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, transform 0.1s ease;
+}
+.form-group button {
+    background: #007bff;
+    color: #fff;
+}
+.form-group button:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+.form-group .delete-btn {
+    background: #dc3545;
+    color: #fff;
+}
+.form-group .delete-btn:hover {
+    background: #b02a37;
+    transform: translateY(-2px);
+}
+.form-group .cancel-btn {
+    background: #6c757d;
+    color: #fff;
+}
+.form-group .cancel-btn:hover {
+    background: #565e64;
+    transform: translateY(-2px);
+}
+.error {
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 5px;
+    display: none;
+}
+body.dark .form-container {
+    background: #333;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+body.dark .form-group input,
+body.dark .form-group select,
+body.dark .form-group textarea {
+    background: #444;
+    color: #fff;
+    border-color: #555;
+}
+body.dark .form-group label {
+    color: #ddd;
+}
+body.dark .form-group input:focus,
+body.dark .form-group select:focus,
+body.dark .form-group textarea:focus {
+    border-color: #4dabf7;
+    background: #555;
+}
+@media (max-width: 600px) {
+    .form-container {
+        margin: 15px;
+        padding: 20px;
+    }
+    .button-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .form-group button, .form-group .delete-btn, .form-group .cancel-btn {
+        width: 100%;
+    }
+}
