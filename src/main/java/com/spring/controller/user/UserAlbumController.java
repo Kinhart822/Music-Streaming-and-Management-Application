@@ -1,8 +1,6 @@
-package com.spring.controller.artist;
+package com.spring.controller.user;
 
-import com.spring.dto.request.music.AddSongRequest;
 import com.spring.dto.request.music.AlbumRequest;
-import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
 import com.spring.service.AlbumService;
@@ -14,10 +12,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/artist/album")
+@RequestMapping("/api/v1/user/album")
 @RequiredArgsConstructor
-public class AlbumController {
+public class UserAlbumController {
     private final AlbumService albumService;
+
+    @PostMapping("/userSaveAlbum/{id}")
+    public ResponseEntity<ApiResponse> userSaveAlbum(@PathVariable Long id) {
+        return ResponseEntity.ok(albumService.userSaveAlbum(id));
+    }
 
     @PostMapping("/create")
     public ResponseEntity<AlbumResponse> createAlbum(@ModelAttribute @Valid AlbumRequest request) {
@@ -39,38 +42,8 @@ public class AlbumController {
         return ResponseEntity.ok(albumService.getAlbumById(id));
     }
 
-    @GetMapping("/infoAll/currentArtist")
-    public ResponseEntity<List<AlbumResponse>> getAllAlbumsByCurrentAccount() {
-        return ResponseEntity.ok(albumService.getAllAlbumsByCurrentAccount());
-    }
-
     @GetMapping("/infoAll/{id}")
     public ResponseEntity<List<AlbumResponse>> getAllAlbumsByArtistId(@PathVariable Long id) {
         return ResponseEntity.ok(albumService.getAllAlbumsByArtistId(id));
-    }
-
-    @PostMapping("/song/add")
-    public ResponseEntity<ApiResponse> addSongToAlbum(@RequestBody AddSongRequest request) {
-        return ResponseEntity.ok(albumService.addSongToAlbum(request));
-    }
-
-    @PostMapping("/songList/add")
-    public ResponseEntity<ApiResponse> addListSongToAlbum(@RequestBody AddSongRequest request) {
-        return ResponseEntity.ok(albumService.addListSongToAlbum(request));
-    }
-
-    @DeleteMapping("/song/remove")
-    public ResponseEntity<ApiResponse> removeSongFromAlbum(@RequestBody RemoveSongRequest request) {
-        return ResponseEntity.ok(albumService.removeSongFromAlbum(request));
-    }
-
-    @DeleteMapping("/songList/remove")
-    public ResponseEntity<ApiResponse> removeListSongFromAlbum(@RequestBody RemoveSongRequest request) {
-        return ResponseEntity.ok(albumService.removeListSongFromAlbum(request));
-    }
-
-    @PostMapping("/upload/{id}")
-    public ResponseEntity<ApiResponse> uploadAlbum(@PathVariable Long id) {
-        return ResponseEntity.ok(albumService.uploadAlbum(id));
     }
 }

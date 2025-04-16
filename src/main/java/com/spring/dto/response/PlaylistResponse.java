@@ -13,6 +13,7 @@ public class PlaylistResponse {
     private Long id;
     private String name;
     private Float playTimelength;
+    private String releaseDate;
     private String imageUrl;
     private String description;
     private String status;

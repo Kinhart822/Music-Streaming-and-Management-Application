@@ -1,9 +1,8 @@
 package com.spring.service;
 
-import com.spring.dto.request.music.artist.AddSongRequest;
-import com.spring.dto.request.music.artist.AlbumRequest;
-import com.spring.dto.request.music.artist.PlaylistRequest;
-import com.spring.dto.request.music.artist.RemoveSongRequest;
+import com.spring.dto.request.music.AddSongRequest;
+import com.spring.dto.request.music.AlbumRequest;
+import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
 
@@ -22,4 +21,5 @@ public interface AlbumService {
     ApiResponse removeListSongFromAlbum(RemoveSongRequest removeSongRequest);
     ApiResponse uploadAlbum(Long id);
     ApiResponse manageUploadAlbum(Long id, String manageProcess);
+    ApiResponse userSaveAlbum(Long albumId);
 }

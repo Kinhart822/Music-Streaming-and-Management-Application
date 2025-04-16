@@ -4,9 +4,9 @@ import com.spring.constants.ApiResponseCode;
 import com.spring.constants.ManageProcess;
 import com.spring.constants.PlaylistAndAlbumStatus;
 import com.spring.constants.SongStatus;
-import com.spring.dto.request.music.artist.AddSongRequest;
-import com.spring.dto.request.music.artist.PlaylistRequest;
-import com.spring.dto.request.music.artist.RemoveSongRequest;
+import com.spring.dto.request.music.AddSongRequest;
+import com.spring.dto.request.music.PlaylistRequest;
+import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.PlaylistResponse;
 import com.spring.entities.*;
@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,7 +27,8 @@ import java.util.stream.Collectors;
 @Transactional
 @RequiredArgsConstructor
 public class PlaylistServiceImpl implements PlaylistService {
-    private final PlayListRepository playlistRepository;
+    private final PlaylistRepository playlistRepository;
+    private final UserSavedPlaylistRepository userSavedPlaylistRepository;
     private final ArtistRepository artistRepository;
     private final ArtistPlaylistRepository artistPlaylistRepository;
     private final SongRepository songRepository;
@@ -310,14 +312,40 @@ public class PlaylistServiceImpl implements PlaylistService {
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
         }
+    }
 
+    @Override
+    public ApiResponse userSavePlaylist(Long playlistId) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        UserSavedPlaylistId id = new UserSavedPlaylistId(user, playlist);
+
+        if (userSavedPlaylistRepository.existsById(id)) {
+            throw new BusinessException(ApiResponseCode.ALREADY_EXISTS);
+        }
+
+        UserSavedPlaylist saved = UserSavedPlaylist.builder()
+                .userSavedPlaylistId(id)
+                .build();
+
+        userSavedPlaylistRepository.save(saved);
+
+        return ApiResponse.ok("Playlist đã được lưu!");
     }
 
     private PlaylistResponse convertToResponse(Playlist playlist) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        String formattedDate = playlist.getReleaseDate() != null ? sdf.format(playlist.getReleaseDate()) : null;
+
         return PlaylistResponse.builder()
                 .id(playlist.getId())
                 .name(playlist.getPlaylistName())
                 .imageUrl(playlist.getImageUrl())
+                .releaseDate(formattedDate)
                 .description(playlist.getDescription())
                 .playTimelength(playlist.getPlaylistTimeLength())
                 .status(playlist.getPlaylistAndAlbumStatus().toString())

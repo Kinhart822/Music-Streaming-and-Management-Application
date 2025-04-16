@@ -110,6 +110,15 @@ public class User implements Serializable, UserDetails {
     @OneToMany(mappedBy = "userPlaylistId.user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPlaylist> userPlaylists;
 
+    @OneToMany(mappedBy = "userAlbumId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserAlbum> userAlbums;
+
+    @OneToMany(mappedBy = "userSavedPlaylistId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSavedPlaylist> userSavedPlaylists;
+
+    @OneToMany(mappedBy = "userSavedAlbumId.user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSavedAlbum> userSavedAlbums;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(userType.name()));

@@ -1,4 +1,4 @@
-package com.spring.dto.request.account;
+package com.spring.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AdminPresentation {
+public class UserPresentation {
     private Long id;
     private String avatar;
     private String firstName;

@@ -2,6 +2,8 @@ package com.spring.dto.response;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -22,4 +24,5 @@ public class SongResponse {
     private String mp3Url;        // Song file url from Cloudinary
     private String trackUrl;       // Song url from Spotify_API
     private String songStatus;
+    private List<String> genreName;
 }

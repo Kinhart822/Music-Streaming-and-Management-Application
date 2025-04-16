@@ -15,6 +15,7 @@ public enum ApiResponseCode {
     INVALID_FORMAT("400", "INVALID_FORMAT"),
     PASSWORD_MISMATCH("400", "Wrong confirm password"),
     INVALID_HTTP_REQUEST("400", "INVALID_HTTP_REQUEST"),
+    PAGE_OUT_OF_BOUND("400", "PAGE_OUT_OF_BOUND"),
     INVALID_HTTP_REQUEST_HEADER("400", "Authorization Header not found, or wrong type"),
     INVALID_TYPE("403", "INVALID_TYPE"),
     INVALID_SONG_STATUS("403", "INVALID_SONG_STATUS"),

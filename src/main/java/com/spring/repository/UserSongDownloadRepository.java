@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface UserSongDownloadRepository extends JpaRepository<UserSongDownload, UserSongDownloadId> {
     @Query("SELECT COUNT(u) FROM UserSongDownload u WHERE u.userSongDownloadId.song.id = :songId")
@@ -16,5 +18,8 @@ public interface UserSongDownloadRepository extends JpaRepository<UserSongDownlo
     @Modifying
     @Query("DELETE FROM UserSongDownload als WHERE als.userSongDownloadId.song.id = :songId")
     void deleteAllBySongId(@Param("songId") Long songId);
+
+    @Query("SELECT u FROM UserSongDownload u WHERE u.userSongDownloadId.user.id = :userId")
+    List<UserSongDownload> getAllUserDownload(@Param("userId") Long userId);
 }
 

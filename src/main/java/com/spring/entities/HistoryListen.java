@@ -25,9 +25,6 @@ public class HistoryListen {
     @JoinColumn(name = "song_id")
     private Song song;
 
-    @Column(name = "count_listen")
-    private int countListen;
-
     @Column(name = "date")
     private LocalDateTime dateTime;
 }

@@ -1,6 +1,6 @@
 package com.spring.service;
 
-import com.spring.dto.request.music.admin.GenreRequest;
+import com.spring.dto.request.music.GenreRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.GenreResponse;
 

@@ -11,5 +11,4 @@ import java.util.List;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     boolean existsByUserAndStatus(User user, Integer status);
     List<RefreshToken> findAllByUserAndStatus(User user, Integer status);
-    void deleteAllByUser(User user);
 }

@@ -1,11 +1,11 @@
-package com.spring.dto.request.music.artist;
+package com.spring.dto.request.music;
 
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class RemoveSongRequest {
+public class AddSongRequest {
     private Long playlistId;
     private Long albumId;
     private Long songId;

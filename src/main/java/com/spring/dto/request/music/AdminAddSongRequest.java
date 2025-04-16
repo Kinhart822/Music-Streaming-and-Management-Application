@@ -1,4 +1,4 @@
-package com.spring.dto.request.music.admin;
+package com.spring.dto.request.music;
 
 import lombok.Data;
 

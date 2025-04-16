@@ -1,4 +1,4 @@
-package com.spring.dto.request.music.artist;
+package com.spring.dto.request.music;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;

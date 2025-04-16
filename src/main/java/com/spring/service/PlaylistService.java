@@ -1,8 +1,8 @@
 package com.spring.service;
 
-import com.spring.dto.request.music.artist.AddSongRequest;
-import com.spring.dto.request.music.artist.PlaylistRequest;
-import com.spring.dto.request.music.artist.RemoveSongRequest;
+import com.spring.dto.request.music.AddSongRequest;
+import com.spring.dto.request.music.PlaylistRequest;
+import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.PlaylistResponse;
 
@@ -21,4 +21,5 @@ public interface PlaylistService {
     ApiResponse removeListSongFromPlaylist(RemoveSongRequest removeSongRequest);
     ApiResponse uploadPlaylist(Long id);
     ApiResponse manageUploadPlaylist(Long id, String manageProcess);
+    ApiResponse userSavePlaylist(Long playlistId);
 }

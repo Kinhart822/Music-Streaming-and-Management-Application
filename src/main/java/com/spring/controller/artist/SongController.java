@@ -1,7 +1,7 @@
 package com.spring.controller.artist;
 
-import com.spring.dto.request.music.artist.EditSongRequest;
-import com.spring.dto.request.music.artist.SongUploadRequest;
+import com.spring.dto.request.music.EditSongRequest;
+import com.spring.dto.request.music.SongUploadRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.service.SongService;
 import jakarta.validation.Valid;

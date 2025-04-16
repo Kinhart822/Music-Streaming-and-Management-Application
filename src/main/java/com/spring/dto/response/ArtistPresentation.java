@@ -1,4 +1,4 @@
-package com.spring.dto.request.account;
+package com.spring.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,11 +11,15 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserPresentation {
+public class ArtistPresentation {
     private Long id;
     private String avatar;
     private String firstName;
     private String lastName;
+    private String description;
+    private String image;
+    private Long countListen;
+    private Long numberOfFollowers;
     private String email;
     private String gender;
     private String birthDay;

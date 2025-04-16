@@ -191,8 +191,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AdminPresentation getAdmin() {
-        User admin = userRepository
-                .findById(jwtHelper.getIdUserRequesting())
+        User admin = userRepository.findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         String formattedDateOfBirth = admin.getBirthDay() != null ?
@@ -217,8 +216,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public UserPresentation getUser() {
-        User user = userRepository
-                .findById(jwtHelper.getIdUserRequesting())
+        User user = userRepository.findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         String formattedDateOfBirth = user.getBirthDay() != null ?
@@ -241,15 +239,68 @@ public class AccountServiceImpl implements AccountService {
                 .build();
     }
 
+    @Override
+    public UserPresentation viewUserProfile(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        String formattedDateOfBirth = user.getBirthDay() != null ?
+                user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+        return UserPresentation.builder()
+                .id(user.getId())
+                .avatar(user.getAvatar() != null ? user.getAvatar() : "")
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
+                .email(user.getEmail())
+                .gender(user.getGender() != null ? user.getGender().toString() : "")
+                .birthDay(formattedDateOfBirth)
+                .phone(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+                .status(user.getStatus())
+                .createdBy(user.getCreatedBy())
+                .lastModifiedBy(user.getLastModifiedBy())
+                .createdDate(user.getCreatedDate())
+                .lastModifiedDate(user.getLastModifiedDate())
+                .build();
+    }
 
     @Override
     public ArtistPresentation getArtist() {
-        User artist = userRepository
-                .findById(jwtHelper.getIdUserRequesting())
+        User artist = userRepository.findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-        Artist artist_info = artistRepository
-                .findById(artist.getId())
+        Artist artist_info = artistRepository.findById(artist.getId())
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        String formattedDateOfBirth = artist.getBirthDay() != null ?
+                artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+        return ArtistPresentation.builder()
+                .id(artist.getId())
+                .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
+                .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
+                .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
+                .image(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
+                .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
+                .email(artist.getEmail())
+                .gender(artist.getGender() != null ? artist.getGender().toString() : "")
+                .birthDay(formattedDateOfBirth)
+                .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
+                .status(artist.getStatus())
+                .createdBy(artist.getCreatedBy())
+                .lastModifiedBy(artist.getLastModifiedBy())
+                .createdDate(artist.getCreatedDate())
+                .lastModifiedDate(artist.getLastModifiedDate())
+                .build();
+    }
+
+    @Override
+    public ArtistPresentation viewArtistProfile(Long id) {
+        User artist = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        Artist artist_info = artistRepository.findById(artist.getId())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         String formattedDateOfBirth = artist.getBirthDay() != null ?

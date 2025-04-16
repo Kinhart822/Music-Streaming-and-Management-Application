@@ -4,6 +4,7 @@ import com.spring.constants.PlaylistAndAlbumStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -30,6 +31,9 @@ public class Playlist {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
+    @Column(name = "release_date")
+    private Date releaseDate;
+
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private PlaylistAndAlbumStatus playlistAndAlbumStatus;
@@ -42,4 +46,7 @@ public class Playlist {
 
     @OneToMany(mappedBy = "userPlaylistId.playlist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPlaylist> userPlaylists;
+
+    @OneToMany(mappedBy = "userSavedPlaylistId.playlist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSavedPlaylist> userSavedPlaylists;
 }

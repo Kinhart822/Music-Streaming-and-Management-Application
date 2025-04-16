@@ -1,7 +1,7 @@
 package com.spring.service.impl;
 
 import com.spring.constants.ApiResponseCode;
-import com.spring.dto.request.music.admin.GenreRequest;
+import com.spring.dto.request.music.GenreRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.GenreResponse;
 import com.spring.entities.Genre;

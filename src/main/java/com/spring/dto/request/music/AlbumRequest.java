@@ -1,14 +1,14 @@
-package com.spring.dto.request.music.artist;
+package com.spring.dto.request.music;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
-public class PlaylistRequest {
+public class AlbumRequest {
     @NotBlank
-    private String playlistName;
+    private String name;
 
-    private MultipartFile image;
     private String description;
+    private MultipartFile image;
 }

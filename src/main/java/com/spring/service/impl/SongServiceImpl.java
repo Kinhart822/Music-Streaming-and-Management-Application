@@ -6,9 +6,9 @@ import com.spring.constants.ManageProcess;
 import com.spring.constants.SongStatus;
 import org.springframework.context.event.EventListener;
 import com.spring.dto.SongUploadedEvent;
-import com.spring.dto.request.music.admin.AdminAddSongRequest;
-import com.spring.dto.request.music.artist.EditSongRequest;
-import com.spring.dto.request.music.artist.SongUploadRequest;
+import com.spring.dto.request.music.AdminAddSongRequest;
+import com.spring.dto.request.music.EditSongRequest;
+import com.spring.dto.request.music.SongUploadRequest;
 import com.spring.dto.response.ApiResponse;
 import com.spring.dto.response.FastApiResponse;
 import com.spring.dto.response.SongResponse;
@@ -39,6 +39,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -99,21 +100,33 @@ public class SongServiceImpl implements SongService {
     }
 
     private SongResponse convertToSongResponse(Song song) {
+        String formattedDate = song.getReleaseDate() != null
+                ? new SimpleDateFormat("dd/MM/yyyy").format(song.getReleaseDate())
+                : null;
+
+        List<String> genreNames = song.getGenreSongs() != null
+                ? song.getGenreSongs().stream()
+                .map(gs -> gs.getGenreSongId().getGenre().getGenresName())
+                .filter(Objects::nonNull)
+                .toList()
+                : new ArrayList<>();
+
         return SongResponse.builder()
                 .id(song.getId())
-                .title(song.getTitle())
-                .releaseDate(song.getReleaseDate() != null ? song.getReleaseDate().toString() : null)
-                .lyrics(song.getLyrics())
-                .duration(song.getDuration())
-                .imageUrl(song.getImageUrl())
-                .artSmallUrl(song.getArtSmallUrl())
-                .artMediumUrl(song.getArtMediumUrl())
-                .artBigUrl(song.getArtBigUrl())
-                .downloadPermission(song.getDownloadPermission())
-                .description(song.getDescription())
-                .mp3Url(song.getMp3Url())
-                .trackUrl(song.getTrackUrl())
+                .title(song.getTitle() != null ? song.getTitle() : "")
+                .releaseDate(formattedDate)
+                .lyrics(song.getLyrics() != null ? song.getLyrics() : "")
+                .duration(song.getDuration() != null ? song.getDuration() : "")
+                .imageUrl(song.getImageUrl() != null ? song.getImageUrl() : "")
+                .artSmallUrl(song.getArtSmallUrl() != null ? song.getArtSmallUrl() : "")
+                .artMediumUrl(song.getArtMediumUrl() != null ? song.getArtMediumUrl() : "")
+                .artBigUrl(song.getArtBigUrl() != null ? song.getArtBigUrl() : "")
+                .downloadPermission(song.getDownloadPermission() != null ? song.getDownloadPermission() : false)
+                .description(song.getDescription() != null ? song.getDescription() : "")
+                .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
+                .trackUrl(song.getTrackUrl() != null ? song.getTrackUrl() : "")
                 .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
+                .genreName(genreNames)
                 .build();
     }
 
@@ -180,6 +193,7 @@ public class SongServiceImpl implements SongService {
                 .downloadPermission(downloadPermission)
                 .description(description)
                 .mp3Url(audioUrl)
+                .countListener(0L)
                 .songStatus(SongStatus.PROCESSING)
                 .build();
         songRepository.save(song);
@@ -578,5 +592,4 @@ public class SongServiceImpl implements SongService {
 
         return ApiResponse.ok("Thêm bài hát thành công!");
     }
-
 }

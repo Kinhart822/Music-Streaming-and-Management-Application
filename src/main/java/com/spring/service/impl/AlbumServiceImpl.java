@@ -1,14 +1,12 @@
 package com.spring.service.impl;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.spring.constants.ApiResponseCode;
 import com.spring.constants.ManageProcess;
 import com.spring.constants.PlaylistAndAlbumStatus;
 import com.spring.constants.SongStatus;
-import com.spring.dto.request.music.artist.AddSongRequest;
-import com.spring.dto.request.music.artist.AlbumRequest;
-import com.spring.dto.request.music.artist.RemoveSongRequest;
+import com.spring.dto.request.music.AddSongRequest;
+import com.spring.dto.request.music.AlbumRequest;
+import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
 import com.spring.entities.*;
@@ -20,9 +18,7 @@ import com.spring.service.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,9 +30,11 @@ public class AlbumServiceImpl implements AlbumService {
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
     private final ArtistAlbumRepository artistAlbumRepository;
+    private final UserRepository userRepository;
     private final SongRepository songRepository;
     private final JwtHelper jwtHelper;
     private final CloudinaryService cloudinaryService;
+    private final UserSavedAlbumRepository userSavedAlbumRepository;
 
     @Override
     public AlbumResponse createAlbum(AlbumRequest request) {
@@ -313,8 +311,34 @@ public class AlbumServiceImpl implements AlbumService {
         }
     }
 
+    @Override
+    public ApiResponse userSaveAlbum(Long albumId) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        // Tạo ID tổng hợp
+        UserSavedAlbumId id = new UserSavedAlbumId(user, album);
+
+        // Kiểm tra đã lưu chưa (nếu muốn tránh duplicate)
+        if (userSavedAlbumRepository.existsById(id)) {
+            throw new BusinessException(ApiResponseCode.ALREADY_EXISTS);
+        }
+
+        // Tạo và lưu entity
+        UserSavedAlbum saved = UserSavedAlbum.builder()
+                .userSavedAlbumId(id)
+                .build();
+
+        userSavedAlbumRepository.save(saved);
+
+        return ApiResponse.ok("Album đã được lưu!");
+    }
+
     private AlbumResponse convertToResponse(Album album) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         String formattedDate = album.getReleaseDate() != null ? sdf.format(album.getReleaseDate()) : null;
 
         return AlbumResponse.builder()

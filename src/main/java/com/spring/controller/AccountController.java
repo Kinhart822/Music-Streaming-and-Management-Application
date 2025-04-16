@@ -1,8 +1,7 @@
 package com.spring.controller;
 
 import com.spring.dto.request.account.*;
-import com.spring.dto.response.ApiResponse;
-import com.spring.dto.response.SongResponse;
+import com.spring.dto.response.*;
 import com.spring.entities.Notification;
 import com.spring.security.JwtHelper;
 import com.spring.service.AccountService;

@@ -15,6 +15,9 @@ public interface GenreSongRepository extends JpaRepository<GenreSong, GenreSongI
     @Query("SELECT gs FROM GenreSong gs WHERE gs.genreSongId.genre.id = :genreId")
     List<GenreSong> findAllByGenreId(@Param("genreId") Long genreId);
 
+    @Query("SELECT gs FROM GenreSong gs WHERE gs.genreSongId.song.id = :songId")
+    GenreSong findBySongId(@Param("songId") Long songId);
+
     @Modifying
     @Query("DELETE FROM GenreSong gs WHERE gs.genreSongId.genre.id = :genreId")
     void deleteAllByGenreId(@Param("genreId") Long genreId);
