@@ -1,24 +1,3 @@
-// const toggle = document.getElementById('darkModeToggle');
-// const switchBtn = document.querySelector('.switch');
-// const modeText = document.querySelector('.mode-text');
-// const sunIcon = document.querySelector('.sun-icon');
-// const moonIcon = document.querySelector('.moon-icon');
-
-// toggle.addEventListener('click', () => {
-//   document.body.classList.toggle('dark');
-
-//   // Toggle text
-//   if (document.body.classList.contains('dark')) {
-//     modeText.textContent = "Light Mode";
-//     sunIcon.style.display = "inline-block";
-//     moonIcon.style.display = "none";
-//   } else {
-//     modeText.textContent = "Dark Mode";
-//     sunIcon.style.display = "none";
-//     moonIcon.style.display = "inline-block";
-//   }
-// });
-
 document.addEventListener('DOMContentLoaded', () => {
   let darkModeToggle = document.getElementById('darkModeToggle');
   let body = document.body;
