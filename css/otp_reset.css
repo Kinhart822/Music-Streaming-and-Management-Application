@@ -1,0 +1,266 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+:root {
+    --mainColor: #218952;
+    --whiteColor: #ffffff;
+    --titleColor: #000000;
+    --labelColor: #000000;
+    --body-color: #E4E9F7;
+    --body-color-dark: #18191A;
+}
+
+html {
+    font-size: 62.5%;
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--body-color);
+    font-weight: 400;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 70px; /* Offset for fixed header */
+    transition: all 0.3s ease;
+}
+
+/* Header */
+.header {
+    width: 100%;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--whiteColor);
+    padding: 10px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo img {
+    width: 120px;
+    height: auto;
+    cursor: pointer;
+}
+
+.wrapper {
+    position: relative;
+    width: 35rem;
+    height: 50rem;
+}
+
+@media(min-width: 540px) {
+    .wrapper {
+        width: 40rem;
+    }
+}
+
+.wrapper .form-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: var(--whiteColor);
+    border-radius: .5rem;
+    box-shadow: 0 0 1rem 0 rgb(0, 0, 0);
+}
+
+.wrapper .form-container form h2 {
+    font-size: 3rem;
+    text-align: center;
+    text-transform: capitalize;
+    color: var(--titleColor);
+}
+
+.wrapper .form-container form .form-group {
+    position: relative;
+    width: 32rem;
+    margin: 3rem 0;
+}
+
+.wrapper .form-container form .form-group i,
+.wrapper .form-container form .form-group label {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.6rem;
+    text-transform: capitalize;
+    color: var(--labelColor);
+    padding: 0 .5rem;
+    pointer-events: none;
+    transition: all .5s ease;
+}
+
+.wrapper .form-container form .form-group i {
+    left: .5rem;
+}
+
+.wrapper .form-container form .form-group label {
+    left: 2.5rem;
+}
+
+.wrapper .form-container form .form-group input {
+    width: 100%;
+    height: 4rem;
+    padding: 0 1rem;
+    border-radius: .5rem;
+    border: none;
+    outline: none;
+    border: .1rem solid var(--labelColor);
+    font-size: 1.6rem;
+    color: var(--labelColor);
+    background: transparent;
+}
+
+form .form-group input:focus~label,
+form .form-group input:valid~label,
+form .form-group input:focus~i,
+form .form-group input:valid~i {
+    top: 0 !important;
+    font-size: 1.2rem !important;
+    background-color: var(--whiteColor);
+}
+
+.wrapper .form-container form .forgot-pass {
+    margin: -1.5rem 0 1.5rem;
+}
+
+.wrapper .form-container form .forgot-pass a {
+    color: var(--mainColor);
+    text-decoration: none;
+    font-size: 1.5rem;
+    text-transform: capitalize;
+    transform: all .5s ease;
+    text-transform: capitalize;
+    font-weight: 600;
+}
+
+.wrapper .form-container form .forgot-pass a:hover {
+    color: #4485da;
+    text-decoration: underline;
+    text-transform: capitalize;
+}
+
+.wrapper .form-container form .btn {
+    background: #3a83cc;
+    color: var(--whiteColor);
+    text-transform: capitalize;
+    width: 100%;
+    height: 4rem;
+    font-size: 1.6rem;
+    font-weight: 600;
+    outline: none;
+    border: none;
+    border-radius: .5rem;
+    cursor: pointer;
+    box-shadow: 0 .2rem 1rem rgba(0 0 0 / .4);
+}
+
+.wrapper .form-container form .link {
+    text-align: center;
+    font-size: 1.5rem;
+    color: var(--labelColor);
+    margin: 2.5rem 0;
+}
+
+.wrapper .form-container form .link a {
+    text-transform: capitalize;
+    color: var(--mainColor);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all .5s ease;
+}
+
+.wrapper .form-container form .link a:hover {
+    color: #4485da;
+    text-decoration: underline;
+}
+
+.wrapper .reset {
+    transform: rotate(7deg);
+}
+
+.wrapper.animated-reset .form-container.otp {
+    animation: otp-flip 1s ease-in-out forwards;
+}
+
+@keyframes otp-flip {
+    0% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(-50rem) scale(1.1);
+    }
+
+    100% {
+        transform: translateX(0) rotate(7deg) scale(1);
+    }
+}
+
+.wrapper.animated-reset .form-container.reset {
+    animation: rotatecard .7s ease-in-out forwards;
+}
+
+@keyframes rotatecard {
+    0% {
+        transform: rotate(7deg);
+    }
+
+    100% {
+        transform: rotate(0);
+        z-index: 1;
+    }
+}
+
+.wrapper.animated-otp .form-container.reset {
+    animation: reset-flip 1s ease-in-out forwards;
+}
+
+@keyframes reset-flip {
+    0% {
+        transform: translateX(0);
+        z-index: 1;
+    }
+
+    50% {
+        transform: translateX(50rem) scale(1.1);
+    }
+
+    100% {
+        transform: translateX(0) rotate(7deg) scale(1);
+    }
+}
+
+.wrapper.animated-otp .form-container.otp {
+    transform: rotate(7deg);
+    animation: rotatecard .7s ease-in-out forwards;
+    animation-delay: .3s;
+}
+
+@keyframes rotatecard {
+    0% {
+        transform: rotate(7deg);
+    }
+
+    100% {
+        transform: rotate(0);
+        z-index: 1;
+    }
+}
