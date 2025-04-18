@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/artist/home_structure.css">
+    <link rel="stylesheet" href="../css/artist/artist_manage.css">
+    <link rel="stylesheet" href="../css/artist/album_structure.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Manage Albums</title>
+</head>
+<body>
+<section class="header">
+    <div class="logo">
+        <i class="ri-menu-line icon icon-0 menu"></i>
+        <img id="logo-img" src="../imgs/logo.png" alt="logo">
+    </div>
+    <div class="search--notification--profile">
+        <div class="search">
+            <label for="search-content"></label><input type="text" id="search-content" placeholder="Search Albums...">
+            <button><i class='bx bx-search-alt-2'></i></button>
+        </div>
+        <div class="notification--profile">
+            <div class="picon bell">
+                <i class='bx bx-bell'></i>
+                <div class="notification-dropdown">
+                    <ul class="notification-list">
+                        <li><i class="ri-user-follow-line"></i> <span>New follower: User123</span> <small>2h ago</small></li>
+                        <li><i class="ri-heart-3-line"></i> <span>Your song "Midnight Drive" got 50 likes</span> <small>4h ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Song "Echoes" uploaded successfully</span> <small>1d ago</small></li>
+                        <li><i class="ri-play-list-line"></i> <span>Added to playlist: Summer Vibes</span> <small>2d ago</small></li>
+                        <li><i class="ri-user-follow-line"></i> <span>New follower: MusicFan99</span> <small>3d ago</small></li>
+                        <li><i class="ri-heart-3-line"></i> <span>Your song "City Lights" got 100 likes</span> <small>4d ago</small></li>
+                        <li><i class="ri-download-line"></i> <span>Song "Starbound" downloaded 200 times</span> <small>5d ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Song "Fade Away" uploaded successfully</span> <small>6d ago</small></li>
+                        <li><i class="ri-play-list-line"></i> <span>Added to playlist: Chill Hits</span> <small>7d ago</small></li>
+                        <li><i class="ri-user-follow-line"></i> <span>New follower: GrooveMaster</span> <small>8d ago</small></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="picon profile">
+                <img id="profile-icon-img" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Profile Picture" class="profile-icon-image">
+            </div>
+            <div class="profile-modal">
+                <div class="profile-modal-content">
+                    <span class="close-modal">×</span>
+                    <div class="profile-details">
+                        <img id="profile-background-img" class="profile-background" alt="Background Image">
+                        <img id="profile-modal-img" class="profile-avatar" alt="Profile Picture">
+                        <h3 id="profile-fullname"></h3>
+                        <p id="profile-description"></p>
+                        <div class="profile-info">
+                            <p><strong>Gender:</strong> <span id="profile-gender"></span></p>
+                            <p><strong>Date of Birth:</strong> <span id="profile-dob"></span></p>
+                            <p><strong>Phone:</strong> <span id="profile-phone"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="main">
+    <div class="sidebar">
+        <div class="menu-bar">
+            <div class="menu">
+                <ul class="menu-links">
+                    <li class="nav-link">
+                        <a href="artist_dashboard.html">
+                            <i class='bx bx-home-alt'></i>
+                            <span class="text nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="artist_manage_song.html">
+                            <i class='bx bx-music'></i>
+                            <span class="text nav-text">Manage Songs</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="artist_manage_playlist.html">
+                            <i class='bx bx-list-ul'></i>
+                            <span class="text nav-text">Manage Playlists</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="artist_manage_album.html">
+                            <i class='bx bx-album'></i>
+                            <span class="text nav-text">Manage Albums</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="artist_manage_profile.html">
+                            <i class='bx bx-user-pin'></i>
+                            <span class="text nav-text">Manage Profile</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bottom-content">
+            <ul class="menu-links">
+                <li class="nav-link">
+                    <a href="../auth/login_register.html">
+                        <i class='bx bx-log-out icon'></i>
+                        <span class="text nav-text">Logout</span>
+                    </a>
+                </li>
+                <li class="nav-link mode">
+                    <div class="mode-toggle" id="darkModeToggle">
+                        <div class="moon-sun">
+                            <i class='bx bx-moon icon moon-icon'></i>
+                            <i class='bx bx-sun icon sun-icon' style="display: none;"></i>
+                        </div>
+                        <span class="mode-text text nav-text">Dark Mode</span>
+                        <div class="toggle-switch">
+                            <span class="switch"></span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main--content">
+        <div class="album-content">
+            <div class="title">
+                <h2 class="section--title">Manage Albums</h2>
+                <button class="add" id="add-album-btn"><i class="ri-add-line"></i> Add Album</button>
+            </div>
+            <div class="add-album-form" id="add-album-form">
+                <form id="album-form" data-mode="add">
+                    <h3 id="form-title">Add Album</h3>
+                    <div class="form-group">
+                        <label for="album-title">Title *</label>
+                        <input type="text" id="album-title" required>
+                        <div class="error" id="title-error">Please enter a valid title</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="album-description">Description</label>
+                        <textarea id="album-description" placeholder="Describe your album here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="album-songs">Songs *</label>
+                        <input type="text" id="song-search" placeholder="Search songs...">
+                        <div id="album-songs" class="song-container">
+                            <!-- Songs populated dynamically -->
+                        </div>
+                        <div id="selected-songs-display" class="selected-songs">
+                            <p>Selected Songs:</p>
+                            <ul id="selected-songs-list"></ul>
+                        </div>
+                        <div class="error" id="songs-error">Please select at least one accepted song</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="album-additional_artists">Additional Artists</label>
+                        <input type="text" id="artist-search" placeholder="Search artists...">
+                        <div id="album-additional_artists" class="artist-container">
+                            <!-- Artists populated dynamically -->
+                        </div>
+                        <div id="selected-artists-display" class="selected-artists">
+                            <p>Selected Artists:</p>
+                            <ul id="selected-artists-list"></ul>
+                        </div>
+                        <div class="error" id="artists-error">Please select at least one artist</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="album-image">Image File (JPG/PNG) *</label>
+                        <input type="file" id="album-image" accept="image/jpeg,image/png">
+                        <img id="image-preview" style="display: none;" alt="Image Preview">
+                        <div class="current-image" id="current-image"></div>
+                        <div class="error" id="image-error">Please select a valid JPG or PNG file (max 5MB)</div>
+                    </div>
+                    <div class="form-group button-group">
+                        <button type="submit">Save</button>
+                        <button type="button" class="cancel" id="cancel-add-album">Cancel</button>
+                    </div>
+                </form>
+            </div>
+            <div class="table-controls">
+                <div>
+                    <label for="filter-status">Filter by Status:</label>
+                    <select id="filter-status">
+                        <option value="all">All</option>
+                        <option value="draft">Draft</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="declined">Declined</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sort-by">Sort by:</label>
+                    <select id="sort-by">
+                        <option value="title-asc">Title A-Z</option>
+                        <option value="title-desc">Title Z-A</option>
+                        <option value="date-asc">Release Date Ascending</option>
+                        <option value="date-desc">Release Date Descending</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rows-per-page">Rows per page:</label>
+                    <input type="number" id="rows-per-page" value="10" min="1">
+                </div>
+            </div>
+            <div class="table">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Release Date</th>
+                        <th>Additional Artists</th>
+                        <th>Songs</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="album-table-body">
+                    <!-- Albums populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination"></div>
+        </div>
+    </div>
+</section>
+<div class="modal" id="content-modal">
+    <div class="modal-content">
+        <span class="close" id="close-modal">×</span>
+        <h3 id="modal-title">Content</h3>
+        <div id="modal-content-body" class="lyrics-content">
+            <!-- Dynamic content: Songs table or Description textarea -->
+        </div>
+    </div>
+</div>
+<script src="../js/dark_mode.js"></script>
+<script src="../js/header_siderbar.js"></script>
+<script src="../js/artist/artist_album.js"></script>
+</body>
+</html>

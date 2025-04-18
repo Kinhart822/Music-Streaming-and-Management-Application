@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP & Reset Password</title>    
+    <link rel="stylesheet" href="../css/otp_reset.css">
+</head>
+
+<body>
+    <section class="header">
+        <div class="logo">
+            <img id="logo-img" src="../imgs/logo.png" alt="logo">
+        </div>
+    </section>
+    <div class="wrapper">
+        <div class="form-container reset">
+            <form action="login_register.html" method="GET">
+                <h2>Reset Password</h2>
+                <div class="form-group">
+                    <label>
+                        <input type="password" required />
+                    </label>
+                    <i class="fas fa-lock"></i>
+                    <label>New Password</label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="password" required />
+                    </label>
+                    <i class="fas fa-lock"></i>
+                    <label>Confirm Password</label>
+                </div>
+                <button type="submit" class="btn">Reset</button>
+            </form>
+        </div>
+        <div class="form-container otp">
+            <form action="#" id="otpForm">
+                <h2>Verify OTP</h2>
+                <div class="form-group">
+                    <label>
+                        <input type="text" required />
+                    </label>
+                    <i class="fas fa-key"></i>
+                    <label>Enter OTP</label>
+                </div>
+                <button type="submit" class="btn">Verify</button>
+                <div class="link">
+                    <p>Back to <a href="login_register.html" class="otp-link">Sign In</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/9e5ba2e3f5.js" crossorigin="anonymous"></script>
+    <script>
+        let wrapper = document.querySelector('.wrapper');
+        let otpForm = document.getElementById('otpForm');
+
+        otpForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent form submission
+            wrapper.classList.add('animated-reset');
+            wrapper.classList.remove('animated-otp');
+        });
+    </script>
+</body>
+
+</html>
