@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/admin/home_structure.css">
+    <link rel="stylesheet" href="../css/admin/admin_manage.css">
+    <link rel="stylesheet" href="../css/admin/song_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <title>Admin Dashboard</title>
@@ -17,8 +19,8 @@
     </div>
     <div class="search--notification--profile">
         <div class="search">
-            <label>
-                <input type="text" placeholder="Search Content...">
+            <label for="search-content">
+                <input type="text" id="search-content" placeholder="Search Content...">
             </label>
             <button><i class='bx bx-search-alt-2'></i></button>
         </div>
@@ -70,31 +72,31 @@
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="manage/admin_manage_users.html">
+                        <a href="#">
                             <i class='bx bx-user'></i>
                             <span class="text nav-text">Manage Users</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="manage/admin_manage_songs.html">
+                        <a href="#">
                             <i class='bx bx-music'></i>
                             <span class="text nav-text">Manage Songs</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="manage/admin_manage_playlists.html">
+                        <a href="#">
                             <i class='bx bx-list-ul'></i>
                             <span class="text nav-text">Manage Playlists</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="manage/admin_manage_albums.html">
+                        <a href="#">
                             <i class='bx bx-album'></i>
                             <span class="text nav-text">Manage Albums</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="manage/admin_review_content.html">
+                        <a href="#">
                             <i class='bx bx-check-square'></i>
                             <span class="text nav-text">Review Content</span>
                         </a>
@@ -213,15 +215,53 @@
                 <h2 class="section--title">Recent Review Content</h2>
                 <a class="add" href="manage/admin_review_content.html"><i class="ri-eye-line"></i>View All</a>
             </div>
+            <div class="table-controls">
+                <div>
+                    <label for="filter-type">Filter by Type:</label>
+                    <select id="filter-type">
+                        <option value="all">All</option>
+                        <option value="Song">Song</option>
+                        <option value="Playlist">Playlist</option>
+                        <option value="Album">Album</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-status">Filter by Status:</label>
+                    <select id="filter-status">
+                        <option value="all">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Declined">Declined</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sort-by">Sort by:</label>
+                    <select id="sort-by">
+                        <option value="title-asc">Title A-Z</option>
+                        <option value="title-desc">Title Z-A</option>
+                        <option value="date-asc">Submission Date Ascending</option>
+                        <option value="date-desc">Submission Date Descending</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rows-per-page">Rows per page:</label>
+                    <input type="number" id="rows-per-page" value="10" min="1">
+                </div>
+            </div>
             <div class="table">
                 <table>
                     <thead>
                     <tr>
+                        <th>Image</th>
                         <th>Title</th>
-                        <th>Type</th>
+                        <th>Genre</th>
+                        <th>Duration</th>
+                        <th>Upload Date</th>
                         <th>Submitted By</th>
                         <th>Submission Date</th>
                         <th>Description</th>
+                        <th>Download Permission</th>
+                        <th>Additional Artists</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -231,11 +271,19 @@
                     </tbody>
                 </table>
             </div>
+            <div class="pagination"></div>
         </div>
     </div>
 </section>
+<div class="modal" id="description-modal">
+    <div class="modal-content">
+        <span class="close" id="close-modal">×</span>
+        <h3 id="modal-title">Content Description</h3>
+        <label for="modal-description-content"></label>
+        <textarea class="lyrics-content" id="modal-description-content" readonly placeholder="No description available"></textarea>
+    </div>
+</div>
 <script src="../js/dark_mode.js"></script>
-<script src="../js/admin/admin_structure.js"></script>
 <script src="../js/admin/admin_dashboard.js"></script>
 </body>
 </html>

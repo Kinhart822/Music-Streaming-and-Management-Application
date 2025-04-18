@@ -30,41 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalLyricsContent = document.getElementById('modal-lyrics-content');
     const modalClose = document.getElementById('close-modal');
 
-    let songs = JSON.parse(localStorage.getItem('songs')) || [
-        {
-            id: 'song1',
-            title: 'Blank Space',
-            artist: 'Taylor Swift',
-            genre: 'Pop',
-            duration: '3:55',
-            status: 'Draft',
-            songFileName: 'blank_space.mp3',
-            imageName: 'blank_space.jpg',
-            downloadPermission: 'Yes',
-            uploadDate: '01/01/2025',
-            listeners: 500,
-            lyrics: '',
-            description: '',
-            additionalArtists: ['Taylor Swift']
-        },
-        {
-            id: 'song2',
-            title: 'Shape of You',
-            artist: 'Ed Sheeran',
-            genre: 'Pop',
-            duration: '4:20',
-            status: 'Pending',
-            songFileName: 'shape_of_you.mp3',
-            imageName: 'shape_of_you.jpg',
-            downloadPermission: 'No',
-            uploadDate: '02/01/2025',
-            listeners: 600,
-            lyrics: '',
-            description: '',
-            additionalArtists: ['Ed Sheeran']
-        }
-    ];
-
+    let songs = JSON.parse(localStorage.getItem('songs')) || [];
     let artists = JSON.parse(localStorage.getItem('artists')) || [
         {id: 'Taylor Swift', name: 'Taylor Swift'},
         {id: 'Ed Sheeran', name: 'Ed Sheeran'},
@@ -96,13 +62,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchQuery = '';
 
     // Load saved profile data for header and modal
-    const savedProfile = JSON.parse(localStorage.getItem('userProfile'));
+    const savedProfile = JSON.parse(localStorage.getItem('userProfile')) || {};
     if (savedProfile) {
         if (profileIconImg) profileIconImg.src = savedProfile.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
         if (profileModalImg) profileModalImg.src = savedProfile.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
         if (profileBackgroundImg && savedProfile.background) profileBackgroundImg.src = savedProfile.background;
         if (profileFullname) profileFullname.textContent = `${savedProfile.firstName || ''} ${savedProfile.lastName || ''}`.trim() || 'Unknown User';
-        if (profileDescription) profileDescription.textContent = savedProfile.description || 'No description available';
+        if (profileDescription) {
+            const descriptionArray = savedProfile.description && Array.isArray(savedProfile.description) ? savedProfile.description : ['No description available'];
+            profileDescription.innerHTML = descriptionArray.map(p => `<p>${p}</p>`).join('');
+        }
         if (profileGender) profileGender.textContent = savedProfile.gender || 'Not specified';
         if (profileDob) profileDob.textContent = savedProfile.dob || 'Not specified';
         if (profilePhone) profilePhone.textContent = savedProfile.phone || 'Not specified';
@@ -175,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedProfile) {
             firstNameInput.value = savedProfile.firstName || '';
             lastNameInput.value = savedProfile.lastName || '';
-            descriptionInput.value = savedProfile.description || '';
+            descriptionInput.value = savedProfile.description && Array.isArray(savedProfile.description) ? savedProfile.description.join('\n\n') : '';
             genderInputs.forEach(input => {
                 if (input.value === savedProfile.gender) input.checked = true;
             });
@@ -219,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const firstName = firstNameInput.value.trim();
             const lastName = lastNameInput.value.trim();
-            let description = descriptionInput.value.trim();
+            let descriptionText = descriptionInput.value.trim();
             const gender = document.querySelector('input[name="gender"]:checked');
             const dob = dobInput.value;
             const phone = phoneInput.value;
@@ -236,14 +205,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Validate description length (1000 characters)
-            if (description.length > 1000) {
-                alert('Description cannot exceed 1000 characters.');
+            // Validate description length (150 words)
+            const wordCount = descriptionText.split(/\s+/).filter(word => word.length > 0).length;
+            if (wordCount > 150) {
+                alert('Description must not exceed 150 words.');
                 return;
             }
 
-            // Normalize description line breaks (replace multiple newlines with one)
-            description = description.replace(/\n+/g, '\n').trim();
+            // Split description into paragraphs
+            const description = descriptionText ? descriptionText.split(/\n\n+/).map(p => p.trim()).filter(p => p) : [];
 
             const profileData = {
                 firstName,
@@ -263,7 +233,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (profileModalImg) profileModalImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
                 if (profileBackgroundImg && profileData.background) profileBackgroundImg.src = profileData.background;
                 if (profileFullname) profileFullname.textContent = `${profileData.firstName} ${profileData.lastName}`.trim() || 'Unknown User';
-                if (profileDescription) profileDescription.textContent = profileData.description || 'No description available';
+                if (profileDescription) {
+                    profileDescription.innerHTML = profileData.description.length > 0
+                        ? profileData.description.map(p => `<p>${p}</p>`).join('')
+                        : '<p>No description available</p>';
+                }
                 if (profileGender) profileGender.textContent = profileData.gender || 'Not specified';
                 if (profileDob) profileDob.textContent = profileData.dob || 'Not specified';
                 if (profilePhone) profilePhone.textContent = profileData.phone || 'Not specified';
@@ -332,7 +306,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render table
         const renderTable = () => {
-            let filteredSongs = [...songs];
+            // Sort by upload date (descending) and take only the 10 most recent songs
+            let recentSongs = [...songs].sort((a, b) => {
+                return parseDate(b.uploadDate) - parseDate(a.uploadDate);
+            }).slice(0, 10);
+
+            let filteredSongs = [...recentSongs];
 
             // Filter by status
             if (currentFilterStatus !== 'all') {
@@ -403,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td>${song.genre || 'Unknown'}</td>
                             <td>${song.duration || '0:00'}</td>
                             <td>${song.uploadDate || 'Unknown'}</td>
-                            <td class="status ${song.status.toLowerCase()}">${song.status.charAt(0).toUpperCase() + song.status.slice(1)}</td>
                             <td>${song.listeners || 0}</td>
                             <td>
                                 ${song.lyrics
@@ -419,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </td>
                             <td>${song.downloadPermission || 'No'}</td>
                             <td>${artistNames}</td>
+                            <td class="status ${song.status.toLowerCase()}">${song.status.charAt(0).toUpperCase() + song.status.slice(1)}</td>
                             <td>
                                 ${
                         song.status === 'Draft' || song.status === 'Declined'
@@ -635,12 +614,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalAlbumsCard = document.querySelector('.card-4 h1');
 
     if (totalSongsCard) {
-        totalSongsCard.textContent = songs.length;
+        totalSongsCard.textContent = Math.min(songs.length, 10); // Reflect the limit in the total songs card
     }
 
     if (uploadedSongsCard) {
         const uploadedSongs = songs.filter(song => song.status === 'Accepted').length;
-        uploadedSongsCard.textContent = uploadedSongs;
+        uploadedSongsCard.textContent = Math.min(uploadedSongs, 10); // Limit to 10
     }
 
     if (totalPlaylistsCard) {

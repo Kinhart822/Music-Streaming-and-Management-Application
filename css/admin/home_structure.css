@@ -92,6 +92,7 @@ body.dark .logo i {
     align-items: center;
     width: 400px;
     height: 36px;
+    position: relative;
 }
 
 body.dark .search {
@@ -118,6 +119,8 @@ body.dark .search {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    right: 6px;
 }
 
 body.dark .search button {
@@ -379,16 +382,16 @@ body.dark .profile-modal-content {
 
 .profile-info {
     width: 100%;
-    text-align: left;
+    text-align: center;
 }
 
 .profile-info p {
     font-size: 14px;
     margin: 5px 0;
-}
-
-.profile-info strong {
     color: var(--text-color);
+    display: flex;
+    justify-content: center; /* Center the content */
+    gap: 10px; /* Space between items */
 }
 
 .profile-info span {
@@ -454,7 +457,7 @@ body.dark .profile-modal-content {
 .nav-link a {
     display: flex;
     align-items: center;
-    padding: 12px 15px;
+    padding: 10px 10px;
     text-decoration: none;
     color: var(--text-color);
     gap: 15px;
@@ -725,7 +728,7 @@ body.dark .card {
 }
 
 .card-2 .card--icon--lg {
-    color: #d6b938;
+    color: #f1d243;
 }
 
 .card-3 {
@@ -786,18 +789,6 @@ body.dark .card {
 
 .card-7 .card--icon--lg {
     color: #24d3d3;
-}
-
-.card-8 {
-    background: linear-gradient(135deg, rgba(153, 102, 255, 0.1), rgba(153, 102, 255, 0.05));
-}
-
-.card-8 .card--title {
-    color: #9966ff;
-}
-
-.card-8 .card--icon--lg {
-    color: #9966ff;
 }
 
 /* Add Button */
@@ -1020,12 +1011,17 @@ body.dark .form-group select {
     accent-color: var(--primary-color);
 }
 
+.preview-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
 .avatar-preview {
     width: 100px;
     height: 100px;
     border-radius: 50%;
     object-fit: cover;
-    margin-top: 10px;
     display: none;
 }
 
@@ -1034,7 +1030,6 @@ body.dark .form-group select {
     height: 100px;
     border-radius: 8px;
     object-fit: cover;
-    margin-top: 10px;
     display: none;
 }
 
@@ -1101,34 +1096,4 @@ body.dark .song-form-container {
     display: flex;
     flex-direction: column;
     gap: 15px;
-}
-
-.pending-content .table table td.truncate {
-    max-width: 200px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.pending-content .table table td.pending {
-    color: #ff9800;
-    font-weight: bold;
-}
-.pending-content .table table td button {
-    padding: 5px 10px;
-    margin: 0 5px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-}
-.pending-content .table table td button.approve {
-    background: #28a745;
-    color: #fff;
-}
-.pending-content .table table td button.reject {
-    background: #dc3545;
-    color: #fff;
-}
-.pending-content .table table td button:hover {
-    opacity: 0.9;
 }

@@ -36,40 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalLyricsContent = document.getElementById('modal-lyrics-content');
     const closeModal = document.getElementById('close-modal');
 
-    let songs = JSON.parse(localStorage.getItem('songs')) || [
-        {
-            id: 'song1',
-            title: 'Blank Space',
-            artist: 'Taylor Swift',
-            genre: 'Pop',
-            duration: '3:55',
-            status: 'Accepted',
-            songFileName: 'blank_space.mp3',
-            imageName: 'blank_space.jpg',
-            downloadPermission: 'Yes',
-            uploadDate: '01/01/2025',
-            listeners: 500,
-            lyrics: '',
-            description: '',
-            additionalArtists: ['Taylor Swift']
-        },
-        {
-            id: 'song2',
-            title: 'Shape of You',
-            artist: 'Ed Sheeran',
-            genre: 'Pop',
-            duration: '4:20',
-            status: 'Pending',
-            songFileName: 'shape_of_you.mp3',
-            imageName: 'shape_of_you.jpg',
-            downloadPermission: 'No',
-            uploadDate: '02/01/2025',
-            listeners: 600,
-            lyrics: '',
-            description: '',
-            additionalArtists: ['Ed Sheeran']
-        }
-    ];
+    let songs = JSON.parse(localStorage.getItem('songs')) || [];
     let artists = JSON.parse(localStorage.getItem('artists')) || [
         {id: 'Taylor Swift', name: 'Taylor Swift'},
         {id: 'Ed Sheeran', name: 'Ed Sheeran'},

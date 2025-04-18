@@ -17,17 +17,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let profileDob = document.getElementById('profile-dob');
     let profilePhone = document.getElementById('profile-phone');
 
-    const savedProfile = JSON.parse(localStorage.getItem('userProfile'));
-    if (savedProfile) {
-        if (profileIconImg) profileIconImg.src = savedProfile.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
-        if (profileModalImg) profileModalImg.src = savedProfile.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
-        if (profileBackgroundImg && savedProfile.background) profileBackgroundImg.src = savedProfile.background;
-        if (profileFullname) profileFullname.textContent = `${savedProfile.firstName || ''} ${savedProfile.lastName || ''}`.trim() || 'Unknown User';
-        if (profileDescription) profileDescription.textContent = savedProfile.description || 'No description available';
-        if (profileGender) profileGender.textContent = savedProfile.gender || 'Not specified';
-        if (profileDob) profileDob.textContent = savedProfile.dob || 'Not specified';
-        if (profilePhone) profilePhone.textContent = savedProfile.phone || 'Not specified';
-    }
+    const updateProfileModal = (profileData) => {
+        if (profileIconImg) profileIconImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+        if (profileModalImg) profileModalImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+        if (profileBackgroundImg && profileData.background) profileBackgroundImg.src = profileData.background;
+        if (profileFullname) profileFullname.textContent = `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim() || 'Unknown User';
+        if (profileDescription) {
+            const descriptionArray = Array.isArray(profileData.description) && profileData.description.length > 0
+                ? profileData.description
+                : ['No description available'];
+            profileDescription.innerHTML = descriptionArray
+                .map(p => `<p class="description-paragraph">${p}</p>`)
+                .join('');
+        }
+        if (profileGender) profileGender.textContent = profileData.gender || 'Not specified';
+        if (profileDob) profileDob.textContent = profileData.dob || 'Not specified';
+        if (profilePhone) profilePhone.textContent = profileData.phone || 'Not specified';
+    };
+
+    // Load initial profile data
+    const savedProfile = JSON.parse(localStorage.getItem('userProfile')) || {};
+    updateProfileModal(savedProfile);
+
+    // Listen for profile updates from profile_form.js
+    window.addEventListener('profileUpdated', (event) => {
+        updateProfileModal(event.detail);
+    });
 
     if (logoImg) {
         logoImg.onclick = function () {
@@ -72,126 +87,4 @@ document.addEventListener('DOMContentLoaded', () => {
             profileModal.classList.remove('active');
         }
     });
-
-    // Phần xử lý Profile form giữ nguyên
-    const profileForm = document.getElementById('profile-form');
-    if (profileForm) {
-        const avatarInput = document.getElementById('avatar');
-        const avatarPreview = document.getElementById('avatar-preview');
-        const backgroundInput = document.getElementById('background');
-        const backgroundPreview = document.getElementById('background-preview');
-        const firstNameInput = document.getElementById('first-name');
-        const lastNameInput = document.getElementById('last-name');
-        const descriptionInput = document.getElementById('description');
-        const genderInputs = document.querySelectorAll('input[name="gender"]');
-        const dobInput = document.getElementById('dob');
-        const phoneInput = document.getElementById('phone');
-
-        if (savedProfile) {
-            firstNameInput.value = savedProfile.firstName || '';
-            lastNameInput.value = savedProfile.lastName || '';
-            PrevdescriptionInput.value = savedProfile.description || '';
-            genderInputs.forEach(input => {
-                if (input.value === savedProfile.gender) input.checked = true;
-            });
-            dobInput.value = savedProfile.dob || '';
-            phoneInput.value = savedProfile.phone || '';
-            if (savedProfile.avatar) {
-                avatarPreview.src = savedProfile.avatar;
-                avatarPreview.style.display = 'block';
-            }
-            if (savedProfile.background) {
-                backgroundPreview.src = savedProfile.background;
-                backgroundPreview.style.display = 'block';
-            }
-        }
-
-        avatarInput?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    avatarPreview.src = event.target.result;
-                    avatarPreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        backgroundInput?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    backgroundPreview.src = event.target.result;
-                    backgroundPreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        profileForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const firstName = firstNameInput.value.trim();
-            const lastName = lastNameInput.value.trim();
-            const description = descriptionInput.value.trim();
-            const gender = document.querySelector('input[name="gender"]:checked');
-            const dob = dobInput.value;
-            const phone = phoneInput.value;
-
-            if (!firstName || !lastName || !gender || !dob || !phone) {
-                alert('Please fill out all required fields.');
-                return;
-            }
-
-            if (!/^[0-9]{10,15}$/.test(phone)) {
-                alert('Please enter a valid phone number (10-15 digits).');
-                return;
-            }
-
-            const profileData = {
-                firstName,
-                lastName,
-                description,
-                gender: gender.value,
-                dob,
-                phone,
-                avatar: savedProfile ? savedProfile.avatar : '',
-                background: savedProfile ? savedProfile.background : ''
-            };
-
-            const saveProfile = () => {
-                localStorage.setItem('userProfile', JSON.stringify(profileData));
-                alert('Profile updated successfully!');
-                window.location.href = 'artist_dashboard.html';
-            };
-
-            if (avatarInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    profileData.avatar = event.target.result;
-                    if (backgroundInput.files[0]) {
-                        const bgReader = new FileReader();
-                        bgReader.onload = (bgEvent) => {
-                            profileData.background = bgEvent.target.result;
-                            saveProfile();
-                        };
-                        bgReader.readAsDataURL(backgroundInput.files[0]);
-                    } else {
-                        saveProfile();
-                    }
-                };
-                reader.readAsDataURL(avatarInput.files[0]);
-            } else if (backgroundInput.files[0]) {
-                const bgReader = new FileReader();
-                bgReader.onload = (bgEvent) => {
-                    profileData.background = bgEvent.target.result;
-                    saveProfile();
-                };
-                bgReader.readAsDataURL(backgroundInput.files[0]);
-            } else {
-                saveProfile();
-            }
-        });
-    }
 });
