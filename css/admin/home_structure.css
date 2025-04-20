@@ -791,6 +791,18 @@ body.dark .card {
     color: #24d3d3;
 }
 
+.card-8 {
+    background: linear-gradient(135deg, rgba(153, 102, 255, 0.1), rgba(153, 102, 255, 0.05));
+}
+
+.card-8 .card--title {
+    color: #9966ff;
+}
+
+.card-8 .card--icon--lg {
+    color: #9966ff;
+}
+
 /* Add Button */
 .add {
     display: flex;
@@ -809,18 +821,16 @@ body.dark .card {
 }
 
 .add:hover {
-    background: #2e66b0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background: #66b1ff;
 }
 
 body.dark .add {
-    background: #ffffff;
-    color: #000000;
+    background: #494b4e;
+    color: white;
 }
 
 body.dark .add:hover {
-    background: #e0e0e0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background: #797c80;
 }
 
 .add i {
@@ -882,7 +892,7 @@ body.dark tr:hover {
 
 .edit {
     color: #70d7a5;
-    margin-right: 12px;
+    margin: 10px;
     cursor: pointer;
     font-size: 16px;
 }

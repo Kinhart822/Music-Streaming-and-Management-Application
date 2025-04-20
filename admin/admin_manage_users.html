@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/admin/home_structure.css">
+    <link rel="stylesheet" href="/css/admin/form_add_user.css">
+    <link rel="stylesheet" href="/css/admin/admin_manage.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Manage Users</title>
+</head>
+<body>
+<section class="header">
+    <div class="logo">
+        <i class="ri-menu-line icon icon-0 menu"></i>
+        <img id="logo-img" src="/imgs/logo.png" alt="logo">
+    </div>
+    <div class="search--notification--profile">
+        <div class="search">
+            <label for="search-user">
+                <input type="text" id="search-user" placeholder="Search Users...">
+            </label>
+            <button><i class='bx bx-search-alt-2'></i></button>
+        </div>
+        <div class="notification--profile">
+            <div class="picon bell">
+                <i class='bx bx-bell'></i>
+                <div class="notification-dropdown">
+                    <ul class="notification-list">
+                        <li><i class="ri-user-follow-line"></i> <span>New user registered: User123</span> <small>2h
+                            ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Song "Midnight Drive" submitted for review</span>
+                            <small>4h ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Playlist "Summer Vibes" submitted</span> <small>1d
+                            ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Echoes" submitted</span> <small>2d
+                            ago</small></li>
+                        <li><i class="ri-user-follow-line"></i> <span>New user: MusicFan99</span> <small>3d ago</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="picon profile">
+                <img id="profile-icon-img"
+                     src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                     alt="Profile Picture" class="profile-icon-image">
+            </div>
+            <div class="profile-modal">
+                <div class="profile-modal-content">
+                    <span class="close-modal">×</span>
+                    <div class="profile-details">
+                        <img id="profile-background-img" class="profile-background" alt="Background Image">
+                        <img id="profile-modal-img" class="profile-avatar" alt="Profile Picture">
+                        <h3 id="profile-fullname"></h3>
+                        <p id="profile-description"></p>
+                        <div class="profile-info">
+                            <p><strong>Gender:</strong> <span id="profile-gender"></span></p>
+                            <p><strong>Date of Birth:</strong> <span id="profile-dob"></span></p>
+                            <p><strong>Phone:</strong> <span id="profile-phone"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="main">
+    <div class="sidebar">
+        <div class="menu-bar">
+            <div class="menu">
+                <ul class="menu-links">
+                    <li class="nav-link">
+                        <a href="../admin/admin_dashboard.html">
+                            <i class='bx bx-home-alt'></i>
+                            <span class="text nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="admin_manage_users.html">
+                            <i class='bx bx-user'></i>
+                            <span class="text nav-text">Manage Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_songs.html">
+                            <i class='bx bx-music'></i>
+                            <span class="text nav-text">Manage Songs</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_playlists.html">
+                            <i class='bx bx-list-ul'></i>
+                            <span class="text nav-text">Manage Playlists</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_albums.html">
+                            <i class='bx bx-album'></i>
+                            <span class="text nav-text">Manage Albums</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_review_contents.html">
+                            <i class='bx bx-check-square'></i>
+                            <span class="text nav-text">Review Content</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bottom-content">
+            <ul class="menu-links">
+                <li class="nav-link">
+                    <a href="../auth/login_register.html">
+                        <i class='bx bx-log-out icon'></i>
+                        <span class="text nav-text">Logout</span>
+                    </a>
+                </li>
+                <li class="nav-link mode">
+                    <div class="mode-toggle" id="darkModeToggle">
+                        <div class="moon-sun">
+                            <i class='bx bx-moon icon moon-icon'></i>
+                            <i class='bx bx-sun icon sun-icon' style="display: none;"></i>
+                        </div>
+                        <span class="mode-text text nav-text">Dark Mode</span>
+                        <div class="toggle-switch">
+                            <span class="switch"></span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main--content">
+        <div class="users">
+            <div class="title">
+                <h2 class="section--title">Manage Users</h2>
+                <button class="add" id="add-user-btn"><i class="ri-add-line"></i>Add User</button>
+            </div>
+            <div class="add-user-form" id="add-user-form">
+                <form id="user-form">
+                    <div class="form-group">
+                        <label for="user-email">Email *</label>
+                        <input type="email" id="user-email" required>
+                        <div class="error" id="email-error">Please enter a valid email</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">Password *</label>
+                        <input type="password" id="user-password" required>
+                        <div class="error" id="password-error">Password must be at least 6 characters</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">Role *</label>
+                        <select id="user-role" required>
+                            <option value="user">User</option>
+                            <option value="artist">Artist</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group button-group">
+                        <button type="submit">Add User</button>
+                        <button type="button" class="cancel" id="cancel-add-user">Cancel</button>
+                    </div>
+                </form>
+            </div>
+            <div class="table-controls">
+                <div>
+                    <label for="filter-role">Filter by Role:</label>
+                    <select id="filter-role">
+                        <option value="all">All</option>
+                        <option value="user">User</option>
+                        <option value="artist">Artist</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sort-by">Sort by:</label>
+                    <select id="sort-by">
+                        <option value="joinDate-asc">Join Date Ascending</option>
+                        <option value="joinDate-desc">Join Date Descending</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rows-per-page">Rows per page:</label>
+                    <input type="number" id="rows-per-page" value="10" min="1">
+                </div>
+            </div>
+            <div class="table">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Join Date</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="user-table-body">
+                    <!-- JavaScript will populate users -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination"></div>
+        </div>
+    </div>
+</section>
+<script src="../js/dark_mode.js"></script>
+<script src="/js/admin/admin_manage_user.js"></script>
+<script src="../js/admin/admin_profile.js"></script>
+</body>
+</html>

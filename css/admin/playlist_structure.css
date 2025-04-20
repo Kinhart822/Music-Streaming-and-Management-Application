@@ -25,6 +25,7 @@
 }
 
 .modal-content h3 {
+    /*text-align: center;*/
     padding: 12px 16px;
     border-radius: 6px;
     margin: 0 auto 20px;
@@ -78,7 +79,7 @@
 }
 
 .modal-content table td.status.draft {
-    color: #b392f0;
+    color: #cccccc;
 }
 
 .modal-content table td.status.pending {
@@ -138,7 +139,7 @@ body.dark .modal-content table tr:hover {
 }
 
 body.dark .modal-content table td.status.draft {
-    color: #c4b5fd;
+    color: #9e9c9c;
 }
 
 body.dark .modal-content table td.status.pending {
@@ -192,7 +193,7 @@ body.dark .add {
     color: white;
 }
 
-.add-song-form {
+.add-playlist-form {
     display: none;
     background: #fff;
     padding: 30px;
@@ -204,23 +205,23 @@ body.dark .add {
     box-sizing: border-box;
 }
 
-body.dark .add-song-form {
+body.dark .add-playlist-form {
     background: rgba(37, 37, 37, 0.9);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.add-song-form.active {
+.add-playlist-form.active {
     display: block;
 }
 
-.add-song-form h3 {
+.add-playlist-form h3 {
     margin: 0 0 25px;
     font-size: 1.5em;
     color: #303133;
     text-align: center;
 }
 
-body.dark .add-song-form h3 {
+body.dark .add-playlist-form h3 {
     color: #e4e7ed;
 }
 
@@ -500,7 +501,7 @@ body.dark .selected-artists .remove-artist:hover {
 }
 
 .table td.status.draft {
-    color: #b392f0;
+    color: #cccccc;
 }
 
 .table td.status.pending {
@@ -541,8 +542,8 @@ body.dark .selected-artists .remove-artist:hover {
     margin: 10px;
 }
 
-.table button.accept {
-    background: #67c23a;
+.table button.publish {
+    background: #218838;
     margin: 10px;
 }
 
@@ -551,17 +552,12 @@ body.dark .selected-artists .remove-artist:hover {
     margin: 10px;
 }
 
-.table button.decline {
-    background: #909399;
-    margin: 10px;
-}
-
 .table button.delete {
     background: #f56c6c;
     margin: 10px;
 }
 
-.table button.accept:hover {
+.table button.publish:hover {
     background: #55a532;
 }
 
@@ -569,15 +565,12 @@ body.dark .selected-artists .remove-artist:hover {
     background: #d48d2a;
 }
 
-.table button.decline:hover {
-    background: #a0a6ab;
-}
-
 .table button.delete:hover {
     background: #d45b5b;
 }
 
 body.dark .table th {
+    /*background: #494b4e;*/
     color: #e4e7ed;
 }
 
@@ -592,7 +585,7 @@ body.dark .table td.image span {
 }
 
 body.dark .table td.status.draft {
-    color: #c4b5fd;
+    color: #9e9c9c;
 }
 
 body.dark .table td.status.pending {
@@ -619,45 +612,43 @@ body.dark .table a.view-songs:hover {
     color: #66b1ff;
 }
 
-body.dark .table button.accept {
+body.dark .table button.publish {
     background: #55a532;
-    margin: 10px;
-}
-
-body.dark .table button.accept:hover {
-    background: #4a912d;
 }
 
 body.dark .table button.edit {
     background: #d48d2a;
-    margin: 10px;
+}
+
+body.dark .table button.delete {
+    background: #d45b5b;
+}
+
+body.dark .table button.publish:hover {
+    background: #4a912d;
 }
 
 body.dark .table button.edit:hover {
     background: #bf7d25;
 }
 
-body.dark .table button.decline {
-    background: #a0a6ab;
-    margin: 10px;
-}
-
-body.dark .table button.decline:hover {
-    background: #8c9197;
-}
-
-body.dark .table button.delete {
-    background: #d45b5b;
-    margin: 10px;
-}
-
 body.dark .table button.delete:hover {
     background: #c14f4f;
 }
 
-.table td[colspan="13"] {
+.table td[colspan="8"] {
     text-align: center;
     padding: 20px;
+}
+
+.no-playlists {
+    color: #606266;
+    text-align: center;
+    font-size: 14px;
+}
+
+body.dark .no-playlists {
+    color: #dcdcdc;
 }
 
 .no-songs-text {
@@ -665,16 +656,7 @@ body.dark .table button.delete:hover {
     font-size: 14px;
 }
 
-.no-songs {
-    color: #606266;
-    font-size: 14px;
-}
-
 body.dark .no-songs-text {
-    color: #dcdcdc;
-}
-
-body.dark .no-songs {
     color: #dcdcdc;
 }
 
@@ -776,13 +758,13 @@ body.dark .pagination span.active {
 
 /* Responsive Styles */
 @media (max-width: 600px) {
-    .add-song-form {
+    .add-playlist-form {
         padding: 20px;
         max-width: 100%;
         margin: 20px auto;
     }
 
-    .add-song-form h3 {
+    .add-playlist-form h3 {
         font-size: 1.3em;
     }
 
@@ -850,6 +832,10 @@ body.dark .pagination span.active {
         padding: 10px;
         font-size: 0.9em;
         border: none;
+    }
+
+    .table th {
+        text-align: center;
     }
 
     .table button {

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoImg = document.getElementById('logo-img');
 
     // Table elements
-    const pendingTableBody = document.getElementById('pending-table-body');
+    const reviewTableBody = document.getElementById('review-table-body');
     const filterTypeSelect = document.getElementById('filter-type');
     const filterStatusSelect = document.getElementById('filter-status');
     const sortBySelect = document.getElementById('sort-by');
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         title: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'Unknown User',
         description: user.description || '',
         imageName: user.avatar || '',
-        uploadDate: user.createdAt || new Date().toLocaleDateString('en-GB'),
+        uploadDate: user.joinDate || new Date().toLocaleDateString('en-GB'),
         uploadedBy: user.username || 'System',
         purposeUpload: 'Account Creation',
         additionalArtists: [],
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('albums', JSON.stringify(albums));
 
     // Combine all items for the table
-    let pendingItems = [
+    let reviewItems = [
         ...users.map(u => ({
             ...u,
             type: u.role.charAt(0).toUpperCase() + u.role.slice(1) // User, Artist, Admin
@@ -98,27 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilterStatus = 'all';
     let currentSort = 'title-asc';
     let searchQuery = '';
-
-    // Update dashboard cards
-    const updateDashboardCards = () => {
-        const totalListenersCard = document.getElementById('total-listeners');
-        const totalArtistsCard = document.getElementById('total-artists');
-        const totalSongsCard = document.getElementById('total-songs');
-        const totalPlaylistsCard = document.getElementById('total-playlists');
-        const totalAlbumsCard = document.getElementById('total-albums');
-        const pendingSongsCard = document.getElementById('pending-songs');
-        const pendingPlaylistsCard = document.getElementById('pending-playlists');
-        const pendingAlbumsCard = document.getElementById('pending-albums');
-
-        if (totalListenersCard) totalListenersCard.textContent = users.filter(u => u.role === 'user').length;
-        if (totalArtistsCard) totalArtistsCard.textContent = users.filter(u => u.role === 'artist').length;
-        if (totalSongsCard) totalSongsCard.textContent = songs.length;
-        if (totalPlaylistsCard) totalPlaylistsCard.textContent = playlists.length;
-        if (totalAlbumsCard) totalAlbumsCard.textContent = albums.length;
-        if (pendingSongsCard) pendingSongsCard.textContent = songs.filter(s => s.status === 'pending').length;
-        if (pendingPlaylistsCard) pendingPlaylistsCard.textContent = playlists.filter(p => p.status === 'pending').length;
-        if (pendingAlbumsCard) pendingAlbumsCard.textContent = albums.filter(a => a.status === 'pending').length;
-    };
+    let currentPage = 1;
+    let rowsPerPage = parseInt(rowsPerPageInput?.value) || 10;
 
     // Refresh page on logo click
     if (logoImg) {
@@ -151,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Table handling
-    if (pendingTableBody) {
+    if (reviewTableBody) {
         // Parse date (DD/MM/YYYY to a Date object)
         const parseDate = (dateStr) => {
             if (!dateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return new Date(0);
@@ -164,9 +145,98 @@ document.addEventListener('DOMContentLoaded', () => {
             return Math.floor(Math.random() * 1001);
         };
 
+        // Render pagination
+        const renderPagination = (totalItems) => {
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            paginationDiv.innerHTML = '';
+
+            if (totalPages > 1) {
+                const prevButton = document.createElement('button');
+                prevButton.textContent = 'Previous';
+                prevButton.disabled = currentPage === 1;
+                prevButton.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderTable();
+                    }
+                });
+                paginationDiv.appendChild(prevButton);
+
+                const maxPagesToShow = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+                if (endPage - startPage + 1 < maxPagesToShow) {
+                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                }
+
+                if (startPage > 1) {
+                    const firstPage = document.createElement('span');
+                    firstPage.textContent = '1';
+                    firstPage.addEventListener('click', () => {
+                        currentPage = 1;
+                        renderTable();
+                    });
+                    paginationDiv.appendChild(firstPage);
+                    if (startPage > 2) {
+                        paginationDiv.appendChild(document.createTextNode(' ... '));
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageSpan = document.createElement('span');
+                    pageSpan.textContent = i;
+                    if (i === currentPage) {
+                        pageSpan.classList.add('active');
+                    }
+                    pageSpan.addEventListener('click', () => {
+                        currentPage = i;
+                        renderTable();
+                    });
+                    paginationDiv.appendChild(pageSpan);
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        paginationDiv.appendChild(document.createTextNode(' ... '));
+                    }
+                    const lastPage = document.createElement('span');
+                    lastPage.textContent = totalPages;
+                    lastPage.addEventListener('click', () => {
+                        currentPage = totalPages;
+                        renderTable();
+                    });
+                    paginationDiv.appendChild(lastPage);
+                }
+
+                const nextButton = document.createElement('button');
+                nextButton.textContent = 'Next';
+                nextButton.disabled = currentPage === totalPages;
+                nextButton.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderTable();
+                    }
+                });
+                paginationDiv.appendChild(nextButton);
+            }
+        };
+
+        // Validate and update rows per page
+        const updateRowsPerPage = () => {
+            const value = parseInt(rowsPerPageInput.value);
+            if (isNaN(value) || value < 1) {
+                rowsPerPageInput.value = 10;
+                rowsPerPage = 10;
+            } else {
+                rowsPerPage = value;
+            }
+            currentPage = 1;
+            renderTable();
+        };
+
         // Render table
         const renderTable = () => {
-            let filteredItems = [...pendingItems];
+            let filteredItems = [...reviewItems];
 
             // Filter by type
             if (currentFilterType !== 'all') {
@@ -198,12 +268,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return 0;
             });
 
-            // Limit to 10 items for dashboard view
-            const limitedItems = filteredItems.slice(0, 10);
+            // Paginate
+            const totalPages = Math.ceil(filteredItems.length / rowsPerPage);
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = totalPages;
+            } else if (totalPages === 0) {
+                currentPage = 1;
+            }
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const paginatedItems = filteredItems.slice(startIndex, startIndex + rowsPerPage);
 
             // Render table
-            pendingTableBody.innerHTML = limitedItems.length > 0
-                ? limitedItems.map((item, index) => `
+            reviewTableBody.innerHTML = paginatedItems.length > 0
+                ? paginatedItems.map((item, index) => `
                     <tr>
                         <td class="image">
                             ${item.imageName ? `<span>${item.imageName}</span>` : `<span>No image</span>`}
@@ -216,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${item.uploadedBy || 'Unknown'}</td>
                         <td>
                             ${item.description
-                    ? `<a class="view-description" href="#" data-index="${index}" title="View Description">Show more...</a>`
+                    ? `<a class="view-description" href="#" data-index="${startIndex + index}" title="View Description">Show more...</a>`
                     : 'None'
                 }
                         </td>
@@ -241,14 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 `).join('')
                 : '<tr><td colspan="12"><span class="no-contents">No content available.</span></td></tr>';
 
-            // Hide pagination for dashboard view
-            paginationDiv.innerHTML = '';
+            // Render pagination
+            renderPagination(filteredItems.length);
         };
 
         // Filter by type
         if (filterTypeSelect) {
             filterTypeSelect.addEventListener('change', () => {
                 currentFilterType = filterTypeSelect.value;
+                currentPage = 1; // Reset to first page
                 renderTable();
             });
         }
@@ -257,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filterStatusSelect) {
             filterStatusSelect.addEventListener('change', () => {
                 currentFilterStatus = filterStatusSelect.value;
+                currentPage = 1; // Reset to first page
                 renderTable();
             });
         }
@@ -265,40 +344,44 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sortBySelect) {
             sortBySelect.addEventListener('change', () => {
                 currentSort = sortBySelect.value;
+                currentPage = 1; // Reset to first page
                 renderTable();
             });
         }
 
-        // Rows per page (disable for dashboard view)
+        // Rows per page
         if (rowsPerPageInput) {
-            rowsPerPageInput.disabled = true;
-            rowsPerPageInput.title = 'Pagination is disabled in dashboard view. Use "View All" to see more items.';
+            // Update on input for real-time changes
+            rowsPerPageInput.addEventListener('input', updateRowsPerPage);
+            // Update on change to handle cases like pressing Enter
+            rowsPerPageInput.addEventListener('change', updateRowsPerPage);
         }
 
         // Search
         if (searchInput) {
             searchInput.addEventListener('input', () => {
                 searchQuery = searchInput.value.trim();
+                currentPage = 1; // Reset to first page
                 renderTable();
             });
         }
 
         // Table actions
-        pendingTableBody.addEventListener('click', (e) => {
+        reviewTableBody.addEventListener('click', (e) => {
             e.preventDefault();
             const button = e.target;
 
             // View description
             if (button.classList.contains('view-description')) {
                 const index = parseInt(button.dataset.index);
-                const item = pendingItems.slice(0, 10)[index]; // Use limited items for description
+                const item = reviewItems[index];
                 document.getElementById('modal-title').textContent = `${item.type} Description`;
                 modalDescriptionContent.value = item.description || '';
                 modalDescriptionContent.placeholder = item.description ? '' : 'No description available';
                 descriptionModal.style.display = 'flex';
             }
 
-            // Approve, edit, decline, or delete
+            // Accept, decline, edit, or delete
             if (!button.matches('button')) return;
 
             const type = button.dataset.type;
@@ -362,8 +445,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 localStorage.setItem(key, JSON.stringify(array));
 
-                // Update pendingItems
-                pendingItems = [
+                // Update reviewItems
+                reviewItems = [
                     ...users.map(u => ({
                         ...u,
                         type: u.role.charAt(0).toUpperCase() + u.role.slice(1)
@@ -373,9 +456,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...albums
                 ];
 
-                // Refresh table and cards
+                // Refresh table
                 renderTable();
-                updateDashboardCards();
             } catch (e) {
                 alert(`Failed to process action: Storage quota exceeded.`);
             }
@@ -399,8 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Initial render and update cards
+        // Initial render
         renderTable();
-        updateDashboardCards();
     }
 });

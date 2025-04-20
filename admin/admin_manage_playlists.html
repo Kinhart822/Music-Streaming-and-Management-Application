@@ -4,23 +4,23 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/admin/home_structure.css">
-    <link rel="stylesheet" href="../css/admin/admin_manage.css">
-    <link rel="stylesheet" href="../css/admin/table_dashboard_structure.css">
+    <link rel="stylesheet" href="/css/admin/home_structure.css">
+    <link rel="stylesheet" href="/css/admin/admin_manage.css">
+    <link rel="stylesheet" href="/css/admin/playlist_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <title>Admin Dashboard</title>
+    <title>Manage Playlists</title>
 </head>
 <body>
 <section class="header">
     <div class="logo">
         <i class="ri-menu-line icon icon-0 menu"></i>
-        <img id="logo-img" src="../imgs/logo.png" alt="logo">
+        <img id="logo-img" src="/imgs/logo.png" alt="logo">
     </div>
     <div class="search--notification--profile">
         <div class="search">
-            <label for="search-content">
-                <input type="text" id="search-content" placeholder="Search Content...">
+            <label>
+                <input type="text" placeholder="Search Playlists...">
             </label>
             <button><i class='bx bx-search-alt-2'></i></button>
         </div>
@@ -31,7 +31,7 @@
                     <ul class="notification-list">
                         <li><i class="ri-user-follow-line"></i> <span>New user registered: User123</span> <small>2h ago</small></li>
                         <li><i class="ri-upload-cloud-line"></i> <span>Song "Midnight Drive" submitted for review</span> <small>4h ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Summer Vibes" submitted</span> <small>1d ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Playlist "Summer Vibes" submitted</span> <small>1d ago</small></li>
                         <li><i class="ri-upload-cloud-line"></i> <span>Album "Echoes" submitted</span> <small>2d ago</small></li>
                         <li><i class="ri-user-follow-line"></i> <span>New user: MusicFan99</span> <small>3d ago</small></li>
                     </ul>
@@ -66,7 +66,7 @@
             <div class="menu">
                 <ul class="menu-links">
                     <li class="nav-link">
-                        <a href="admin_dashboard.html">
+                        <a href="../admin/admin_dashboard.html">
                             <i class='bx bx-home-alt'></i>
                             <span class="text nav-text">Dashboard</span>
                         </a>
@@ -84,7 +84,7 @@
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="../admin/admin_manage_playlists.html">
+                        <a href="admin_manage_playlists.html">
                             <i class='bx bx-list-ul'></i>
                             <span class="text nav-text">Manage Playlists</span>
                         </a>
@@ -129,105 +129,61 @@
     </div>
 
     <div class="main--content">
-        <div class="overview">
+        <div class="playlists">
             <div class="title">
-                <h2 class="section--title">System Overview</h2>
+                <h2 class="section--title">Manage Playlists</h2>
+                <button class="add" id="add-playlist-btn"><i class="ri-add-line"></i>Add Playlist</button>
             </div>
-            <div class="cards">
-                <div class="card card-1">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Listeners</h5>
-                            <h1 id="total-listeners">0</h1>
-                        </div>
-                        <i class="ri-user-line card--icon--lg"></i>
+            <div class="add-playlist-form" id="add-playlist-form">
+                <form id="playlist-form" data-mode="add">
+                    <h3 id="form-title">Add Playlist</h3>
+                    <div class="form-group">
+                        <label for="playlist-title">Title *</label>
+                        <input type="text" id="playlist-title" required>
+                        <div class="error" id="title-error">Please enter a valid title</div>
                     </div>
-                </div>
-                <div class="card card-2">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Artists</h5>
-                            <h1 id="total-artists">0</h1>
-                        </div>
-                        <i class="ri-user-star-line card--icon--lg"></i>
+                    <div class="form-group">
+                        <label for="playlist-description">Description</label>
+                        <textarea id="playlist-description" placeholder="Describe your playlist here..."></textarea>
                     </div>
-                </div>
-                <div class="card card-3">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Songs</h5>
-                            <h1 id="total-songs">0</h1>
+                    <div class="form-group">
+                        <label for="playlist-songs">Songs *</label>
+                        <input type="text" id="song-search" placeholder="Search songs...">
+                        <div id="playlist-songs" class="song-container">
+                            <!-- Songs populated dynamically -->
                         </div>
-                        <i class="ri-music-2-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-4">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Playlists</h5>
-                            <h1 id="total-playlists">0</h1>
+                        <div id="selected-songs-display" class="selected-songs">
+                            <p>Selected Songs:</p>
+                            <ul id="selected-songs-list"></ul>
                         </div>
-                        <i class="ri-play-list-line card--icon--lg"></i>
+                        <div class="error" id="songs-error">Please select at least one accepted song</div>
                     </div>
-                </div>
-                <div class="card card-5">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Albums</h5>
-                            <h1 id="total-albums">0</h1>
+                    <div class="form-group">
+                        <label for="song-artists">Artists</label>
+                        <label for="artists-search"></label><input type="text" id="artists-search" placeholder="Search artists...">
+                        <div id="song-artists" class="artists-container">
+                            <!-- Artist names populated dynamically -->
                         </div>
-                        <i class="ri-album-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-6">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Pending Songs</h5>
-                            <h1 id="pending-songs">0</h1>
+                        <div id="selected-artists-display" class="selected-artists">
+                            <p>Selected Artists:</p>
+                            <ul id="selected-artists-list"></ul>
                         </div>
-                        <i class="ri-music-2-line card--icon--lg"></i>
+                        <div class="error" id="artists-error">Please select at least one artist</div>
                     </div>
-                </div>
-                <div class="card card-7">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Pending Playlists</h5>
-                            <h1 id="pending-playlists">0</h1>
-                        </div>
-                        <i class="ri-play-list-line card--icon--lg"></i>
+                    <div class="form-group">
+                        <label for="playlist-image">Image File *</label>
+                        <input type="file" id="playlist-image" accept="image/jpeg,image/png">
+                        <div class="current-image" id="current-image"></div>
+                        <div class="error" id="image-error">Please select a valid JPG or PNG file (max 5MB)</div>
                     </div>
-                </div>
-                <div class="card card-8">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Pending Albums</h5>
-                            <h1 id="pending-albums">0</h1>
-                        </div>
-                        <i class="ri-album-line card--icon--lg"></i>
+                    <div class="form-group button-group">
+                        <button type="submit">Save</button>
+                        <button type="button" class="cancel" id="cancel-add-playlist">Cancel</button>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="pending-content">
-            <div class="title">
-                <h2 class="section--title">Recent Review Content</h2>
-                <a class="add" href="../admin/admin_review_contents.html"><i class="ri-eye-line"></i>View All</a>
+                </form>
             </div>
             <div class="table-controls">
-                <div class="control-group">
-                    <label for="filter-type">Filter by Type:</label>
-                    <select id="filter-type">
-                        <option value="all">All</option>
-                        <option value="User">User</option>
-                        <option value="Artist">Artist</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Song">Song</option>
-                        <option value="Playlist">Playlist</option>
-                        <option value="Album">Album</option>
-                    </select>
-                </div>
-                <div class="control-group">
+                <div>
                     <label for="filter-status">Filter by Status:</label>
                     <select id="filter-status">
                         <option value="all">All</option>
@@ -237,14 +193,18 @@
                         <option value="declined">Declined</option>
                     </select>
                 </div>
-                <div class="control-group">
+                <div>
                     <label for="sort-by">Sort by:</label>
                     <select id="sort-by">
                         <option value="title-asc">Title A-Z</option>
                         <option value="title-desc">Title Z-A</option>
-                        <option value="date-asc">Submission Date Ascending</option>
-                        <option value="date-desc">Submission Date Descending</option>
+                        <option value="dateUpload-asc">Date Upload Ascending</option>
+                        <option value="dateUpload-desc">Date Upload Descending</option>
                     </select>
+                </div>
+                <div>
+                    <label for="rows-per-page">Rows per page:</label>
+                    <input type="number" id="rows-per-page" value="10" min="1">
                 </div>
             </div>
             <div class="table">
@@ -252,21 +212,17 @@
                     <thead>
                     <tr>
                         <th>Image</th>
-                        <th>Type</th>
-                        <th>Purpose Upload</th>
                         <th>Title</th>
-                        <th>Duration</th>
-                        <th>Upload Date</th>
-                        <th>Submitted By</th>
                         <th>Description</th>
-                        <th>Artist</th>
+                        <th>Release Date</th>
                         <th>Additional Artists</th>
+                        <th>Songs</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
-                    <tbody id="pending-table-body">
-                    <!-- JavaScript will populate pending content -->
+                    <tbody id="playlist-table-body">
+                    <!-- JavaScript will populate playlists -->
                     </tbody>
                 </table>
             </div>
@@ -274,17 +230,17 @@
         </div>
     </div>
 </section>
-<div class="modal" id="description-modal">
+<div class="modal" id="content-modal">
     <div class="modal-content">
         <span class="close" id="close-modal">×</span>
-        <h3 id="modal-title">Content Description</h3>
-        <label for="modal-description-content"></label>
-        <textarea class="lyrics-content" id="modal-description-content" readonly placeholder="No description available"></textarea>
+        <h3 id="modal-title">Content</h3>
+        <div id="modal-content-body">
+            <!-- Dynamic content: Songs table or Description textarea -->
+        </div>
     </div>
 </div>
 <script src="../js/dark_mode.js"></script>
-<script src="../js/admin/sample_data.js"></script>
-<script src="../js/admin/admin_dashboard.js"></script>
+<script src="../js/admin/admin_manage_playlist.js"></script>
 <script src="../js/admin/admin_profile.js"></script>
 </body>
 </html>

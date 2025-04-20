@@ -5,10 +5,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/admin/home_structure.css">
-    <link rel="stylesheet" href="/css/admin/form_add_user.css">
+    <link rel="stylesheet" href="/css/admin/admin_manage.css">
+    <link rel="stylesheet" href="/css/admin/album_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <title>Manage Users</title>
+    <title>Manage Albums</title>
 </head>
 <body>
 <section class="header">
@@ -18,7 +19,9 @@
     </div>
     <div class="search--notification--profile">
         <div class="search">
-            <input type="text" placeholder="Search Users...">
+            <label>
+                <input type="text" placeholder="Search Albums...">
+            </label>
             <button><i class='bx bx-search-alt-2'></i></button>
         </div>
         <div class="notification--profile">
@@ -28,7 +31,7 @@
                     <ul class="notification-list">
                         <li><i class="ri-user-follow-line"></i> <span>New user registered: User123</span> <small>2h ago</small></li>
                         <li><i class="ri-upload-cloud-line"></i> <span>Song "Midnight Drive" submitted for review</span> <small>4h ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Playlist "Summer Vibes" submitted</span> <small>1d ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Summer Vibes" submitted</span> <small>1d ago</small></li>
                         <li><i class="ri-upload-cloud-line"></i> <span>Album "Echoes" submitted</span> <small>2d ago</small></li>
                         <li><i class="ri-user-follow-line"></i> <span>New user: MusicFan99</span> <small>3d ago</small></li>
                     </ul>
@@ -63,25 +66,25 @@
             <div class="menu">
                 <ul class="menu-links">
                     <li class="nav-link">
-                        <a href="../admin.html">
+                        <a href="../admin/admin_dashboard.html">
                             <i class='bx bx-home-alt'></i>
                             <span class="text nav-text">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="admin_manage_users.html">
+                        <a href="../admin/admin_manage_users.html">
                             <i class='bx bx-user'></i>
                             <span class="text nav-text">Manage Users</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="admin_manage_songs.html">
+                        <a href="../admin/admin_manage_songs.html">
                             <i class='bx bx-music'></i>
                             <span class="text nav-text">Manage Songs</span>
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="admin_manage_playlists.html">
+                        <a href="../admin/admin_manage_playlists.html">
                             <i class='bx bx-list-ul'></i>
                             <span class="text nav-text">Manage Playlists</span>
                         </a>
@@ -93,7 +96,7 @@
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="admin_review_content.html">
+                        <a href="../admin/admin_review_contents.html">
                             <i class='bx bx-check-square'></i>
                             <span class="text nav-text">Review Content</span>
                         </a>
@@ -101,11 +104,10 @@
                 </ul>
             </div>
         </div>
-
         <div class="bottom-content">
             <ul class="menu-links">
                 <li class="nav-link">
-                    <a href="../../auth/login_register.html">
+                    <a href="../auth/login_register.html">
                         <i class='bx bx-log-out icon'></i>
                         <span class="text nav-text">Logout</span>
                     </a>
@@ -127,50 +129,77 @@
     </div>
 
     <div class="main--content">
-        <div class="users">
+        <div class="albums">
             <div class="title">
-                <h2 class="section--title">Manage Users</h2>
-                <button class="add" id="add-user-btn"><i class="ri-add-line"></i>Add User</button>
+                <h2 class="section--title">Manage Albums</h2>
+                <button class="add" id="add-album-btn"><i class="ri-add-line"></i>Add Album</button>
             </div>
-            <div class="add-user-form" id="add-user-form">
-                <form id="user-form">
+            <div class="add-album-form" id="add-album-form">
+                <form id="album-form" data-mode="add">
+                    <h3 id="form-title">Add Album</h3>
                     <div class="form-group">
-                        <label for="user-email">Email *</label>
-                        <input type="email" id="user-email" required>
-                        <div class="error" id="email-error">Please enter a valid email</div>
+                        <label for="album-title">Title *</label>
+                        <input type="text" id="album-title" required>
+                        <div class="error" id="title-error">Please enter a valid title</div>
                     </div>
                     <div class="form-group">
-                        <label for="user-password">Password *</label>
-                        <input type="password" id="user-password" required>
-                        <div class="error" id="password-error">Password must be at least 6 characters</div>
+                        <label for="album-description">Description</label>
+                        <textarea id="album-description" placeholder="Describe your album here..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="user-role">Role *</label>
-                        <select id="user-role" required>
-                            <option value="artist">Artist</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                        <label for="album-songs">Songs *</label>
+                        <input type="text" id="song-search" placeholder="Search songs...">
+                        <div id="album-songs" class="song-container">
+                            <!-- Songs populated dynamically -->
+                        </div>
+                        <div id="selected-songs-display" class="selected-songs">
+                            <p>Selected Songs:</p>
+                            <ul id="selected-songs-list"></ul>
+                        </div>
+                        <div class="error" id="songs-error">Please select at least one accepted song</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="song-artists">Artists</label>
+                        <label for="artists-search"></label><input type="text" id="artists-search" placeholder="Search artists...">
+                        <div id="song-artists" class="artists-container">
+                            <!-- Artist names populated dynamically -->
+                        </div>
+                        <div id="selected-artists-display" class="selected-artists">
+                            <p>Selected Artists:</p>
+                            <ul id="selected-artists-list"></ul>
+                        </div>
+                        <div class="error" id="artists-error">Please select at least one artist</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="album-image">Image File *</label>
+                        <input type="file" id="album-image" accept="image/jpeg,image/png">
+                        <div class="current-image" id="current-image"></div>
+                        <div class="error" id="image-error">Please select a valid JPG or PNG file (max 5MB)</div>
                     </div>
                     <div class="form-group button-group">
-                        <button type="submit">Add User</button>
-                        <button type="button" class="cancel" id="cancel-add-user">Cancel</button>
+                        <button type="submit">Save</button>
+                        <button type="button" class="cancel" id="cancel-add-album">Cancel</button>
                     </div>
                 </form>
             </div>
             <div class="table-controls">
                 <div>
-                    <label for="filter-role">Filter by Role:</label>
-                    <select id="filter-role">
+                    <label for="filter-status">Filter by Status:</label>
+                    <select id="filter-status">
                         <option value="all">All</option>
-                        <option value="artist">Artist</option>
-                        <option value="admin">Admin</option>
+                        <option value="draft">Draft</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="declined">Declined</option>
                     </select>
                 </div>
                 <div>
                     <label for="sort-by">Sort by:</label>
                     <select id="sort-by">
-                        <option value="joinDate-asc">Join Date Ascending</option>
-                        <option value="joinDate-desc">Join Date Descending</option>
+                        <option value="title-asc">Title A-Z</option>
+                        <option value="title-desc">Title Z-A</option>
+                        <option value="dateUpload-asc">Date Upload Ascending</option>
+                        <option value="dateUpload-desc">Date Upload Descending</option>
                     </select>
                 </div>
                 <div>
@@ -182,15 +211,18 @@
                 <table>
                     <thead>
                     <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Join Date</th>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Release Date</th>
+                        <th>Additional Artists</th>
+                        <th>Songs</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
-                    <tbody id="user-table-body">
-                    <!-- JavaScript will populate users -->
+                    <tbody id="album-table-body">
+                    <!-- JavaScript will populate albums -->
                     </tbody>
                 </table>
             </div>
@@ -198,7 +230,17 @@
         </div>
     </div>
 </section>
-<script src="/js/admin/admin_structure.js"></script>
-<script src="/js/admin/user_manage.js"></script>
+<div class="modal" id="content-modal">
+    <div class="modal-content">
+        <span class="close" id="close-modal">×</span>
+        <h3 id="modal-title">Content</h3>
+        <div id="modal-content-body">
+            <!-- Dynamic content: Songs table or Description textarea -->
+        </div>
+    </div>
+</div>
+<script src="../js/dark_mode.js"></script>
+<script src="../js/admin/admin_manage_album.js"></script>
+<script src="../js/admin/admin_profile.js"></script>
 </body>
 </html>

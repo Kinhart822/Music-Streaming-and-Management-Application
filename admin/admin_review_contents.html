@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/admin/home_structure.css">
-    <link rel="stylesheet" href="../css/admin/admin_manage.css">
-    <link rel="stylesheet" href="../css/admin/table_dashboard_structure.css">
+    <link rel="stylesheet" href="/css/admin/home_structure.css">
+    <link rel="stylesheet" href="/css/admin/admin_manage.css">
+    <link rel="stylesheet" href="/css/admin/review_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <title>Admin Dashboard</title>
+    <title>Review Content</title>
 </head>
 <body>
 <section class="header">
     <div class="logo">
         <i class="ri-menu-line icon icon-0 menu"></i>
-        <img id="logo-img" src="../imgs/logo.png" alt="logo">
+        <img id="logo-img" src="/imgs/logo.png" alt="logo">
     </div>
     <div class="search--notification--profile">
         <div class="search">
@@ -31,7 +31,7 @@
                     <ul class="notification-list">
                         <li><i class="ri-user-follow-line"></i> <span>New user registered: User123</span> <small>2h ago</small></li>
                         <li><i class="ri-upload-cloud-line"></i> <span>Song "Midnight Drive" submitted for review</span> <small>4h ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Summer Vibes" submitted</span> <small>1d ago</small></li>
+                        <li><i class="ri-upload-cloud-line"></i> <span>Playlist "Summer Vibes" submitted</span> <small>1d ago</small></li>
                         <li><i class="ri-upload-cloud-line"></i> <span>Album "Echoes" submitted</span> <small>2d ago</small></li>
                         <li><i class="ri-user-follow-line"></i> <span>New user: MusicFan99</span> <small>3d ago</small></li>
                     </ul>
@@ -66,7 +66,7 @@
             <div class="menu">
                 <ul class="menu-links">
                     <li class="nav-link">
-                        <a href="admin_dashboard.html">
+                        <a href="../admin/admin_dashboard.html">
                             <i class='bx bx-home-alt'></i>
                             <span class="text nav-text">Dashboard</span>
                         </a>
@@ -96,7 +96,7 @@
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="../admin/admin_review_contents.html">
+                        <a href="admin_review_contents.html">
                             <i class='bx bx-check-square'></i>
                             <span class="text nav-text">Review Content</span>
                         </a>
@@ -129,90 +129,9 @@
     </div>
 
     <div class="main--content">
-        <div class="overview">
+        <div class="review-content">
             <div class="title">
-                <h2 class="section--title">System Overview</h2>
-            </div>
-            <div class="cards">
-                <div class="card card-1">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Listeners</h5>
-                            <h1 id="total-listeners">0</h1>
-                        </div>
-                        <i class="ri-user-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-2">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Artists</h5>
-                            <h1 id="total-artists">0</h1>
-                        </div>
-                        <i class="ri-user-star-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-3">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Songs</h5>
-                            <h1 id="total-songs">0</h1>
-                        </div>
-                        <i class="ri-music-2-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-4">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Playlists</h5>
-                            <h1 id="total-playlists">0</h1>
-                        </div>
-                        <i class="ri-play-list-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-5">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Total Albums</h5>
-                            <h1 id="total-albums">0</h1>
-                        </div>
-                        <i class="ri-album-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-6">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Pending Songs</h5>
-                            <h1 id="pending-songs">0</h1>
-                        </div>
-                        <i class="ri-music-2-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-7">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Pending Playlists</h5>
-                            <h1 id="pending-playlists">0</h1>
-                        </div>
-                        <i class="ri-play-list-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-8">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Pending Albums</h5>
-                            <h1 id="pending-albums">0</h1>
-                        </div>
-                        <i class="ri-album-line card--icon--lg"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="pending-content">
-            <div class="title">
-                <h2 class="section--title">Recent Review Content</h2>
-                <a class="add" href="../admin/admin_review_contents.html"><i class="ri-eye-line"></i>View All</a>
+                <h2 class="section--title">Review Content</h2>
             </div>
             <div class="table-controls">
                 <div class="control-group">
@@ -246,6 +165,10 @@
                         <option value="date-desc">Submission Date Descending</option>
                     </select>
                 </div>
+                <div class="control-group">
+                    <label for="rows-per-page">Rows per page:</label>
+                    <input type="number" id="rows-per-page" value="10" min="1">
+                </div>
             </div>
             <div class="table">
                 <table>
@@ -265,8 +188,8 @@
                         <th>Actions</th>
                     </tr>
                     </thead>
-                    <tbody id="pending-table-body">
-                    <!-- JavaScript will populate pending content -->
+                    <tbody id="review-table-body">
+                    <!-- JavaScript will populate review content -->
                     </tbody>
                 </table>
             </div>
@@ -283,8 +206,7 @@
     </div>
 </div>
 <script src="../js/dark_mode.js"></script>
-<script src="../js/admin/sample_data.js"></script>
-<script src="../js/admin/admin_dashboard.js"></script>
+<script src="../js/admin/admin_review_contents.js"></script>
 <script src="../js/admin/admin_profile.js"></script>
 </body>
 </html>
