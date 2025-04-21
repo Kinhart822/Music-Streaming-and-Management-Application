@@ -1053,7 +1053,7 @@ body.dark .form-group select {
     font-size: 14px;
     font-weight: 500;
     transition: all 0.3s ease;
-    align-self: flex-start;
+    align-self: flex-end;
 }
 
 .submit-button:hover {

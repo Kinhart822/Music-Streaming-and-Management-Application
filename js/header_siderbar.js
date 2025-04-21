@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let profilePhone = document.getElementById('profile-phone');
 
     const updateProfileModal = (profileData) => {
-        if (profileIconImg) profileIconImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
-        if (profileModalImg) profileModalImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+        if (profileIconImg) profileIconImg.src = profileData.avatar || 'https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg';
+        if (profileModalImg) profileModalImg.src = profileData.avatar || 'https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg';
         if (profileBackgroundImg && profileData.background) profileBackgroundImg.src = profileData.background;
         if (profileFullname) profileFullname.textContent = `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim() || 'Unknown User';
         if (profileDescription) {

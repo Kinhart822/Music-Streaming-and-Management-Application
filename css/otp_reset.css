@@ -29,7 +29,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-top: 70px; /* Offset for fixed header */
+    padding-top: 70px;
     transition: all 0.3s ease;
 }
 
@@ -55,10 +55,14 @@ body {
     cursor: pointer;
 }
 
+/* Form Container */
 .wrapper {
     position: relative;
     width: 35rem;
     height: 50rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @media(min-width: 540px) {
@@ -135,26 +139,6 @@ form .form-group input:valid~i {
     top: 0 !important;
     font-size: 1.2rem !important;
     background-color: var(--whiteColor);
-}
-
-.wrapper .form-container form .forgot-pass {
-    margin: -1.5rem 0 1.5rem;
-}
-
-.wrapper .form-container form .forgot-pass a {
-    color: var(--mainColor);
-    text-decoration: none;
-    font-size: 1.5rem;
-    text-transform: capitalize;
-    transform: all .5s ease;
-    text-transform: capitalize;
-    font-weight: 600;
-}
-
-.wrapper .form-container form .forgot-pass a:hover {
-    color: #4485da;
-    text-decoration: underline;
-    text-transform: capitalize;
 }
 
 .wrapper .form-container form .btn {

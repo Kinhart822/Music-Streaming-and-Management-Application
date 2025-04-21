@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved profile data for header and modal
     const savedProfile = JSON.parse(localStorage.getItem('userProfile')) || {};
     if (savedProfile) {
-        if (profileIconImg) profileIconImg.src = savedProfile.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
-        if (profileModalImg) profileModalImg.src = savedProfile.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+        if (profileIconImg) profileIconImg.src = savedProfile.avatar || 'https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg';
+        if (profileModalImg) profileModalImg.src = savedProfile.avatar || 'https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg';
         if (profileBackgroundImg && savedProfile.background) profileBackgroundImg.src = savedProfile.background;
         if (profileFullname) profileFullname.textContent = `${savedProfile.firstName || ''} ${savedProfile.lastName || ''}`.trim() || 'Unknown User';
         if (profileDescription) {
@@ -152,8 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const saveProfile = () => {
                 localStorage.setItem('userProfile', JSON.stringify(profileData));
                 // Update modal immediately
-                if (profileIconImg) profileIconImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
-                if (profileModalImg) profileModalImg.src = profileData.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+                if (profileIconImg) profileIconImg.src = profileData.avatar || 'https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg';
+                if (profileModalImg) profileModalImg.src = profileData.avatar || 'https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg';
                 if (profileBackgroundImg && profileData.background) profileBackgroundImg.src = profileData.background;
                 if (profileFullname) profileFullname.textContent = `${profileData.firstName} ${profileData.lastName}`.trim() || 'Unknown User';
                 if (profileDescription) {
