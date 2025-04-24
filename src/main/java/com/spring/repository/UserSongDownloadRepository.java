@@ -12,12 +12,11 @@ import java.util.List;
 
 @Repository
 public interface UserSongDownloadRepository extends JpaRepository<UserSongDownload, UserSongDownloadId> {
-    @Query("SELECT COUNT(u) FROM UserSongDownload u WHERE u.userSongDownloadId.song.id = :songId")
-    Long countBySongId(@Param("songId") Long songId);
+    @Query("SELECT COUNT(DISTINCT usc.userSongDownloadId.user.id) FROM UserSongDownload usc WHERE usc.userSongDownloadId.song.id = :songId AND usc.userSongDownloadId.user.userType = 'USER'")
+    Long countDistinctUsersBySongId(@Param("songId") Long songId);
 
-    @Modifying
-    @Query("DELETE FROM UserSongDownload als WHERE als.userSongDownloadId.song.id = :songId")
-    void deleteAllBySongId(@Param("songId") Long songId);
+    @Query("SELECT COUNT(DISTINCT usc.userSongDownloadId.user.id) FROM UserSongDownload usc WHERE usc.userSongDownloadId.song.id IN :songIds AND usc.userSongDownloadId.user.userType = 'USER'")
+    Long countDistinctListenersBySongIds(@Param("songIds") List<Long> songIds);
 
     @Query("SELECT u FROM UserSongDownload u WHERE u.userSongDownloadId.user.id = :userId")
     List<UserSongDownload> getAllUserDownload(@Param("userId") Long userId);

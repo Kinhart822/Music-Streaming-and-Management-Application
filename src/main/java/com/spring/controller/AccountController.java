@@ -1,20 +1,27 @@
 package com.spring.controller;
 
+import com.spring.constants.ApiResponseCode;
+import com.spring.constants.Gender;
 import com.spring.dto.request.account.*;
 import com.spring.dto.response.*;
 import com.spring.entities.Notification;
+import com.spring.exceptions.BusinessException;
 import com.spring.security.JwtHelper;
 import com.spring.service.AccountService;
 import com.spring.service.SongService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/account")
 @RequiredArgsConstructor
@@ -49,6 +56,42 @@ public class AccountController {
         return ResponseEntity.ok(accountService.updateAccount(request));
     }
 
+    @PutMapping(value = "/updateArtist", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> updateArtistAccount(
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+            @RequestPart(value = "backgroundImage", required = false) MultipartFile backgroundImage,
+            @RequestPart(value = "firstName", required = false) String firstName,
+            @RequestPart(value = "lastName", required = false) String lastName,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart(value = "gender", required = false) String gender,
+            @RequestPart(value = "dateOfBirth", required = false) String dateOfBirth,
+            @RequestPart(value = "phone", required = false) String phone)
+    {
+        log.info("Received updateArtist request - Avatar: {}, BackgroundImage: {}, FirstName: {}, LastName: {}, Description: {}, Gender: {}, DateOfBirth: {}, Phone: {}",
+                avatar != null ? avatar.getOriginalFilename() : null,
+                backgroundImage != null ? backgroundImage.getOriginalFilename() : null,
+                firstName, lastName, description, gender, dateOfBirth, phone);
+
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setAvatar(avatar);
+        request.setBackgroundImage(backgroundImage);
+        request.setFirstName(firstName);
+        request.setLastName(lastName);
+        request.setDescription(description);
+        if (gender != null) {
+            try {
+                request.setGender(Gender.valueOf(gender));
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid gender value: {}", gender);
+                throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
+            }
+        }
+        request.setDateOfBirth(dateOfBirth);
+        request.setPhone(phone);
+
+        return ResponseEntity.ok(accountService.updateArtistAccount(request));
+    }
+
     /*
     TODO: Delete account details
     */
@@ -61,6 +104,11 @@ public class AccountController {
     /*
     TODO: Account functionalities
     */
+    @PostMapping("/signUpArtist")
+    public ResponseEntity<ApiResponse> signUpArtist(@RequestBody @Valid CreateArtist request) {
+        return ResponseEntity.ok(accountService.signUpArtist(request));
+    }
+
     @PostMapping("/admin/create")
     public ResponseEntity<ApiResponse> createAdmin(@RequestBody @Valid CreateAdmin request) {
         return ResponseEntity.ok(accountService.createAdmin(request));
@@ -161,22 +209,22 @@ public class AccountController {
     }
 
     @GetMapping("/song/listeners/{songId}")
-    public ResponseEntity<ApiResponse> getNumberOfListener(@PathVariable Long songId) {
+    public ResponseEntity<Long> getNumberOfListener(@PathVariable Long songId) {
         return ResponseEntity.ok(songService.getNumberOfListener(songId));
     }
 
     @GetMapping("/song/downloads/{songId}")
-    public ResponseEntity<ApiResponse> getNumberOfDownload(@PathVariable Long songId) {
+    public ResponseEntity<Long> getNumberOfDownload(@PathVariable Long songId) {
         return ResponseEntity.ok(songService.getNumberOfDownload(songId));
     }
 
     @GetMapping("/song/likes/{songId}")
-    public ResponseEntity<ApiResponse> getNumberOfUserLike(@PathVariable Long songId) {
+    public ResponseEntity<Long> getNumberOfUserLike(@PathVariable Long songId) {
         return ResponseEntity.ok(songService.getNumberOfUserLike(songId));
     }
 
     @GetMapping("/song/count-listen/{songId}")
-    public ResponseEntity<ApiResponse> getCountListen(@PathVariable Long songId) {
+    public ResponseEntity<Long> getCountListen(@PathVariable Long songId) {
         return ResponseEntity.ok(songService.getCountListen(songId));
     }
 

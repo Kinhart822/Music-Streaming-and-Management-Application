@@ -1,18 +1,13 @@
 package com.spring.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spring.constants.ApiResponseCode;
-import com.spring.constants.ManageProcess;
-import com.spring.constants.SongStatus;
+import com.spring.constants.*;
+import com.spring.dto.response.*;
 import org.springframework.context.event.EventListener;
 import com.spring.dto.SongUploadedEvent;
 import com.spring.dto.request.music.AdminAddSongRequest;
 import com.spring.dto.request.music.EditSongRequest;
 import com.spring.dto.request.music.SongUploadRequest;
-import com.spring.dto.response.ApiResponse;
-import com.spring.dto.response.FastApiResponse;
-import com.spring.dto.response.SongResponse;
-import com.spring.dto.response.SongUploadResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
@@ -35,12 +30,17 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -56,11 +56,17 @@ public class SongServiceImpl implements SongService {
     private final UserSongDownloadRepository userSongDownloadRepository;
     private final UserSongLikeRepository userSongLikeRepository;
     private final UserSongCountRepository userSongCountRepository;
+    private final ArtistUserFollowRepository artistUserFollowRepository;
     private final FastApiService fastApiService;
     private final JwtHelper jwtHelper;
     private final CloudinaryService cloudinaryService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private static final Logger log = LoggerFactory.getLogger(SongServiceImpl.class);
+
+    // Initialize HttpClient for concurrent downloads
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
+            .build();
 
     @Value("${file.upload-dir}")
     private String uploadDirPath;
@@ -75,39 +81,52 @@ public class SongServiceImpl implements SongService {
 
     // TODO: Helper method
     public SongUploadResponse enrichUploadData(SongUploadRequest songUploadRequest) {
+        // Upload thông tin
         String title = songUploadRequest.getTitle();
         String lyrics = songUploadRequest.getLyrics();
-        Boolean downloadPermission = songUploadRequest.getDownloadPermission();
         String description = songUploadRequest.getDescription();
-        List<Long> genreId = songUploadRequest.getGenreId();
+        Boolean downloadPermission = songUploadRequest.getDownloadPermission();
+
+        // Upload file lên Cloudinary
+        MultipartFile mp3File = songUploadRequest.getFile();
+        SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(songUploadRequest.getFile());
+        String audioUrl = uploaded.getMp3Url();
+        String formattedDuration = uploaded.getDuration();
+
         MultipartFile image = songUploadRequest.getImage();
         String imageUrl = cloudinaryService.uploadImageToCloudinary(image);
 
-        List<String> genreNames = genreId.stream()
-                .map(id -> genreRepository.findById(id)
-                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
-                .map(Genre::getGenresName)
-                .toList();
-
         return SongUploadResponse.builder()
+                .mp3File(mp3File)
+                .mp3Url(audioUrl)
+                .image(image)
                 .imageUrl(imageUrl)
+                .duration(formattedDuration)
                 .title(title)
                 .lyrics(lyrics)
                 .downloadPermission(downloadPermission != null ? downloadPermission : false)
                 .description(description)
-                .genreNameList(genreNames)
                 .build();
     }
 
     private SongResponse convertToSongResponse(Song song) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
         String formattedDate = song.getReleaseDate() != null
-                ? new SimpleDateFormat("dd/MM/yyyy").format(song.getReleaseDate())
+                ? formatter.format(song.getReleaseDate())
                 : null;
 
         List<String> genreNames = song.getGenreSongs() != null
                 ? song.getGenreSongs().stream()
                 .map(gs -> gs.getGenreSongId().getGenre().getGenresName())
                 .filter(Objects::nonNull)
+                .toList()
+                : new ArrayList<>();
+
+        List<String> additionalArtistNameList = song.getArtistSongs() != null
+                ? song.getArtistSongs().stream()
+                .map(as -> as.getArtistSongId().getArtist().getArtistName())
                 .toList()
                 : new ArrayList<>();
 
@@ -126,7 +145,12 @@ public class SongServiceImpl implements SongService {
                 .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
                 .trackUrl(song.getTrackUrl() != null ? song.getTrackUrl() : "")
                 .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
-                .genreName(genreNames)
+                .genreNameList(genreNames)
+                .additionalArtistNameList(additionalArtistNameList)
+                .numberOfListeners(userSongCountRepository.countDistinctUsersBySongId(song.getId()))
+                .countListen(userSongCountRepository.getTotalCountListenBySongId(song.getId()))
+                .numberOfDownload(userSongDownloadRepository.countDistinctUsersBySongId(song.getId()))
+                .numberOfUserLike(userSongLikeRepository.countDistinctUsersBySongId(song.getId()))
                 .build();
     }
 
@@ -139,36 +163,52 @@ public class SongServiceImpl implements SongService {
         }
     }
 
-    public Path downloadAudioFromCloudinary(String cloudinaryUrl, String destinationFolder, String name) {
+    public CompletableFuture<Path> downloadAudioFromCloudinary(String cloudinaryUrl, String destinationFolder, String name) {
         try {
-            URL url = new URL(cloudinaryUrl);
-            // Tạo tên file mới
-            String newFileName = name + ".mp3";
-            Path destinationPath = Paths.get(destinationFolder, newFileName);
+            // Generate unique file name to avoid conflicts
+            String uniqueFileName = name + ".mp3";
+            Path destinationPath = Paths.get(destinationFolder, uniqueFileName);
 
+            // Ensure destination directory exists (thread-safe)
             Files.createDirectories(Paths.get(destinationFolder));
 
-            try (InputStream in = url.openStream()) {
-                Files.copy(in, destinationPath);
-                log.info("✅ Audio downloaded to: {}", destinationPath.toAbsolutePath());
-            }
+            // Create HTTP request for downloading the audio
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(cloudinaryUrl))
+                    .GET()
+                    .build();
 
-            return destinationPath;
-        } catch (IOException e) {
-            log.error("❌ Failed to download audio: {}", e.getMessage());
-            return null;
+            // Perform async HTTP request and save to file
+            return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                    .thenApply(response -> {
+                        if (response.statusCode() != 200) {
+                            log.error("❌ Failed to download audio from {}: HTTP {}", cloudinaryUrl, response.statusCode());
+                            throw new RuntimeException("HTTP error: " + response.statusCode());
+                        }
+                        try (InputStream in = response.body()) {
+                            Files.copy(in, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                            log.info("✅ Audio downloaded to: {}", destinationPath.toAbsolutePath());
+                            return destinationPath;
+                        } catch (IOException e) {
+                            log.error("❌ Failed to save audio to {}: {}", destinationPath, e.getMessage());
+                            throw new RuntimeException("Failed to save audio", e);
+                        }
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("❌ Error downloading audio from {}: {}", cloudinaryUrl, throwable.getMessage());
+                        return null;
+                    });
+
+        } catch (Exception e) {
+            log.error("❌ Failed to initiate download from {}: {}", cloudinaryUrl, e.getMessage());
+            return CompletableFuture.completedFuture(null);
         }
     }
 
     // TODO: Main function
     @Override
-    public ApiResponse uploadSong(SongUploadRequest songUploadRequest) {
+    public ApiResponse createDraftSong(SongUploadRequest songUploadRequest) {
         Long artistId = jwtHelper.getIdUserRequesting();
-
-        // Upload file lên Cloudinary
-        SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(songUploadRequest.getFile());
-        String audioUrl = uploaded.getMp3Url();
-        String formattedDuration = uploaded.getDuration();
 
         // Lấy dữ liệu bổ sung từ request
         SongUploadResponse enriched = enrichUploadData(songUploadRequest);
@@ -179,35 +219,58 @@ public class SongServiceImpl implements SongService {
             return ApiResponse.ok("Lyrics of the song is too short, Lyrics must be at least above 100 words!");
         }
 
-        String description = enriched.getDescription();
-        Boolean downloadPermission = enriched.getDownloadPermission();
-        String imageUrl = enriched.getImageUrl();
-
         // Lưu song
         Song song = Song.builder()
                 .title(title)
-                .releaseDate(Date.from(Instant.now()))
+                .releaseDate(Instant.now())
                 .lyrics(lyrics)
-                .duration(formattedDuration)
-                .imageUrl(imageUrl)
-                .downloadPermission(downloadPermission)
-                .description(description)
-                .mp3Url(audioUrl)
+                .duration(enriched.getDuration())
+                .imageUrl(enriched.getImageUrl())
+                .downloadPermission(enriched.getDownloadPermission())
+                .description(enriched.getDescription())
+                .mp3Url(enriched.getMp3Url())
                 .countListener(0L)
-                .songStatus(SongStatus.PROCESSING)
+                .songStatus(SongStatus.DRAFT)
+                .createdDate(Instant.now())
+                .lastModifiedDate(Instant.now())
                 .build();
         songRepository.save(song);
 
-        // Gán artist cho bài hát
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
         artistSongRepository.save(new ArtistSong(new ArtistSongId(artist, song)));
 
+        for (Long genreId : songUploadRequest.getGenreIds()) {
+            Genre genre = genreRepository.findById(genreId)
+                    .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+            genreSongRepository.save(new GenreSong(new GenreSongId(song, genre)));
+        }
+
+        for (Long additionalArtistId : songUploadRequest.getAdditionalArtistIds()) {
+            Artist additionalArtist = artistRepository.findById(additionalArtistId)
+                    .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+            artistSongRepository.save(new ArtistSong(new ArtistSongId(additionalArtist, song)));
+        }
+
+        return ApiResponse.ok("Creat draft successful!");
+    }
+
+    @Override
+    public ApiResponse uploadSong(Long songId) {
+        Song song = songRepository.findById(songId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (song.getSongStatus() != SongStatus.DRAFT && song.getSongStatus() != SongStatus.EDITED) {
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        }
+
+        song.setSongStatus(SongStatus.PROCESSING);
+        song.setLastModifiedDate(Instant.now());
+        songRepository.save(song);
+
         applicationEventPublisher.publishEvent(new SongUploadedEvent(this, song.getId()));
 
-        return ApiResponse.ok("Upload successful! Your song is pending for processing."
-                + (audioUrl != null ? " Audio URL: " + audioUrl : "")
-                + (imageUrl != null ? " | Image URL: " + imageUrl : ""));
+        return ApiResponse.ok("Upload song successful!");
     }
 
     @EventListener
@@ -225,11 +288,12 @@ public class SongServiceImpl implements SongService {
         }
 
         boolean isFirstSong = songRepository.countAllSongs() == 0;
-        Path filePath;
         File file = null;
 
         try {
-            filePath = downloadAudioFromCloudinary(song.getMp3Url(), uploadDirPath, song.getTitle());
+            // Download audio asynchronously
+            CompletableFuture<Path> downloadFuture = downloadAudioFromCloudinary(song.getMp3Url(), uploadDirPath, song.getTitle());
+            Path filePath = downloadFuture.join(); // Wait for download to complete
             if (filePath == null) {
                 message = "Failed to download audio for Song [" + song.getId() + "]";
                 log.error("❌ {}", message);
@@ -313,6 +377,7 @@ public class SongServiceImpl implements SongService {
             // 4. Predict genres & save
             fastApiService.handleGenres(song, null, song.getLyrics(), mp3File, requestId);
             song.setSongStatus(SongStatus.PENDING);
+            song.setLastModifiedDate(Instant.now());
             songRepository.save(song);
             message = "Song [" + song.getId() + "] processed successfully.";
             log.info("✅ {}", message);
@@ -341,26 +406,33 @@ public class SongServiceImpl implements SongService {
 
         if (song.getSongStatus() != SongStatus.PENDING) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
-        }
-
-        if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
-            song.setSongStatus(SongStatus.ACCEPTED);
-            song.setCountListener(0L);
-            songRepository.save(song);
-            return ApiResponse.ok("Song accepted successfully!");
-        } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
-            song.setSongStatus(SongStatus.DECLINED);
-            songRepository.save(song);
-            return ApiResponse.ok("Song declined! Please check your song before uploading again.");
         } else {
-            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
+            if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
+                song.setSongStatus(SongStatus.ACCEPTED);
+                song.setCountListener(0L);
+                song.setLastModifiedDate(Instant.now());
+                songRepository.save(song);
+                return ApiResponse.ok("Song accepted successfully!");
+            } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
+                song.setSongStatus(SongStatus.DECLINED);
+                song.setLastModifiedDate(Instant.now());
+                songRepository.save(song);
+                return ApiResponse.ok("Song declined! Please check your song before uploading again.");
+            } else {
+                throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
+            }
         }
     }
 
     @Override
-    public ApiResponse updateSong(Long id, EditSongRequest request) {
-        Song song = songRepository.findById(id)
+    public ApiResponse updateSong(Long songId, EditSongRequest request) {
+        Long artistId = jwtHelper.getIdUserRequesting();
+        Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (song.getSongStatus() == SongStatus.PROCESSING) {
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        }
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             song.setTitle(request.getTitle());
@@ -383,29 +455,66 @@ public class SongServiceImpl implements SongService {
                     .map(index -> genreRepository.findById(index)
                             .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
                     .toList();
-
             List<GenreSong> genreSongs = genres.stream()
                     .map(genre -> new GenreSong(new GenreSongId(song, genre)))
                     .toList();
-
             song.setGenreSongs(genreSongs);
         }
 
-        if (request.getImage() != null && !request.getImage().isEmpty()) {
-            String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
-            song.setImageUrl(imageUrl);
+        if (request.getAdditionalArtistIds() != null && !request.getAdditionalArtistIds().isEmpty()) {
+            List<Long> newArtistIds = request.getAdditionalArtistIds().stream()
+                    .filter(id -> !id.equals(artistId))
+                    .toList();
+
+            List<Long> currentArtistIds = song.getArtistSongs().stream()
+                    .map(ap -> ap.getArtistSongId().getArtist().getId())
+                    .filter(id -> !id.equals(artistId))
+                    .toList();
+
+            for (Long additionalArtistId : newArtistIds) {
+                if (!currentArtistIds.contains(additionalArtistId)) {
+                    Artist artist = artistRepository.findById(additionalArtistId)
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                    if (artist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                        throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+                    }
+
+                    ArtistSong newArtistSong = new ArtistSong();
+                    newArtistSong.setArtistSongId(new ArtistSongId(artist, song));
+                    song.getArtistSongs().add(newArtistSong);
+                }
+            }
+
+            song.getArtistSongs().removeIf(ap -> {
+                Long id = ap.getArtistSongId().getArtist().getId();
+                return !id.equals(artistId) && !newArtistIds.contains(id);
+            });
+
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
+                song.setImageUrl(imageUrl);
+            }
+
+            if (request.getFile() != null && !request.getFile().isEmpty()) {
+                SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(request.getFile());
+                String audioUrl = uploaded.getMp3Url();
+                String formattedDuration = uploaded.getDuration();
+
+                song.setMp3Url(audioUrl);
+                song.setDuration(formattedDuration);
+            }
         }
 
-        if (request.getFile() != null && !request.getFile().isEmpty()) {
-            SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(request.getFile());
-            String audioUrl = uploaded.getMp3Url();
-            String formattedDuration = uploaded.getDuration();
-
-            song.setMp3Url(audioUrl);
-            song.setDuration(formattedDuration);
+        song.setLastModifiedDate(Instant.now());
+        if (song.getSongStatus() != SongStatus.DECLINED) {
+            song.setSongStatus(song.getSongStatus());
+        } else {
+            song.setSongStatus(SongStatus.EDITED);
         }
+        Song updated = songRepository.save(song);
+        songRepository.save(updated);
 
-        songRepository.save(song);
         return ApiResponse.ok();
     }
 
@@ -450,15 +559,13 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public ApiResponse getNumberOfListener(Long songId) {
-        Long totalCountListener = userSongCountRepository.getTotalCountListenBySongId(songId);
-        return ApiResponse.ok("Có tầm" + totalCountListener + "đã nghe bài hát");
+    public Long getNumberOfListener(Long songId) {
+        return userSongCountRepository.countDistinctUsersBySongId(songId);
     }
 
     @Override
-    public ApiResponse getCountListen(Long songId) {
-        Long totalCountListen = userSongCountRepository.getTotalCountListenBySongId(songId);
-        return ApiResponse.ok("Bài hát được nghe " + totalCountListen + " lần");
+    public Long getCountListen(Long songId) {
+        return userSongCountRepository.getTotalCountListenBySongId(songId);
     }
 
     @Override
@@ -486,7 +593,6 @@ public class SongServiceImpl implements SongService {
         return songs.stream()
                 .map(this::convertToSongResponse)
                 .collect(Collectors.toList());
-
     }
 
     @Override
@@ -501,9 +607,8 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public ApiResponse getNumberOfDownload(Long songId) {
-        Long count = userSongDownloadRepository.countBySongId(songId);
-        return ApiResponse.ok(String.valueOf(count));
+    public Long getNumberOfDownload(Long songId) {
+        return userSongDownloadRepository.countDistinctUsersBySongId(songId);
     }
 
     @Override
@@ -531,8 +636,8 @@ public class SongServiceImpl implements SongService {
                 .map(gs -> gs.getGenreSongId().getSong())
                 .distinct()
                 .sorted((s1, s2) -> {
-                    Long count1 = userSongDownloadRepository.countBySongId(s1.getId());
-                    Long count2 = userSongDownloadRepository.countBySongId(s2.getId());
+                    Long count1 = userSongDownloadRepository.countDistinctUsersBySongId(s1.getId());
+                    Long count2 = userSongDownloadRepository.countDistinctUsersBySongId(s2.getId());
                     return count2.compareTo(count1); // Sắp giảm dần
                 })
                 .limit(15)
@@ -544,9 +649,8 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public ApiResponse getNumberOfUserLike(Long songId) {
-        Long count = userSongLikeRepository.countBySongId(songId);
-        return ApiResponse.ok(count.toString());
+    public Long getNumberOfUserLike(Long songId) {
+        return userSongLikeRepository.countDistinctUsersBySongId(songId);
     }
 
     @Override
@@ -572,10 +676,12 @@ public class SongServiceImpl implements SongService {
                 .title(title)
                 .lyrics(lyrics)
                 .duration(duration)
-                .releaseDate(Date.from(Instant.now()))
+                .releaseDate(Instant.now())
                 .downloadPermission(false)
                 .songStatus(SongStatus.ACCEPTED)
                 .countListener(0L)
+                .createdDate(Instant.now())
+                .lastModifiedDate(Instant.now())
                 .build();
         song = songRepository.save(song);
 
@@ -591,5 +697,59 @@ public class SongServiceImpl implements SongService {
         songRepository.save(song);
 
         return ApiResponse.ok("Thêm bài hát thành công!");
+    }
+
+    @Override
+    public Long totalSongsByArtist() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+
+        return songRepository.findByArtistId(artistId).stream()
+                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .count();
+    }
+
+    @Override
+    public Long totalNumberOfListeners() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+        List<Song> songs = songRepository.findByArtistId(artistId).stream()
+                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .toList();
+        if (songs.isEmpty()) {
+            return 0L;
+        }
+        List<Long> songIds = songs.stream().map(Song::getId).collect(Collectors.toList());
+        return userSongCountRepository.countDistinctListenersBySongIds(songIds);
+    }
+
+    @Override
+    public Long totalNumberOfDownloads() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+        List<Song> songs = songRepository.findByArtistId(artistId).stream()
+                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .toList();
+        if (songs.isEmpty()) {
+            return 0L;
+        }
+        List<Long> songIds = songs.stream().map(Song::getId).collect(Collectors.toList());
+        return userSongDownloadRepository.countDistinctListenersBySongIds(songIds);
+    }
+
+    @Override
+    public Long totalNumberOfLikes() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+        List<Song> songs = songRepository.findByArtistId(artistId).stream()
+                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .toList();
+        if (songs.isEmpty()) {
+            return 0L;
+        }
+        List<Long> songIds = songs.stream().map(Song::getId).collect(Collectors.toList());
+        return userSongLikeRepository.countDistinctListenersBySongIds(songIds);
+    }
+
+    @Override
+    public Long totalNumberOfUserFollowers() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+        return artistUserFollowRepository.countDistinctUsersByArtistId(artistId);
     }
 }

@@ -1,9 +1,6 @@
 package com.spring.service.impl;
 
-import com.spring.constants.ApiResponseCode;
-import com.spring.constants.ManageProcess;
-import com.spring.constants.PlaylistAndAlbumStatus;
-import com.spring.constants.SongStatus;
+import com.spring.constants.*;
 import com.spring.dto.request.music.AddSongRequest;
 import com.spring.dto.request.music.PlaylistRequest;
 import com.spring.dto.request.music.RemoveSongRequest;
@@ -19,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,9 +49,45 @@ public class PlaylistServiceImpl implements PlaylistService {
             playlist.setImageUrl(imageUrl);
         }
 
+        Float totalLength = 0.0F;
+
+        if (request.getSongIds() != null && !request.getSongIds().isEmpty()) {
+            for (Long songId : request.getSongIds()) {
+                Song song = songRepository.findById(songId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                if (song.getSongStatus() == SongStatus.PENDING) {
+                    throw new BusinessException(ApiResponseCode.INVALID_SONG_STATUS);
+                }
+
+                PlaylistSong playlistSong = new PlaylistSong();
+                playlistSong.setPlaylistSongId(new PlaylistSongId(song, playlist));
+                playlist.getPlaylistSongs().add(playlistSong);
+                totalLength += convertDurationToFloat(song.getDuration());
+            }
+        }
+
+        if (request.getAdditionalArtistIds() != null && !request.getAdditionalArtistIds().isEmpty()) {
+            for (Long additionalArtistId : request.getAdditionalArtistIds()) {
+                Artist additionalArtist = artistRepository.findById(additionalArtistId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                if (additionalArtist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                    throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+                }
+
+                ArtistPlaylist additionalArtistPlaylist = new ArtistPlaylist();
+                additionalArtistPlaylist.setArtistPlaylistId(new ArtistPlaylistId(additionalArtist, playlist));
+                playlist.getArtistPlaylists().add(additionalArtistPlaylist);
+            }
+        }
+
         playlist.setDescription(request.getDescription());
-        playlist.setPlaylistTimeLength(0f);
+        playlist.setPlaylistTimeLength(totalLength);
         playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.DRAFT);
+        playlist.setReleaseDate(Instant.now());
+        playlist.setCreatedDate(Instant.now());
+        playlist.setLastModifiedDate(Instant.now());
 
         Playlist saved = playlistRepository.save(playlist);
 
@@ -60,11 +95,12 @@ public class PlaylistServiceImpl implements PlaylistService {
         artistPlaylist.setArtistPlaylistId(new ArtistPlaylistId(artist, saved));
         artistPlaylistRepository.save(artistPlaylist);
 
-        return convertToResponse(saved);
+        return convertToPlaylistResponse(saved);
     }
 
     @Override
     public PlaylistResponse updatePlaylist(Long playlistId, PlaylistRequest request) {
+        Long artistId = jwtHelper.getIdUserRequesting();
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
@@ -80,7 +116,75 @@ public class PlaylistServiceImpl implements PlaylistService {
             playlist.setImageUrl(cloudinaryService.uploadImageToCloudinary(request.getImage()));
         }
 
-        return convertToResponse(playlistRepository.save(playlist));
+        if (request.getSongIds() != null) {
+            List<Long> newSongIds = request.getSongIds();
+            List<Long> currentSongIds = playlist.getPlaylistSongs().stream()
+                    .map(ps -> ps.getPlaylistSongId().getSong().getId())
+                    .toList();
+
+            // Thêm bài hát mới
+            for (Long songId : newSongIds) {
+                if (!currentSongIds.contains(songId)) {
+                    Song song = songRepository.findById(songId)
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                    if (song.getSongStatus() == SongStatus.PENDING) {
+                        throw new BusinessException(ApiResponseCode.INVALID_SONG_STATUS);
+                    }
+
+                    PlaylistSong newPlaylistSong = new PlaylistSong();
+                    newPlaylistSong.setPlaylistSongId(new PlaylistSongId(song, playlist));
+                    playlist.getPlaylistSongs().add(newPlaylistSong);
+                }
+            }
+
+            playlist.getPlaylistSongs().removeIf(ps -> !newSongIds.contains(ps.getPlaylistSongId().getSong().getId()));
+        }
+
+        Float totalLength = playlist.getPlaylistSongs().stream()
+                .map(ps -> convertDurationToFloat(ps.getPlaylistSongId().getSong().getDuration()))
+                .reduce(0.0F, Float::sum);
+        playlist.setPlaylistTimeLength(totalLength);
+
+        if (request.getAdditionalArtistIds() != null) {
+            List<Long> newArtistIds = request.getAdditionalArtistIds().stream()
+                    .filter(id -> !id.equals(artistId))
+                    .toList();
+
+            List<Long> currentArtistIds = playlist.getArtistPlaylists().stream()
+                    .map(ap -> ap.getArtistPlaylistId().getArtist().getId())
+                    .filter(id -> !id.equals(artistId))
+                    .toList();
+
+            for (Long additionalArtistId : newArtistIds) {
+                if (!currentArtistIds.contains(additionalArtistId)) {
+                    Artist artist = artistRepository.findById(additionalArtistId)
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                    if (artist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                        throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+                    }
+
+                    ArtistPlaylist newArtistPlaylist = new ArtistPlaylist();
+                    newArtistPlaylist.setArtistPlaylistId(new ArtistPlaylistId(artist, playlist));
+                    playlist.getArtistPlaylists().add(newArtistPlaylist);
+                }
+            }
+
+            playlist.getArtistPlaylists().removeIf(ap -> {
+                Long id = ap.getArtistPlaylistId().getArtist().getId();
+                return !id.equals(artistId) && !newArtistIds.contains(id);
+            });
+        }
+
+        playlist.setLastModifiedDate(Instant.now());
+        if (playlist.getPlaylistAndAlbumStatus() != PlaylistAndAlbumStatus.DECLINED){
+            playlist.setPlaylistAndAlbumStatus(playlist.getPlaylistAndAlbumStatus());
+        } else {
+            playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.EDITED);
+        }
+        Playlist updated = playlistRepository.save(playlist);
+        return convertToPlaylistResponse(updated);
     }
 
     @Override
@@ -95,7 +199,7 @@ public class PlaylistServiceImpl implements PlaylistService {
     public PlaylistResponse getPlaylistById(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-        return convertToResponse(playlist);
+        return convertToPlaylistResponse(playlist);
     }
 
     @Override
@@ -108,7 +212,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                     .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
             return user.getUserPlaylists().stream()
-                    .map(up -> convertToResponse(up.getUserPlaylistId().getPlaylist()))
+                    .map(up -> convertToPlaylistResponse(up.getUserPlaylistId().getPlaylist()))
                     .collect(Collectors.toList());
 
         } else if ("ARTIST".equalsIgnoreCase(role)) {
@@ -116,15 +220,14 @@ public class PlaylistServiceImpl implements PlaylistService {
                     .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
             return artist.getArtistPlaylists().stream()
-                    .map(ap -> convertToResponse(ap.getArtistPlaylistId().getPlaylist()))
+                    .map(ap -> convertToPlaylistResponse(ap.getArtistPlaylistId().getPlaylist()))
                     .collect(Collectors.toList());
 
         } else if ("ADMIN".equalsIgnoreCase(role)) {
-            // Admin có thể xem toàn bộ playlist chẳng hạn (nếu có logic như vậy)
             List<Playlist> allPlaylists = playlistRepository.findAll();
             return allPlaylists.stream()
-                    .filter(p -> p.getPlaylistAndAlbumStatus().equals(PlaylistAndAlbumStatus.PUBLIC))
-                    .map(this::convertToResponse)
+                    .filter(p -> p.getPlaylistAndAlbumStatus().equals(PlaylistAndAlbumStatus.ACCEPTED))
+                    .map(this::convertToPlaylistResponse)
                     .collect(Collectors.toList());
         }
 
@@ -137,7 +240,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         return artist.getArtistPlaylists().stream()
-                .map(ap -> convertToResponse(ap.getArtistPlaylistId().getPlaylist()))
+                .map(ap -> convertToPlaylistResponse(ap.getArtistPlaylistId().getPlaylist()))
                 .collect(Collectors.toList());
     }
 
@@ -166,14 +269,13 @@ public class PlaylistServiceImpl implements PlaylistService {
             PlaylistSongId id = new PlaylistSongId(song, playlist);
             PlaylistSong playlistSong = new PlaylistSong();
             playlistSong.setPlaylistSongId(id);
-
-            // Thêm vào danh sách
             playlist.getPlaylistSongs().add(playlistSong);
 
             // Cộng thêm thời lượng bài hát vào playlist
             Float songDuration = convertDurationToFloat(song.getDuration()); // convert "mm:ss" or "hh:mm:ss" to float minutes
             Float currentLength = playlist.getPlaylistTimeLength() != null ? playlist.getPlaylistTimeLength() : 0.0F;
             playlist.setPlaylistTimeLength(currentLength + songDuration);
+            playlist.setLastModifiedDate(Instant.now());
             playlistRepository.save(playlist);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -213,6 +315,7 @@ public class PlaylistServiceImpl implements PlaylistService {
             }
 
             playlist.setPlaylistTimeLength(currentLength);
+            playlist.setLastModifiedDate(Instant.now());
             playlistRepository.save(playlist);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -233,6 +336,8 @@ public class PlaylistServiceImpl implements PlaylistService {
             PlaylistSongId id = new PlaylistSongId(song, playlist);
 
             playlist.getPlaylistSongs().removeIf(ps -> ps.getPlaylistSongId().equals(id));
+
+            playlist.setLastModifiedDate(Instant.now());
 
             playlistRepository.save(playlist);
         } else {
@@ -271,6 +376,7 @@ public class PlaylistServiceImpl implements PlaylistService {
             }
 
             playlist.setPlaylistTimeLength(newLength);
+            playlist.setLastModifiedDate(Instant.now());
             playlistRepository.save(playlist);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -286,6 +392,7 @@ public class PlaylistServiceImpl implements PlaylistService {
 
         if (playlist.getPlaylistAndAlbumStatus() == PlaylistAndAlbumStatus.DRAFT) {
             playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.PENDING);
+            playlist.setLastModifiedDate(Instant.now());
             playlistRepository.save(playlist);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -304,10 +411,14 @@ public class PlaylistServiceImpl implements PlaylistService {
         }
 
         if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
-            playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.PUBLIC);
+            playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.ACCEPTED);
+            playlist.setLastModifiedDate(Instant.now());
             playlistRepository.save(playlist);
             return ApiResponse.ok("Playlist accepted successfully!");
         } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
+            playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.DECLINED);
+            playlist.setLastModifiedDate(Instant.now());
+            playlistRepository.save(playlist);
             return ApiResponse.ok("Playlist declined! Please check your playlist before uploading again.");
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
@@ -337,17 +448,39 @@ public class PlaylistServiceImpl implements PlaylistService {
         return ApiResponse.ok("Playlist đã được lưu!");
     }
 
-    private PlaylistResponse convertToResponse(Playlist playlist) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        String formattedDate = playlist.getReleaseDate() != null ? sdf.format(playlist.getReleaseDate()) : null;
+    private PlaylistResponse convertToPlaylistResponse(Playlist playlist) {
+        Long id = jwtHelper.getIdUserRequesting();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedDate = playlist.getReleaseDate() != null
+                ? formatter.format(playlist.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
+        List<String> songNameList = playlist.getPlaylistSongs() != null
+                ? playlist.getPlaylistSongs().stream()
+                .filter(Objects::nonNull)
+                .map(playlistSong -> playlistSong.getPlaylistSongId().getSong().getTitle())
+                .toList()
+                : Collections.emptyList();
+
+        List<String> additionalArtistNameList = Optional.ofNullable(
+                        artistPlaylistRepository.findByArtistPlaylistId_Playlist_Id(playlist.getId()))
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(ap -> !ap.getArtistPlaylistId().getArtist().getId().equals(id))
+                .map(ap -> ap.getArtistPlaylistId().getArtist().getArtistName())
+                .toList();
 
         return PlaylistResponse.builder()
                 .id(playlist.getId())
-                .name(playlist.getPlaylistName())
-                .imageUrl(playlist.getImageUrl())
-                .releaseDate(formattedDate)
+                .playlistName(playlist.getPlaylistName())
                 .description(playlist.getDescription())
                 .playTimelength(playlist.getPlaylistTimeLength())
+                .releaseDate(formattedDate)
+                .songNameList(songNameList)
+                .additionalArtistNameList(additionalArtistNameList)
+                .imageUrl(playlist.getImageUrl())
                 .status(playlist.getPlaylistAndAlbumStatus().toString())
                 .build();
     }
@@ -369,5 +502,14 @@ public class PlaylistServiceImpl implements PlaylistService {
         }
 
         return (float) (hours * 3600 + minutes * 60 + seconds);
+    }
+
+    @Override
+    public Long totalArtistPlaylist() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+
+        return playlistRepository.findByArtistId(artistId).stream()
+                .filter(playlist -> !playlist.getPlaylistAndAlbumStatus().equals(PlaylistAndAlbumStatus.ACCEPTED))
+                .count();
     }
 }

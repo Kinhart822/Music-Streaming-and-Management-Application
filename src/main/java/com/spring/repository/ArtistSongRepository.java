@@ -7,9 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ArtistSongRepository extends JpaRepository<ArtistSong, ArtistSongId> {
-    @Modifying
-    @Query("DELETE FROM ArtistSong ars WHERE ars.artistSongId.song.id = :songId")
-    void deleteAllBySongId(@Param("songId") Long songId);
+    List<ArtistSong> findByArtistSongId_Song_Id(Long songId);
+
 }

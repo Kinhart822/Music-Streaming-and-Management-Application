@@ -16,8 +16,10 @@ public class ArtistPresentation {
     private String avatar;
     private String firstName;
     private String lastName;
+    private String artistName;
     private String description;
     private String image;
+    private String backgroundImage;
     private Long countListen;
     private Long numberOfFollowers;
     private String email;

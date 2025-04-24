@@ -7,6 +7,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class Song {
     private String title;
 
     @Column(name = "release_date")
-    private Date releaseDate;
+    private Instant releaseDate;
 
     @Column(name = "lyrics", columnDefinition = "text")
     private String lyrics;
@@ -65,17 +66,25 @@ public class Song {
     @Enumerated(EnumType.STRING)
     private SongStatus songStatus;
 
+    @CreatedDate
+    @Column(updatable = false)
+    private Instant createdDate;
+
+    @LastModifiedDate
+    @Column
+    private Instant lastModifiedDate;
+
     @OneToMany(mappedBy = "artistSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArtistSong> artistSongs;
+    private List<ArtistSong> artistSongs = new ArrayList<>();
 
     @OneToMany(mappedBy = "song", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistoryListen> historyListens;
 
     @OneToMany(mappedBy = "albumSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AlbumSong> albumSongs;
+    private List<AlbumSong> albumSongs = new ArrayList<>();
 
     @OneToMany(mappedBy = "playlistSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PlaylistSong> playlistSongs;
+    private List<PlaylistSong> playlistSongs = new ArrayList<>();
 
     @OneToMany(mappedBy = "genreSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GenreSong> genreSongs;

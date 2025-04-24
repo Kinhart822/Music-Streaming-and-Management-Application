@@ -11,9 +11,9 @@ import java.util.List;
 @NoArgsConstructor
 @Builder(toBuilder = true)
 public class SongUploadResponse {
-    private Long songId;
     private MultipartFile mp3File;
     private String mp3Url;
+    private MultipartFile image;
     private String imageUrl;
     private String duration;
     private String title;
@@ -21,4 +21,5 @@ public class SongUploadResponse {
     private Boolean downloadPermission;
     private String description;
     private List<String> genreNameList;
+    private List<String> additionalArtistNameList;
 }

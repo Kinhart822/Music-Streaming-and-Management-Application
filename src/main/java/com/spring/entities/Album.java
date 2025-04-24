@@ -3,7 +3,11 @@ package com.spring.entities;
 import com.spring.constants.PlaylistAndAlbumStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -26,7 +30,7 @@ public class Album {
     private String description;
 
     @Column(name = "release_date")
-    private Date releaseDate;
+    private Instant releaseDate;
 
     @Column(name = "album_time_length")
     private Float albumTimeLength;
@@ -34,15 +38,23 @@ public class Album {
     @Column(name = "image_url", columnDefinition = "text")
     private String imageUrl;
 
+    @CreatedDate
+    @Column(updatable = false)
+    private Instant createdDate;
+
+    @LastModifiedDate
+    @Column
+    private Instant lastModifiedDate;
+
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private PlaylistAndAlbumStatus playlistAndAlbumStatus;
 
     @OneToMany(mappedBy = "artistAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArtistAlbum> artistAlbums;
+    private List<ArtistAlbum> artistAlbums = new ArrayList<>();
 
     @OneToMany(mappedBy = "albumSongId.album", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AlbumSong> albumSongs;
+    private List<AlbumSong> albumSongs = new ArrayList<>();
 
     @OneToMany(mappedBy = "userAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserAlbum> userAlbums;

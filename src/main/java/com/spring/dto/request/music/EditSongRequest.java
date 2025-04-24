@@ -14,4 +14,5 @@ public class EditSongRequest {
     private Boolean downloadPermission;
     private String description;
     private List<Long> genreId;
+    private List<Long> additionalArtistIds;
 }

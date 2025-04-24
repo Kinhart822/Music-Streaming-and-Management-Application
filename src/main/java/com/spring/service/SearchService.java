@@ -9,6 +9,7 @@ import java.util.Map;
 
 public interface SearchService {
     Map<String, Object> paginationAccount(PaginationAccountRequest request);
+    Map<String, Object> paginationRecentSongs(PaginationSongRequest request);
     Map<String, Object> paginationSongs(PaginationSongRequest request);
     Map<String, Object> paginationPlaylists(PaginationPlaylistAlbumRequest request);
     Map<String, Object> paginationAlbums(PaginationPlaylistAlbumRequest request);

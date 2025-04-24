@@ -15,11 +15,15 @@ public interface PlaylistService {
     PlaylistResponse getPlaylistById(Long id);
     List<PlaylistResponse> getAllPlaylistsByCurrentAccount();
     List<PlaylistResponse> getAllPlaylistsByArtistId(Long id);
+
     ApiResponse addSongToPlaylist(AddSongRequest addSongRequest);
     ApiResponse addListSongToPlaylist(AddSongRequest addSongRequest);
     ApiResponse removeSongFromPlaylist(RemoveSongRequest removeSongRequest);
     ApiResponse removeListSongFromPlaylist(RemoveSongRequest removeSongRequest);
+
     ApiResponse uploadPlaylist(Long id);
     ApiResponse manageUploadPlaylist(Long id, String manageProcess);
     ApiResponse userSavePlaylist(Long playlistId);
+
+    Long totalArtistPlaylist();
 }

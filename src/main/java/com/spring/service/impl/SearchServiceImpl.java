@@ -10,6 +10,7 @@ import com.spring.dto.response.*;
 import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
+import com.spring.security.JwtHelper;
 import com.spring.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -30,6 +32,13 @@ public class SearchServiceImpl implements SearchService {
     private final PlaylistRepository playListRepository;
     private final AlbumRepository albumRepository;
     private final GenreRepository genreRepository;
+    private final ArtistSongRepository artistSongRepository;
+    private final ArtistPlaylistRepository artistPlaylistRepository;
+    private final ArtistAlbumRepository artistAlbumRepository;
+    private final UserSongDownloadRepository userSongDownloadRepository;
+    private final UserSongLikeRepository userSongLikeRepository;
+    private final UserSongCountRepository userSongCountRepository;
+    private final JwtHelper jwtHelper;
 
     @Override
     public Map<String, Object> paginationAccount(PaginationAccountRequest request) {
@@ -47,12 +56,15 @@ public class SearchServiceImpl implements SearchService {
         }
 
         resultPage = switch (userType) {
-            case USER -> userRepository.searchByUserTypeAndStatusAndKeyword(UserType.USER, request.getStatus(), request.getSearch(), pageable)
-                    .map(this::convertToUserPresentation);
-            case ADMIN -> userRepository.searchByUserTypeAndStatusAndKeyword(UserType.ADMIN, request.getStatus(), request.getSearch(), pageable)
-                    .map(this::convertToAdminPresentation);
-            case ARTIST -> artistRepository.searchByUserTypeAndStatusAndKeyword(UserType.ARTIST, request.getStatus(), request.getSearch(), pageable)
-                    .map(this::convertToArtistPresentation);
+            case USER ->
+                    userRepository.searchByUserTypeAndStatusAndKeyword(UserType.USER, request.getStatus(), request.getSearch(), pageable)
+                            .map(this::convertToUserPresentation);
+            case ADMIN ->
+                    userRepository.searchByUserTypeAndStatusAndKeyword(UserType.ADMIN, request.getStatus(), request.getSearch(), pageable)
+                            .map(this::convertToAdminPresentation);
+            case ARTIST ->
+                    artistRepository.searchByUserTypeAndStatusAndKeyword(UserType.ARTIST, request.getStatus(), request.getSearch(), pageable)
+                            .map(this::convertToArtistPresentation);
         };
 
         int currentPage = resultPage.getNumber() + 1;
@@ -68,6 +80,33 @@ public class SearchServiceImpl implements SearchService {
         response.put("totalElements", resultPage.getTotalElements());
 
         return response;
+    }
+
+    @Override
+    public Map<String, Object> paginationRecentSongs(PaginationSongRequest request) {
+        String search = request.getSearch().trim().toLowerCase();
+        Long genreId = request.getGenreId();
+
+        Sort sort = Sort.by("releaseDate").descending();
+        Pageable pageable = PageRequest.of(0, 10, sort);
+
+        Page<Song> songsPage = songRepository.findSongsByFilter(
+                pageable,
+                search.isEmpty() ? null : search,
+                genreId
+        );
+
+        List<SongResponse> songResponses = songsPage.getContent().stream()
+                .map(this::convertToSongResponse)
+                .toList();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("songs", songResponses);
+        result.put("currentPage", 1);
+        result.put("totalPages", 1);
+        result.put("totalElements", songResponses.size());
+
+        return result;
     }
 
     @Override
@@ -208,9 +247,9 @@ public class SearchServiceImpl implements SearchService {
     }
 
     // Helper Method
-    private UserPresentation convertToUserPresentation(User user){
+    private UserPresentation convertToUserPresentation(User user) {
         String formattedDate = user.getBirthDay() != null
-                ? new SimpleDateFormat("dd/MM/yyyy").format(user.getBirthDay())
+                ? user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                 : null;
 
         return UserPresentation.builder()
@@ -230,9 +269,9 @@ public class SearchServiceImpl implements SearchService {
                 .build();
     }
 
-    private AdminPresentation convertToAdminPresentation(User admin){
+    private AdminPresentation convertToAdminPresentation(User admin) {
         String formattedDate = admin.getBirthDay() != null
-                ? new SimpleDateFormat("dd/MM/yyyy").format(admin.getBirthDay())
+                ? admin.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                 : null;
 
         return AdminPresentation.builder()
@@ -252,9 +291,9 @@ public class SearchServiceImpl implements SearchService {
                 .build();
     }
 
-    private ArtistPresentation convertToArtistPresentation(Artist artist){
+    private ArtistPresentation convertToArtistPresentation(Artist artist) {
         String formattedDate = artist.getBirthDay() != null
-                ? new SimpleDateFormat("dd/MM/yyyy").format(artist.getBirthDay())
+                ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                 : null;
 
         return ArtistPresentation.builder()
@@ -262,6 +301,7 @@ public class SearchServiceImpl implements SearchService {
                 .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
                 .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                 .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
                 .email(artist.getEmail())
                 .gender(artist.getGender() != null ? artist.getGender().toString() : "")
                 .birthDay(formattedDate)
@@ -278,8 +318,13 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private SongResponse convertToSongResponse(Song song) {
+        Long id = jwtHelper.getIdUserRequesting();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
         String formattedDate = song.getReleaseDate() != null
-                ? new SimpleDateFormat("dd/MM/yyyy").format(song.getReleaseDate())
+                ? formatter.format(song.getReleaseDate())
                 : null;
 
         List<String> genreNames = song.getGenreSongs() != null
@@ -288,6 +333,15 @@ public class SearchServiceImpl implements SearchService {
                 .filter(Objects::nonNull)
                 .toList()
                 : new ArrayList<>();
+
+        List<String> additionalArtistNameList = Optional.ofNullable(
+                        artistSongRepository.findByArtistSongId_Song_Id(song.getId()))
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(ap -> !ap.getArtistSongId().getArtist().getId().equals(id))
+                .map(ap -> ap.getArtistSongId().getArtist().getArtistName())
+                .toList();
 
         return SongResponse.builder()
                 .id(song.getId())
@@ -304,42 +358,91 @@ public class SearchServiceImpl implements SearchService {
                 .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
                 .trackUrl(song.getTrackUrl() != null ? song.getTrackUrl() : "")
                 .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
-                .genreName(genreNames)
+                .genreNameList(genreNames)
+                .additionalArtistNameList(additionalArtistNameList)
+                .numberOfListeners(userSongCountRepository.countDistinctUsersBySongId(song.getId()))
+                .countListen(userSongCountRepository.getTotalCountListenBySongId(song.getId()))
+                .numberOfDownload(userSongDownloadRepository.countDistinctUsersBySongId(song.getId()))
+                .numberOfUserLike(userSongLikeRepository.countDistinctUsersBySongId(song.getId()))
                 .build();
     }
 
     private PlaylistResponse convertToPlaylistResponse(Playlist playlist) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        String formattedDate = playlist.getReleaseDate() != null ? sdf.format(playlist.getReleaseDate()) : null;
+        Long id = jwtHelper.getIdUserRequesting();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedDate = playlist.getReleaseDate() != null
+                ? formatter.format(playlist.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
+        List<String> songNameList = playlist.getPlaylistSongs() != null
+                ? playlist.getPlaylistSongs().stream()
+                .filter(Objects::nonNull)
+                .map(playlistSong -> playlistSong.getPlaylistSongId().getSong().getTitle())
+                .toList()
+                : Collections.emptyList();
+
+        List<String> additionalArtistList = Optional.ofNullable(
+                        artistPlaylistRepository.findByArtistPlaylistId_Playlist_Id(playlist.getId()))
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(ap -> !ap.getArtistPlaylistId().getArtist().getId().equals(id))
+                .map(ap -> ap.getArtistPlaylistId().getArtist().getArtistName())
+                .toList();
 
         return PlaylistResponse.builder()
                 .id(playlist.getId())
-                .name(playlist.getPlaylistName())
-                .releaseDate(formattedDate)
-                .imageUrl(playlist.getImageUrl())
+                .playlistName(playlist.getPlaylistName())
                 .description(playlist.getDescription())
                 .playTimelength(playlist.getPlaylistTimeLength())
+                .releaseDate(formattedDate)
+                .songNameList(songNameList)
+                .additionalArtistNameList(additionalArtistList)
+                .imageUrl(playlist.getImageUrl())
                 .status(playlist.getPlaylistAndAlbumStatus().toString())
                 .build();
     }
 
     private AlbumResponse convertToAlbumResponse(Album album) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        String formattedDate = album.getReleaseDate() != null ? sdf.format(album.getReleaseDate()) : null;
+        Long id = jwtHelper.getIdUserRequesting();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedDate = album.getReleaseDate() != null
+                ? formatter.format(album.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
+        List<String> songNameList = album.getAlbumSongs() != null
+                ? album.getAlbumSongs().stream()
+                .filter(Objects::nonNull)
+                .map(albumSong -> albumSong.getAlbumSongId().getSong().getTitle())
+                .toList()
+                : Collections.emptyList();
+
+        List<String> additionalArtistList = Optional.ofNullable(
+                        artistAlbumRepository.findByArtistAlbumId_Album_Id(album.getId()))
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(ap -> !ap.getArtistAlbumId().getArtist().getId().equals(id))
+                .map(ap -> ap.getArtistAlbumId().getArtist().getArtistName())
+                .toList();
 
         return AlbumResponse.builder()
                 .id(album.getId())
-                .name(album.getAlbumName())
+                .albumName(album.getAlbumName())
                 .description(album.getDescription())
-                .releaseDate(formattedDate)
-                .imageUrl(album.getImageUrl())
                 .albumTimeLength(album.getAlbumTimeLength())
+                .releaseDate(formattedDate)
+                .songNameList(songNameList)
+                .additionalArtistNameList(additionalArtistList)
+                .imageUrl(album.getImageUrl())
                 .status(album.getPlaylistAndAlbumStatus().toString())
                 .build();
     }
 
-    private GenreResponse convertToGenreResponse(Genre genre){
-        return  GenreResponse.builder()
+    private GenreResponse convertToGenreResponse(Genre genre) {
+        return GenreResponse.builder()
                 .id(genre.getId())
                 .name(genre.getGenresName())
                 .imageUrl(genre.getImageUrl())

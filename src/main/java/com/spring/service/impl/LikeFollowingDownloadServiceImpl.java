@@ -116,6 +116,7 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                             .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
                             .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                             .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                            .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
                             .email(artist.getEmail())
                             .gender(artist.getGender() != null ? artist.getGender().toString() : "")
                             .birthDay(formattedDate)

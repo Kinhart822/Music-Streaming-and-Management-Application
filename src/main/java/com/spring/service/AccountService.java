@@ -16,6 +16,8 @@ public interface AccountService {
 
     ApiResponse createArtist(CreateArtist request);
 
+    ApiResponse signUpArtist(CreateArtist request);
+
     ApiResponse createArtistFromList(CreateArtistFromList request);
 
     Map<String, Instant> sendOtpToEmail(SendOtpRequest request);
@@ -47,6 +49,8 @@ public interface AccountService {
 
     List<ArtistPresentation> getAllArtist();
 
+    List<ArtistPresentation> getAllOtherArtist();
+
     // Sign Up Steps
     Map<String, Boolean> signUpCheckEmailExistence(String query);
 
@@ -72,6 +76,8 @@ public interface AccountService {
 
     // Update Account Step
     ApiResponse updateAccount(UpdateAccountRequest request);
+
+    ApiResponse updateArtistAccount(UpdateAccountRequest request);
 
     // Delete Account Step
     ApiResponse deleteAccount(Long userId);

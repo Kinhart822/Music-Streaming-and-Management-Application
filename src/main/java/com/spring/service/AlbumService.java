@@ -22,4 +22,6 @@ public interface AlbumService {
     ApiResponse uploadAlbum(Long id);
     ApiResponse manageUploadAlbum(Long id, String manageProcess);
     ApiResponse userSaveAlbum(Long albumId);
+
+    Long totalAlbum();
 }

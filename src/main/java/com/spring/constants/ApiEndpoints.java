@@ -13,7 +13,11 @@ public enum ApiEndpoints {
             "/api/v1/account/user/forgot-password/**",
             "/api/v1/account/profile/**",
             "/api/v1/account/song/**",
-            "/api/v1/account/search/**"
+            "/api/v1/account/search/**",
+            "/api/v1/account/signUpArtist",
+            "/api/v1/account/user/sign-up/check-email-existence",
+            "/api/v1/account/signUpArtist",
+            "/api/v1/account/updateArtist"
     );
 
     private final String[] apis;

@@ -2,6 +2,8 @@ package com.spring.entities;
 
 import lombok.*;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -11,6 +13,9 @@ import java.util.List;
 @Entity
 @Table(name = "artists")
 public class Artist extends User{
+    @Column(name = "artist_name")
+    private String artistName;
+
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
@@ -30,5 +35,5 @@ public class Artist extends User{
     private List<ArtistUserFollow> artistUserFollows;
 
     @OneToMany(mappedBy = "artistPlaylistId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArtistPlaylist> artistPlaylists;
+    private List<ArtistPlaylist> artistPlaylists = new ArrayList<>();
 }

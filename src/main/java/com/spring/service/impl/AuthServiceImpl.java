@@ -28,6 +28,7 @@ import java.util.Objects;
 public class AuthServiceImpl implements AuthService {
     private static final String ACCESS_TOKEN_KEY = "accessToken";
     private static final String REFRESH_TOKEN_KEY = "refreshToken";
+    private static final String USER_TYPE = "userType";
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final JwtUtil jwtUtil;
@@ -51,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = (User) userDetails;
         Map<String, String> response = new HashMap<>();
+        response.put(USER_TYPE, user.getUserType().toString());
         response.put(ACCESS_TOKEN_KEY, jwtUtil.generateAccessToken(userDetails));
 
         // Nếu user đã có refresh token, không cấp lại
@@ -69,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
                 .expirationDate(jwtUtil.extractExpirationDate(refreshToken))
                 .build());
         response.put(REFRESH_TOKEN_KEY, refreshToken);
+
         return response;
     }
 

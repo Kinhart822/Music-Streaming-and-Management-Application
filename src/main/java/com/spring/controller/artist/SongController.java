@@ -15,9 +15,14 @@ import org.springframework.web.bind.annotation.*;
 public class SongController {
     private final SongService songService;
 
-    @PostMapping("/uploadFile")
-    public ResponseEntity<ApiResponse> uploadSong(@ModelAttribute @Valid SongUploadRequest songUploadRequest) {
-        return ResponseEntity.ok(songService.uploadSong(songUploadRequest));
+    @PostMapping("/createDraft")
+    public ResponseEntity<ApiResponse> createDraftSong(@ModelAttribute @Valid SongUploadRequest songUploadRequest) {
+        return ResponseEntity.ok(songService.createDraftSong(songUploadRequest));
+    }
+
+    @PostMapping("/upload/{id}")
+    public ResponseEntity<ApiResponse> uploadSong(@PathVariable Long id) {
+        return ResponseEntity.ok(songService.uploadSong(id));
     }
 
     @PutMapping("/update/{id}")

@@ -24,5 +24,10 @@ public class SongResponse {
     private String mp3Url;        // Song file url from Cloudinary
     private String trackUrl;       // Song url from Spotify_API
     private String songStatus;
-    private List<String> genreName;
+    private List<String> genreNameList;
+    private List<String> additionalArtistNameList;
+    private Long numberOfListeners;
+    private Long countListen;
+    private Long numberOfUserLike;
+    private Long numberOfDownload;
 }

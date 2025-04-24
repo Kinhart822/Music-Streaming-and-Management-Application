@@ -1,9 +1,6 @@
 package com.spring.service.impl;
 
-import com.spring.constants.ApiResponseCode;
-import com.spring.constants.ManageProcess;
-import com.spring.constants.PlaylistAndAlbumStatus;
-import com.spring.constants.SongStatus;
+import com.spring.constants.*;
 import com.spring.dto.request.music.AddSongRequest;
 import com.spring.dto.request.music.AlbumRequest;
 import com.spring.dto.request.music.RemoveSongRequest;
@@ -19,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,17 +42,52 @@ public class AlbumServiceImpl implements AlbumService {
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         Album album = new Album();
-        album.setAlbumName(request.getName());
+        album.setAlbumName(request.getAlbumName());
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
             album.setImageUrl(imageUrl);
         }
 
+        Float totalLength = 0.0F;
+
+        if (request.getSongIds() != null && !request.getSongIds().isEmpty()) {
+            for (Long songId : request.getSongIds()) {
+                Song song = songRepository.findById(songId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                if (song.getSongStatus() == SongStatus.PENDING) {
+                    throw new BusinessException(ApiResponseCode.INVALID_SONG_STATUS);
+                }
+
+                AlbumSong albumSong = new AlbumSong();
+                albumSong.setAlbumSongId(new AlbumSongId(song, album));
+                album.getAlbumSongs().add(albumSong);
+                totalLength += convertDurationToFloat(song.getDuration());
+            }
+        }
+
+        if (request.getAdditionalArtistIds() != null && !request.getAdditionalArtistIds().isEmpty()) {
+            for (Long additionalArtistId : request.getAdditionalArtistIds()) {
+                Artist additionalArtist = artistRepository.findById(additionalArtistId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                if (additionalArtist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                    throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+                }
+
+                ArtistAlbum additionalArtistAlbum = new ArtistAlbum();
+                additionalArtistAlbum.setArtistAlbumId(new ArtistAlbumId(album, additionalArtist));
+                album.getArtistAlbums().add(additionalArtistAlbum);
+            }
+        }
+
         album.setDescription(request.getDescription());
-        album.setReleaseDate(new Date());
-        album.setAlbumTimeLength(0.0F);
+        album.setAlbumTimeLength(totalLength);
         album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.DRAFT);
+        album.setReleaseDate(Instant.now());
+        album.setCreatedDate(Instant.now());
+        album.setLastModifiedDate(Instant.now());
 
         Album savedAlbum = albumRepository.save(album);
 
@@ -66,11 +100,12 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     public AlbumResponse updateAlbum(Long albumId, AlbumRequest request) {
+        Long artistId = jwtHelper.getIdUserRequesting();
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-        if (request.getName() != null && !request.getName().isBlank()) {
-            album.setAlbumName(request.getName());
+        if (request.getAlbumName() != null && !request.getAlbumName().isBlank()) {
+            album.setAlbumName(request.getAlbumName());
         }
 
         if (request.getDescription() != null && !request.getDescription().isBlank()) {
@@ -81,8 +116,74 @@ public class AlbumServiceImpl implements AlbumService {
             album.setImageUrl(cloudinaryService.uploadImageToCloudinary(request.getImage()));
         }
 
-        return convertToResponse(albumRepository.save(album));
+        if (request.getSongIds() != null) {
+            List<Long> newSongIds = request.getSongIds();
+            List<Long> currentSongIds = album.getAlbumSongs().stream()
+                    .map(ps -> ps.getAlbumSongId().getSong().getId())
+                    .toList();
 
+            for (Long songId : newSongIds) {
+                if (!currentSongIds.contains(songId)) {
+                    Song song = songRepository.findById(songId)
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                    if (song.getSongStatus() == SongStatus.PENDING) {
+                        throw new BusinessException(ApiResponseCode.INVALID_SONG_STATUS);
+                    }
+
+                    AlbumSong newAlbumSong = new AlbumSong();
+                    newAlbumSong.setAlbumSongId(new AlbumSongId(song, album));
+                    album.getAlbumSongs().add(newAlbumSong);
+                }
+            }
+
+            album.getAlbumSongs().removeIf(ps -> !newSongIds.contains(ps.getAlbumSongId().getSong().getId()));
+        }
+
+        Float totalLength = album.getAlbumSongs().stream()
+                .map(ps -> convertDurationToFloat(ps.getAlbumSongId().getSong().getDuration()))
+                .reduce(0.0F, Float::sum);
+        album.setAlbumTimeLength(totalLength);
+
+        if (request.getAdditionalArtistIds() != null) {
+            List<Long> newArtistIds = request.getAdditionalArtistIds().stream()
+                    .filter(id -> !id.equals(artistId))
+                    .toList();
+
+            List<Long> currentArtistIds = album.getArtistAlbums().stream()
+                    .map(ap -> ap.getArtistAlbumId().getArtist().getId())
+                    .filter(id -> !id.equals(artistId))
+                    .toList();
+
+            for (Long additionalArtistId : newArtistIds) {
+                if (!currentArtistIds.contains(additionalArtistId)) {
+                    Artist artist = artistRepository.findById(additionalArtistId)
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                    if (artist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                        throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+                    }
+
+                    ArtistAlbum newArtistAlbum = new ArtistAlbum();
+                    newArtistAlbum.setArtistAlbumId(new ArtistAlbumId(album, artist));
+                    album.getArtistAlbums().add(newArtistAlbum);
+                }
+            }
+
+            album.getArtistAlbums().removeIf(ap -> {
+                Long id = ap.getArtistAlbumId().getArtist().getId();
+                return !id.equals(artistId) && !newArtistIds.contains(id);
+            });
+        }
+
+        album.setLastModifiedDate(Instant.now());
+        if (album.getPlaylistAndAlbumStatus() != PlaylistAndAlbumStatus.DECLINED) {
+            album.setPlaylistAndAlbumStatus(album.getPlaylistAndAlbumStatus());
+        } else {
+            album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.EDITED);
+        }
+        Album updated = albumRepository.save(album);
+        return convertToResponse(updated);
     }
 
     @Override
@@ -90,7 +191,7 @@ public class AlbumServiceImpl implements AlbumService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-        if (album.getPlaylistAndAlbumStatus() == PlaylistAndAlbumStatus.PUBLIC){
+        if (album.getPlaylistAndAlbumStatus() == PlaylistAndAlbumStatus.ACCEPTED) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
         }
 
@@ -171,6 +272,7 @@ public class AlbumServiceImpl implements AlbumService {
             Float songDuration = convertDurationToFloat(song.getDuration()); // convert "mm:ss" or "hh:mm:ss" to float minutes
             Float currentLength = album.getAlbumTimeLength() != null ? album.getAlbumTimeLength() : 0.0F;
             album.setAlbumTimeLength(currentLength + songDuration);
+            album.setLastModifiedDate(Instant.now());
             albumRepository.save(album);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -210,10 +312,10 @@ public class AlbumServiceImpl implements AlbumService {
             }
 
             album.setAlbumTimeLength(currentLength);
+            album.setLastModifiedDate(Instant.now());
             albumRepository.save(album);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
-
         }
 
         return ApiResponse.ok("Songs added to album");
@@ -230,7 +332,7 @@ public class AlbumServiceImpl implements AlbumService {
             AlbumSongId id = new AlbumSongId(song, album);
 
             album.getAlbumSongs().removeIf(ps -> ps.getAlbumSongId().equals(id));
-
+            album.setLastModifiedDate(Instant.now());
             albumRepository.save(album);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -268,6 +370,7 @@ public class AlbumServiceImpl implements AlbumService {
             }
 
             album.setAlbumTimeLength(newLength);
+            album.setLastModifiedDate(Instant.now());
             albumRepository.save(album);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -283,6 +386,7 @@ public class AlbumServiceImpl implements AlbumService {
 
         if (album.getPlaylistAndAlbumStatus() == PlaylistAndAlbumStatus.DRAFT) {
             album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.PENDING);
+            album.setLastModifiedDate(Instant.now());
             albumRepository.save(album);
         } else {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -301,7 +405,8 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
-            album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.PUBLIC);
+            album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.ACCEPTED);
+            album.setLastModifiedDate(Instant.now());
             albumRepository.save(album);
             return ApiResponse.ok("Album accepted successfully!");
         } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
@@ -338,16 +443,39 @@ public class AlbumServiceImpl implements AlbumService {
     }
 
     private AlbumResponse convertToResponse(Album album) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        String formattedDate = album.getReleaseDate() != null ? sdf.format(album.getReleaseDate()) : null;
+        Long id = jwtHelper.getIdUserRequesting();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedDate = album.getReleaseDate() != null
+                ? formatter.format(album.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
+        List<String> songNameList = album.getAlbumSongs() != null
+                ? album.getAlbumSongs().stream()
+                .filter(Objects::nonNull)
+                .map(albumSong -> albumSong.getAlbumSongId().getSong().getTitle())
+                .toList()
+                : Collections.emptyList();
+
+        List<String> additionalArtistList = Optional.ofNullable(
+                        artistAlbumRepository.findByArtistAlbumId_Album_Id(album.getId()))
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(ap -> !ap.getArtistAlbumId().getArtist().getId().equals(id))
+                .map(ap -> ap.getArtistAlbumId().getArtist().getFirstName() + " " +
+                        ap.getArtistAlbumId().getArtist().getLastName())
+                .toList();
 
         return AlbumResponse.builder()
                 .id(album.getId())
-                .name(album.getAlbumName())
+                .albumName(album.getAlbumName())
                 .description(album.getDescription())
-                .releaseDate(formattedDate)
-                .imageUrl(album.getImageUrl())
                 .albumTimeLength(album.getAlbumTimeLength())
+                .releaseDate(formattedDate)
+                .songNameList(songNameList)
+                .additionalArtistNameList(additionalArtistList)
+                .imageUrl(album.getImageUrl())
                 .status(album.getPlaylistAndAlbumStatus().toString())
                 .build();
     }
@@ -369,5 +497,14 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         return (float) (hours * 3600 + minutes * 60 + seconds);
+    }
+
+    @Override
+    public Long totalAlbum() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+
+        return albumRepository.findByArtistId(artistId).stream()
+                .filter(album -> !album.getPlaylistAndAlbumStatus().equals(PlaylistAndAlbumStatus.ACCEPTED))
+                .count();
     }
 }

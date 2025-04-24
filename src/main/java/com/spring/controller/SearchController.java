@@ -32,6 +32,12 @@ public class SearchController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/recentSongs")
+    public ResponseEntity<Map<String, Object>> getPaginatedRecentSongs(@RequestBody PaginationSongRequest request) {
+        Map<String, Object> response = searchService.paginationRecentSongs(request);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/playlists")
     public ResponseEntity<Map<String, Object>> getPaginatedPlaylists(@RequestBody PaginationPlaylistAlbumRequest request) {
         Map<String, Object> response = searchService.paginationPlaylists(request);

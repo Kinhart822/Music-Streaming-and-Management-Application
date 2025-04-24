@@ -93,6 +93,36 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public ApiResponse signUpArtist(CreateArtist request) {
+        String email = request.getEmail();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new BusinessException(ApiResponseCode.USERNAME_EXISTED);
+        }
+
+        Instant now = Instant.now();
+
+        Artist artist = new Artist();
+        artist.setEmail(email);
+        artist.setPassword(passwordEncoder.encode(request.getPassword()));
+        artist.setUserType(UserType.ARTIST);
+        artist.setStatus(CommonStatus.ACTIVE.getStatus());
+        artist.setCreatedDate(now);
+        artist.setLastModifiedDate(now);
+        artist.setDescription(null);
+        artist.setImageUrl(null);
+        artist.setCountListen(0L);
+        artist.setCreatedBy(0L);
+        artist.setLastModifiedBy(0L);
+        artistRepository.save(artist);
+
+        artist.setCreatedBy(artist.getId());
+        artist.setLastModifiedBy(artist.getId());
+        artistRepository.save(artist);
+
+        return ApiResponse.ok();
+    }
+
+    @Override
     public ApiResponse createArtistFromList(CreateArtistFromList request) {
         List<CreateArtist> artistRequests = request.getArtistList();
 
@@ -162,7 +192,7 @@ public class AccountServiceImpl implements AccountService {
         }
         Otp otp = sessionOtpMap.get(sessionId);
         Map<String, Boolean> response = new HashMap<>();
-        response.put(VALID_KEY, Objects.equals(otp.getOtp(), request.getOtp()) && otp.getDueDate().isAfter(Instant.now()));
+        response.put(VALID_KEY, Objects.equals(otp.getOtp(), request.getOtp()));
         return response;
     }
 
@@ -266,7 +296,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ArtistPresentation getArtist() {
-        User artist = userRepository.findById(jwtHelper.getIdUserRequesting())
+        Artist artist = artistRepository.findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         Artist artist_info = artistRepository.findById(artist.getId())
@@ -280,8 +310,9 @@ public class AccountServiceImpl implements AccountService {
                 .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
                 .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                 .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
                 .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
-                .image(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
+                .backgroundImage(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
                 .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
                 .email(artist.getEmail())
                 .gender(artist.getGender() != null ? artist.getGender().toString() : "")
@@ -297,7 +328,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ArtistPresentation viewArtistProfile(Long id) {
-        User artist = userRepository.findById(id)
+        Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         Artist artist_info = artistRepository.findById(artist.getId())
@@ -311,6 +342,7 @@ public class AccountServiceImpl implements AccountService {
                 .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
                 .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                 .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
                 .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
                 .image(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
                 .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
@@ -391,6 +423,7 @@ public class AccountServiceImpl implements AccountService {
                     .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
                     .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                     .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                    .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
                     .email(artist.getEmail())
                     .gender(artist.getGender() != null ? artist.getGender().toString() : "")
                     .birthDay(formattedDate)
@@ -407,6 +440,38 @@ public class AccountServiceImpl implements AccountService {
         }).toList();
     }
 
+    @Override
+    public List<ArtistPresentation> getAllOtherArtist() {
+        Long id = jwtHelper.getIdUserRequesting();
+        List<Artist> artists = artistRepository.findAll().stream()
+                .filter(a -> !a.getId().equals(id))
+                .toList();
+
+        return artists.stream().map(artist -> {
+            String formattedDate = artist.getBirthDay() != null
+                    ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            return ArtistPresentation.builder()
+                    .id(artist.getId())
+                    .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
+                    .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
+                    .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                    .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
+                    .email(artist.getEmail())
+                    .gender(artist.getGender() != null ? artist.getGender().toString() : "")
+                    .birthDay(formattedDate)
+                    .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
+                    .status(artist.getStatus())
+                    .createdBy(artist.getCreatedBy())
+                    .lastModifiedBy(artist.getLastModifiedBy())
+                    .createdDate(artist.getCreatedDate())
+                    .lastModifiedDate(artist.getLastModifiedDate())
+                    .description(artist.getDescription() != null ? artist.getDescription() : "")
+                    .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
+                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .build();
+        }).toList();
+    }
 
     // Sign Up Request
     @Override
@@ -554,6 +619,55 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public ApiResponse updateArtistAccount(UpdateAccountRequest request) {
+        Long id = jwtHelper.getIdUserRequesting();
+        Artist user = artistRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getAvatar());
+            user.setAvatar(imageUrl);
+        }
+
+        if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
+            user.setFirstName(request.getFirstName());
+        }
+
+        if (request.getLastName() != null && !request.getLastName().isBlank()) {
+            user.setLastName(request.getLastName());
+        }
+
+        if (request.getGender() != null && !request.getGender().name().isBlank()) {
+            user.setGender(request.getGender());
+        }
+
+        if (request.getDateOfBirth() != null && !request.getDateOfBirth().isBlank()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate dateOfBirth = LocalDate.parse(request.getDateOfBirth(), formatter);
+            user.setBirthDay(dateOfBirth);
+        }
+
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            user.setPhoneNumber(request.getPhone());
+        }
+
+        if (request.getBackgroundImage() != null && !request.getBackgroundImage().isEmpty()) {
+            String backgroundImageUrl = cloudinaryService.uploadImageToCloudinary(request.getBackgroundImage());
+            user.setImageUrl(backgroundImageUrl);
+        }
+
+        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+            user.setDescription(request.getDescription());
+        }
+
+        user.setLastModifiedBy(id);
+        user.setLastModifiedDate(Instant.now());
+        artistRepository.save(user);
+
+        return ApiResponse.ok();
+    }
+
+    @Override
     @Transactional
     public ApiResponse deleteAccount(Long userId) {
         User user = userRepository.findById(userId)
@@ -654,6 +768,7 @@ public class AccountServiceImpl implements AccountService {
                     .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
                     .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                     .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                    .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
                     .email(artist.getEmail())
                     .gender(artist.getGender() != null ? artist.getGender().toString() : "")
                     .birthDay(formattedDate)

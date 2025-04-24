@@ -66,7 +66,9 @@ public class AdminController {
         return ResponseEntity.ok(accountService.countSongs());
     }
 
-    @PostMapping("/songUpload/{id}")
+
+
+    @PostMapping("/publish/{id}")
     public ResponseEntity<ApiResponse> manageSongUpload(@PathVariable Long id, @RequestParam String manageProcess) {
         return ResponseEntity.ok(songService.manageUploadSong(id, manageProcess));
     }
