@@ -58,6 +58,12 @@ const fetchWithRefresh = async (url, options = {}) => {
     const refreshToken = localStorage.getItem('refreshToken');
     const email = localStorage.getItem('email');
 
+    if (!accessToken || !refreshToken || !email) {
+        console.error('Missing tokens or email, redirecting to login');
+        window.location.href = '../auth/login_register.html';
+        throw new Error('No tokens or email available');
+    }
+
     // Add Authorization header, set Content-Type only if not FormData
     options.headers = {
         ...options.headers,
@@ -69,29 +75,44 @@ const fetchWithRefresh = async (url, options = {}) => {
     }
 
     try {
+        console.log('Fetching:', url, 'Options:', {
+            method: options.method || 'GET',
+            headers: options.headers,
+            body: options.body instanceof FormData ? '[FormData]' : options.body
+        });
         const response = await fetch(url, options);
-        console.log('Fetch response status:', response.status);
+        console.log('Fetch response status:', response.status, 'URL:', url);
 
-        if (!accessToken || !refreshToken || !email) {
-            window.location.href = '../auth/login_register.html';
-            throw new Error('No tokens or email available');
-        }
-
-        if (response.status === 401 || response.status === 500) {
-            // Token expired, try refreshing
+        if (response.status === 401 || response.status === 403) {
+            console.log('Token expired or unauthorized, attempting to refresh');
+            // Try refreshing the token
             const newAccessToken = await refreshAccessToken(email, refreshToken);
-            // Update Authorization header with new token
+            // Update Authorization header
             options.headers['Authorization'] = `Bearer ${newAccessToken}`;
             // Retry original request
-            return await fetch(url, options);
+            console.log('Retrying with new token:', url);
+            const retryResponse = await fetch(url, options);
+            console.log('Retry response status:', retryResponse.status, 'URL:', url);
+
+            if (retryResponse.status === 401 || retryResponse.status === 403) {
+                console.error('Retry failed, redirecting to login');
+                window.location.href = '../auth/login_register.html';
+                throw new Error('Unauthorized after token refresh');
+            }
+            return retryResponse;
+        }
+
+        if (response.status === 500) {
+            console.error('Server error (500) for URL:', url);
+            throw new Error('Server error occurred');
         }
 
         return response;
     } catch (error) {
-        console.error('Fetch with refresh error:', error);
+        console.error('Fetch error for URL:', url, 'Error:', error.message);
         throw error;
     }
 };
 
 // Export fetchWithRefresh for use in other modules
-export { fetchWithRefresh };
+export {fetchWithRefresh};

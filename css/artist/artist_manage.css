@@ -1,3 +1,34 @@
+.table-container {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #F6F5FF;
+    border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #cdcbcb;
+    border-radius: 8px;
+}
+
+html.dark .table-container::-webkit-scrollbar-track {
+    background: #333;
+}
+
+html.dark .table-container::-webkit-scrollbar-thumb {
+    background: #666;
+}
+
+table {
+    min-width: 1000px;
+}
+
 .table-controls {
     display: flex;
     justify-content: space-between;
@@ -6,9 +37,12 @@
     gap: 10px;
     flex-wrap: wrap;
 }
+
 .table-controls label {
     font-weight: bold;
+    color: #606266;
 }
+
 .table-controls select,
 .table-controls input {
     padding: 8px;
@@ -18,75 +52,195 @@
     min-width: 120px;
     background: #ffffff;
 }
+
 .table table td.truncate {
     max-width: 200px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .table table td button {
     padding: 5px 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     margin: 0 3px;
-    width: 80px; /* Đảm bảo cùng kích thước */
+    min-width: 80px;
     font-size: 14px;
     text-align: center;
 }
+
 .table table td button.accept {
     background: #28a745;
     color: #fff;
 }
+
 .table table td button.accept:hover {
     background: #218838;
 }
+
 .table table td button.decline {
-    background: #ffc107; /* Màu vàng */
+    background: #ffc107;
     color: #fff;
 }
+
 .table table td button.decline:hover {
-    background: #e0a800; /* Màu vàng đậm khi hover */
+    background: #e0a800;
 }
+
 .table table td button.delete {
-    background: #dc3545; /* Màu đỏ */
+    background: #dc3545;
     color: #fff;
 }
+
 .table table td button.delete:hover {
-    background: #c82333; /* Màu đỏ đậm khi hover */
+    background: #c82333;
 }
-.table table td.status.accepted {
-    color: #28a745;
+
+.table td.status.processing {
+    color: #409eff;
     font-weight: bold;
 }
-.table table td.status.declined {
-    color: #dc3545;
-    font-weight: bold;
-}
-.table table td.status.pending {
+
+.table td.status.pending {
     color: #ffc107;
     font-weight: bold;
 }
-.add-song-form {
-    display: none;
-    max-width: 400px;
-    margin: 50px auto;
+
+.table td.status.accepted {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.table td.status.edited {
+    color: #722ed1;
+    font-weight: bold;
+}
+
+.table td.status.declined {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+html.dark .table a.view-lyrics,
+html.dark .table a.view-description {
+    color: #fff;
+    text-decoration: underline;
+}
+
+html.dark .table button.publish {
+    background: #55a532;
+}
+
+html.dark .table button.edit {
+    background: #d48d2a;
+}
+
+html.dark .table button.delete {
+    background: #d45b5b;
+}
+
+html.dark .table button.accept {
+    background: #218838;
+}
+
+html.dark .table button.accept:hover {
+    background: #1c7430;
+}
+
+html.dark .table button.decline {
+    background: #e0a800;
+}
+
+html.dark .table button.decline:hover {
+    background: #cc9600;
+}
+
+html.dark .table button.delete {
+    background: #c82333;
+}
+
+html.dark .table button.delete:hover {
+    background: #b31f2e;
+}
+
+html.dark .table td.status.draft {
+    color: #a0a6ab;
+    font-weight: bold;
+}
+
+html.dark .table td.status.processing {
+    color: #66b1ff;
+    font-weight: bold;
+}
+
+html.dark .table td.status.pending {
+    color: #e0a800;
+    font-weight: bold;
+}
+
+html.dark .table td.status.accepted {
+    color: #218838;
+    font-weight: bold;
+}
+
+html.dark .table td.status.edited {
+    color: #9254de;
+    font-weight: bold;
+}
+
+html.dark .table td.status.declined {
+    color: #c82333;
+    font-weight: bold;
+}
+
+.table button.publish:hover {
+    background: #55a532;
+}
+
+.table button.edit:hover {
+    background: #d48d2a;
+}
+
+.table button.delete:hover {
+    background: #d45b5b;
+}
+
+html.dark .table button.publish:hover {
+    background: #4a912d;
+}
+
+html.dark .table button.edit:hover {
+    background: #bf7d25;
+}
+
+html.dark .table button.delete:hover {
+    background: #c14f4f;
+}
+
+.table td[colspan="12"] {
+    text-align: center;
     padding: 20px;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .add-song-form.active {
     display: block;
 }
+
 .add-song-form .form-group {
     margin-bottom: 15px;
 }
+
 .add-song-form label {
     font-weight: bold;
     margin-bottom: 5px;
     display: block;
 }
+
 .add-song-form input,
 .add-song-form select {
     width: 100%;
@@ -95,17 +249,20 @@
     border-radius: 4px;
     font-size: 14px;
 }
+
 .add-song-form .error {
     color: red;
     font-size: 12px;
     margin-top: 5px;
     display: none;
 }
+
 .add-song-form .button-group {
     display: flex;
     gap: 10px;
     justify-content: center;
 }
+
 .add-song-form button {
     padding: 10px 20px;
     border: none;
@@ -113,20 +270,25 @@
     cursor: pointer;
     font-size: 14px;
 }
+
 .add-song-form button[type="submit"] {
     background: #007bff;
     color: #fff;
 }
+
 .add-song-form button[type="submit"]:hover {
     background: #0056b3;
 }
+
 .add-song-form button.cancel {
     background: #6c757d;
     color: #fff;
 }
+
 .add-song-form button.cancel:hover {
     background: #5a6268;
 }
+
 .pagination {
     margin: 20px 0;
     display: flex;
@@ -134,6 +296,7 @@
     gap: 10px;
     flex-wrap: wrap;
 }
+
 .pagination button {
     padding: 8px 12px;
     border: 1px solid #ccc;
@@ -141,67 +304,141 @@
     background: #fff;
     cursor: pointer;
 }
+
 .pagination button:disabled {
     background: #f0f0f0;
     cursor: not-allowed;
 }
+
 .pagination span {
     padding: 8px 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
     cursor: pointer;
 }
+
 .pagination span.active {
     background: #007bff;
     color: #fff;
     border-color: #007bff;
 }
-body.dark .add-song-form {
+
+html.dark .add-song-form {
     background: #333;
     color: #fff;
 }
-body.dark .add-song-form input,
-body.dark .add-song-form select,
-body.dark .table-controls input,
-body.dark .table-controls select {
+
+html.dark .add-song-form input,
+html.dark .add-song-form select,
+html.dark .table-controls input,
+html.dark .table-controls select {
     background: #444;
     color: #fff;
     border-color: #555;
 }
-body.dark .table-controls label {
+
+html.dark .table-controls label {
     color: #fff;
 }
-body.dark .pagination button,
-body.dark .pagination span {
+
+html.dark .pagination button,
+html.dark .pagination span {
     background: #444;
     color: #fff;
     border-color: #555;
 }
-body.dark .pagination button:disabled {
+
+html.dark .pagination button:disabled {
     background: #555;
 }
-body.dark .pagination span.active {
+
+html.dark .pagination span.active {
     background: #0056b3;
     border-color: #0056b3;
 }
+
+/* Responsive Styles */
+@media (max-width: 900px) {
+    .add-song-form {
+        padding: 15px;
+        max-width: 100%;
+        margin: 10px;
+    }
+
+    .form-group label {
+        font-size: 1em;
+    }
+
+    .form-group input[type="text"],
+    .form-group select,
+    .form-group input[type="file"],
+    .form-group textarea,
+    .form-group input#artist-search {
+        padding: 10px;
+        font-size: 0.95em;
+    }
+
+    .form-group.button-group {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-group.button-group button {
+        padding: 12px;
+        min-width: 100%;
+    }
+
+    .table table td button {
+        min-width: 70px;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+}
+
 @media (max-width: 600px) {
     .table-controls {
         flex-direction: column;
         align-items: flex-start;
     }
+
     .table-controls select,
     .table-controls input {
         width: 100%;
     }
-    .add-song-form {
-        margin: 10px;
-        padding: 15px;
+
+    .table img {
+        max-width: 40px;
+        max-height: 40px;
     }
-    .pagination {
-        gap: 5px;
+
+    .table td.image {
+        padding: 4px;
     }
+
     .table table td button {
-        width: 100%; /* Responsive trên mobile */
+        width: 100%;
         margin: 3px 0;
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 15px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-controls label {
+        font-size: 14px;
+    }
+
+    .table-controls select,
+    .table-controls input {
+        font-size: 12px;
+    }
+
+    .add-song-form button {
+        padding: 8px 16px;
+        font-size: 12px;
     }
 }

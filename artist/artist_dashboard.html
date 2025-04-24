@@ -10,6 +10,20 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <title>Artist Dashboard</title>
+    <script>
+        // Immediately apply dark mode and sidebar state based on localStorage
+        (function () {
+            // Apply dark mode
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.documentElement.classList.toggle('dark', isDarkMode);
+
+            // Apply sidebar collapsed state
+            const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isSidebarCollapsed) {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        })();
+    </script>
 </head>
 <body>
 <section class="header">
@@ -116,7 +130,7 @@
                     <div class="mode-toggle" id="darkModeToggle">
                         <div class="moon-sun">
                             <i class='bx bx-moon icon moon-icon'></i>
-                            <i class='bx bx-sun icon sun-icon' style="display: none;"></i>
+                            <i class='bx bx-sun icon sun-icon'></i>
                         </div>
                         <span class="mode-text text nav-text">Dark Mode</span>
                         <div class="toggle-switch">
@@ -134,7 +148,7 @@
                 <h2 class="section--title">Music Overview</h2>
             </div>
             <div class="cards">
-                <div class="card card-1">
+                <div class="card card-1" data-card="total-songs">
                     <div class="card--data">
                         <div class="card--content">
                             <h5 class="card--title">Total Songs</h5>
@@ -143,16 +157,7 @@
                         <i class="ri-music-2-line card--icon--lg"></i>
                     </div>
                 </div>
-                <div class="card card-2">
-                    <div class="card--data">
-                        <div class="card--content">
-                            <h5 class="card--title">Songs Uploaded Successfully</h5>
-                            <h1>0</h1>
-                        </div>
-                        <i class="ri-upload-cloud-line card--icon--lg"></i>
-                    </div>
-                </div>
-                <div class="card card-3">
+                <div class="card card-2" data-card="total-playlists">
                     <div class="card--data">
                         <div class="card--content">
                             <h5 class="card--title">Total Playlists</h5>
@@ -161,7 +166,7 @@
                         <i class="ri-play-list-line card--icon--lg"></i>
                     </div>
                 </div>
-                <div class="card card-4">
+                <div class="card card-3" data-card="total-albums">
                     <div class="card--data">
                         <div class="card--content">
                             <h5 class="card--title">Total Albums</h5>
@@ -170,29 +175,38 @@
                         <i class="ri-album-line card--icon--lg"></i>
                     </div>
                 </div>
-                <div class="card card-5">
+                <div class="card card-4" data-card="total-listeners">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Total Listeners</h5>
+                            <h1>0</h1>
+                        </div>
+                        <i class="ri-user-voice-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-5" data-card="total-followers">
                     <div class="card--data">
                         <div class="card--content">
                             <h5 class="card--title">Total Followers</h5>
-                            <h1>8K</h1>
+                            <h1>0</h1>
                         </div>
                         <i class="ri-user-follow-line card--icon--lg"></i>
                     </div>
                 </div>
-                <div class="card card-6">
+                <div class="card card-6" data-card="song-likes">
                     <div class="card--data">
                         <div class="card--content">
                             <h5 class="card--title">Song Likes</h5>
-                            <h1>15K</h1>
+                            <h1>0</h1>
                         </div>
                         <i class="ri-heart-3-line card--icon--lg"></i>
                     </div>
                 </div>
-                <div class="card card-7">
+                <div class="card card-7" data-card="song-downloads">
                     <div class="card--data">
                         <div class="card--content">
                             <h5 class="card--title">Song Downloads</h5>
-                            <h1>3K</h1>
+                            <h1>0</h1>
                         </div>
                         <i class="ri-download-line card--icon--lg"></i>
                     </div>
@@ -211,8 +225,10 @@
                     <select id="filter-status">
                         <option value="all">All</option>
                         <option value="draft">Draft</option>
+                        <option value="processing">Processing</option>
                         <option value="pending">Pending</option>
                         <option value="accepted">Accepted</option>
+                        <option value="edited">Edited</option>
                         <option value="declined">Declined</option>
                     </select>
                 </div>
@@ -220,51 +236,42 @@
                     <label for="genre-filter">Genre:</label>
                     <select id="genre-filter">
                         <option value="all">All Genres</option>
-                        <option value="Pop">Pop</option>
-                        <option value="Rock">Rock</option>
-                        <option value="Jazz">Jazz</option>
-                        <option value="Country">Country</option>
-                        <option value="Hip Hop">Hip Hop</option>
                     </select>
                 </div>
                 <div>
                     <label for="sort-by">Sort by:</label>
                     <select id="sort-by">
-                        <option value="title-asc">Title A-Z</option>
-                        <option value="title-desc">Title Z-A</option>
-                        <option value="date-asc">Upload Date Ascending</option>
-                        <option value="date-desc">Upload Date Descending</option>
-                        <option value="listeners-asc">Listeners Ascending</option>
-                        <option value="listeners-desc">Listeners Descending</option>
+                        <option value="title-asc">Name A-Z</option>
+                        <option value="title-desc">Name Z-A</option>
                     </select>
-                </div>
-                <div>
-                    <label for="rows-per-page">Rows per page:</label>
-                    <input type="number" id="rows-per-page" value="10" min="1">
                 </div>
             </div>
             <div class="table">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Title</th>
-                        <th>Genre</th>
-                        <th>Duration</th>
-                        <th>Upload Date</th>
-                        <th>Listeners</th>
-                        <th>Lyrics</th>
-                        <th>Description</th>
-                        <th>Download Permission</th>
-                        <th>Additional Artists</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody id="song-table-body">
-                    <!-- Songs populated by JavaScript -->
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Genre</th>
+                            <th>Duration</th>
+                            <th>Upload Date</th>
+                            <th>Lyrics</th>
+                            <th>Description</th>
+                            <th>Download Permission</th>
+                            <th>Additional Artists</th>
+                            <th>Number of Listeners</th>
+                            <th>Count Listen</th>
+                            <th>Number of Downloads</th>
+                            <th>Number of User Like</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="song-table-body">
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="pagination"></div>
         </div>

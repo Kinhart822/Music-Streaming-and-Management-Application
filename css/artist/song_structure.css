@@ -56,17 +56,17 @@
     cursor: pointer;
 }
 
-body.dark .modal-content {
+html.dark .modal-content {
     background: #333;
     color: #fff;
 }
 
-body.dark .modal-content h3 {
+html.dark .modal-content h3 {
     background: #303133;
     color: #e4e7ed;
 }
 
-body.dark .modal-content .lyrics-content {
+html.dark .modal-content .lyrics-content {
     color: #dcdcdc;
     background: #333333;
     border: 1px solid #555555;
@@ -85,7 +85,7 @@ body.dark .modal-content .lyrics-content {
 }
 
 /* Form Styles */
-body.dark .add{
+html.dark .add {
     background-color: #494b4e;
     color: white;
 }
@@ -102,12 +102,12 @@ body.dark .add{
     box-sizing: border-box;
 }
 
-body.dark .add-song-form {
+html.dark .add-song-form {
     background: rgba(37, 37, 37, 0.9);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-body.dark .add-song-form h3 {
+html.dark .add-song-form h3 {
     color: #e4e7ed;
 }
 
@@ -149,18 +149,30 @@ body.dark .add-song-form h3 {
     box-sizing: border-box;
 }
 
-body.dark .form-group label {
+html.dark .form-group label {
     color: #dcdcdc;
 }
 
-body.dark .form-group input[type="text"],
-body.dark .form-group select,
-body.dark .form-group input[type="file"],
-body.dark .form-group textarea,
-body.dark .form-group input#artist-search {
+html.dark .form-group input[type="text"],
+html.dark .form-group select,
+html.dark .form-group input[type="file"],
+html.dark .form-group textarea,
+html.dark .form-group input#artist-search {
     background: #303133;
     border-color: #555555;
     color: #dcdcdc;
+}
+
+.form-group input[type="file"]:disabled {
+    background-color: #f0f0f0;
+    color: #888;
+    cursor: not-allowed;
+}
+
+.form-group .note {
+    margin-top: 0.5rem;
+    font-size: 1.2rem;
+    color: #888;
 }
 
 .form-group textarea {
@@ -176,7 +188,13 @@ body.dark .form-group input#artist-search {
     font-size: 0.9em;
 }
 
-body.dark .current-file {
+.form-group .current-file {
+    margin-top: 0.5rem;
+    font-size: 1.2rem;
+    color: #555;
+}
+
+html.dark .current-file {
     color: #fff;
 }
 
@@ -210,7 +228,7 @@ body.dark .current-file {
     box-sizing: border-box;
 }
 
-body.dark .artist-container {
+html.dark .artist-container {
     background: #303133;
     border-color: #555555;
 }
@@ -238,11 +256,11 @@ body.dark .artist-container {
     background: #f5f7fa;
 }
 
-body.dark .artist-item {
+html.dark .artist-item {
     color: #dcdcdc;
 }
 
-body.dark .artist-item:hover {
+html.dark .artist-item:hover {
     background: #494b4e;
 }
 
@@ -251,7 +269,7 @@ body.dark .artist-item:hover {
     color: #409eff;
 }
 
-body.dark .artist-item.selected {
+html.dark .artist-item.selected {
     background: #2a3f65;
     color: #66b1ff;
 }
@@ -267,7 +285,7 @@ body.dark .artist-item.selected {
     margin-bottom: 8px;
 }
 
-body.dark .form-group .selected-artists p {
+html.dark .form-group .selected-artists p {
     color: #dcdcdc;
 }
 
@@ -290,7 +308,7 @@ body.dark .form-group .selected-artists p {
     font-size: 0.95em;
 }
 
-body.dark .form-group .selected-artists li {
+html.dark .form-group .selected-artists li {
     background: #303133;
     color: #dcdcdc;
 }
@@ -299,7 +317,7 @@ body.dark .form-group .selected-artists li {
     background: #e6f1ff;
 }
 
-body.dark .form-group .selected-artists li:hover {
+html.dark .form-group .selected-artists li:hover {
     background: #494b4e;
 }
 
@@ -314,11 +332,11 @@ body.dark .form-group .selected-artists li:hover {
     color: #d45b5b;
 }
 
-body.dark .form-group .selected-artists .remove-artist {
+html.dark .form-group .selected-artists .remove-artist {
     color: #d45b5b;
 }
 
-body.dark .form-group .selected-artists .remove-artist:hover {
+html.dark .form-group .selected-artists .remove-artist:hover {
     color: #c14f4f;
 }
 
@@ -363,6 +381,14 @@ body.dark .form-group .selected-artists .remove-artist:hover {
     border-radius: 4px;
     display: block;
     margin: 0 auto;
+}
+
+.table td {
+    white-space: nowrap;
+}
+
+.table td.additional-artists {
+    white-space: nowrap;
 }
 
 .table td.image {
@@ -426,33 +452,33 @@ body.dark .form-group .selected-artists .remove-artist:hover {
     background: #d45b5b;
 }
 
-body.dark .table a.view-lyrics,
-body.dark .table a.view-description {
+html.dark .table a.view-lyrics,
+html.dark .table a.view-description {
     color: #fff;
     text-decoration: underline;
 }
 
-body.dark .table button.publish {
+html.dark .table button.publish {
     background: #55a532;
 }
 
-body.dark .table button.edit {
+html.dark .table button.edit {
     background: #d48d2a;
 }
 
-body.dark .table button.delete {
+html.dark .table button.delete {
     background: #d45b5b;
 }
 
-body.dark .table button.publish:hover {
+html.dark .table button.publish:hover {
     background: #4a912d;
 }
 
-body.dark .table button.edit:hover {
+html.dark .table button.edit:hover {
     background: #bf7d25;
 }
 
-body.dark .table button.delete:hover {
+html.dark .table button.delete:hover {
     background: #c14f4f;
 }
 
@@ -462,12 +488,7 @@ body.dark .table button.delete:hover {
 }
 
 .no-songs {
-    color: #606266;
     font-size: 14px;
-}
-
-body.dark .no-songs {
-    color: #dcdcdc;
 }
 
 /* Responsive Styles */

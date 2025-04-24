@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/login_register_forgot.css">
+    <link rel="stylesheet" href="../css/login_register_forgot.css">
     <title>Signin & Sign up</title>
 </head>
 <body>
@@ -18,16 +18,12 @@
         <form id="sign-up-form">
             <h2>Sign Up</h2>
             <div class="form-group">
-                <input type="email" id="sign-up-email" required>
-                <i class="fas fa-at"></i>
-                <label for="sign-up-email">Email</label>
+                <input type="email" id="sign-up-email" autocomplete="email" placeholder="Email" required>
             </div>
             <div class="form-group">
-                <input type="password" id="sign-up-password" required>
-                <i class="fas fa-lock"></i>
-                <label for="sign-up-password">Password</label>
+                <input type="password" id="sign-up-password" autocomplete="new-password" placeholder="Password" required>
             </div>
-            <div class="error-message" id="sign-up-error" style="color: red; display: none; margin-bottom: 10px;"></div>
+            <div class="error-message" id="sign-up-error"></div>
             <button type="submit" id="sign-up-button" class="btn" disabled>Sign Up</button>
             <div class="link">
                 <p>Already have an account? <a href="#" class="signin-link">Sign In</a></p>
@@ -38,16 +34,12 @@
         <form id="sign-in-form">
             <h2>Login</h2>
             <div class="form-group">
-                <input type="email" id="sign-in-email" required>
-                <i class="fas fa-at"></i>
-                <label for="sign-in-email">Email</label>
+                <input type="email" id="sign-in-email" autocomplete="email" placeholder="Email" required>
             </div>
             <div class="form-group">
-                <input type="password" id="sign-in-password" required>
-                <i class="fas fa-lock"></i>
-                <label for="sign-in-password">Password</label>
+                <input type="password" id="sign-in-password" autocomplete="current-password" placeholder="Password" required>
             </div>
-            <div class="error-message" id="sign-in-error" style="color: red; display: none; margin-bottom: 10px;"></div>
+            <div class="error-message" id="sign-in-error"></div>
             <div class="forgot-pass">
                 <a href="../auth/forgot_password.html">Forgot password?</a>
             </div>

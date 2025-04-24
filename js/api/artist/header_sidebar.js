@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let profileDob = document.getElementById('profile-dob');
     let profilePhone = document.getElementById('profile-phone');
 
+    // Synchronize sidebar state with html class
+    const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isSidebarCollapsed) {
+        sidebar?.classList.add('active');
+        mainContent?.classList.add('active');
+    }
+
     const updateProfileModal = (profileData) => {
         console.log('Updating profile modal with:', profileData);
         if (profileIconImg) {
@@ -34,21 +41,28 @@ document.addEventListener('DOMContentLoaded', () => {
             profileFullname.textContent = `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim() || 'Unknown User';
         }
         if (profileDescription) {
-            if (profileDescription) {
-                const description = Array.isArray(profileData.description)
-                    ? profileData.description
-                    : (profileData.description || 'No description available').split(/\n\n+/).map(p => p.trim()).filter(p => p);
-
-                // Xóa nội dung cũ
-                profileDescription.innerHTML = '';
-
-                // Tạo và thêm từng đoạn <p>
-                description.forEach(paragraph => {
-                    const p = document.createElement('p');
-                    p.textContent = paragraph;
-                    profileDescription.appendChild(p);
-                });
+            let description;
+            if (Array.isArray(profileData.description)) {
+                description = profileData.description;
+            } else {
+                // Split by double or single newlines, prioritizing double newlines
+                const rawDescription = profileData.description || 'No description available';
+                description = rawDescription.split(/\n\n+|\n+/).map(p => p.trim()).filter(p => p);
+                // If no valid paragraphs after splitting, use fallback
+                if (description.length === 0) {
+                    description = ['No description available'];
+                }
             }
+
+            // Clear existing content
+            profileDescription.innerHTML = '';
+
+            // Create and append each paragraph
+            description.forEach(paragraph => {
+                const p = document.createElement('p');
+                p.textContent = paragraph;
+                profileDescription.appendChild(p);
+            });
         }
         if (profileGender) {
             profileGender.textContent = profileData.gender || 'Not specified';
@@ -78,14 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const profileData = await response.json();
             console.log('Fetched profile data:', profileData);
 
-            const description = profileData.description ? profileData.description.split(/\n\n+/).map(p => p.trim()).filter(p => p) : [];
-
-
             // Map backend fields to modal expectations
             const mappedProfileData = {
                 firstName: profileData.firstName,
                 lastName: profileData.lastName,
-                description: description,
+                description: profileData.description,
                 gender: profileData.gender,
                 dob: profileData.birthDay,
                 phone: profileData.phone,
@@ -113,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load profile on a page load
     loadProfile();
 
-    // Listen for profile updates from update_profile.js
+    // Listen for profile updates from artist_manage_profile.js
     window.addEventListener('profileUpdated', (event) => {
         console.log('Received profileUpdated event:', event.detail);
         const mappedProfileData = {
@@ -139,15 +150,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (menu) {
         menu.onclick = function () {
-            sidebar.classList.toggle('active');
-            mainContent.classList.toggle('active');
+            sidebar?.classList.toggle('active');
+            mainContent?.classList.toggle('active');
+            // Update html class and localStorage
+            const isCollapsed = sidebar.classList.contains('active');
+            document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
         };
     }
 
     if (bell) {
         bell.onclick = function (event) {
-            notificationDropdown.classList.toggle('active');
-            if (profileModal) profileModal.classList.remove('active');
+            notificationDropdown?.classList.toggle('active');
+            profileModal?.classList.remove('active');
             event.stopPropagation();
         };
     }
@@ -155,8 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (profile) {
         profile.onclick = function (event) {
             console.log('Profile icon clicked, toggling modal');
-            profileModal.classList.toggle('active');
-            if (notificationDropdown) notificationDropdown.classList.remove('active');
+            profileModal?.classList.toggle('active');
+            notificationDropdown?.classList.remove('active');
             event.stopPropagation();
             // Refresh profile data on click to ensure latest data
             loadProfile();
@@ -165,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (closeModal) {
         closeModal.onclick = function () {
-            profileModal.classList.remove('active');
+            profileModal?.classList.remove('active');
         };
     }
 

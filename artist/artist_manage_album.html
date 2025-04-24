@@ -9,6 +9,20 @@
     <link rel="stylesheet" href="../css/artist/album_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script>
+        // Immediately apply dark mode and sidebar state based on localStorage
+        (function () {
+            // Apply dark mode
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.documentElement.classList.toggle('dark', isDarkMode);
+
+            // Apply sidebar collapsed state
+            const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isSidebarCollapsed) {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        })();
+    </script>
     <title>Manage Albums</title>
 </head>
 <body>
@@ -105,7 +119,7 @@
         <div class="bottom-content">
             <ul class="menu-links">
                 <li class="nav-link">
-                    <a href="../auth/login_register.html">
+                    <a class="logout">
                         <i class='bx bx-log-out icon'></i>
                         <span class="text nav-text">Logout</span>
                     </a>
@@ -128,25 +142,25 @@
 
     <div class="main--content">
         <div class="album-content">
-            <div class="title">
-                <h2 class="section--title">Manage Albums</h2>
+            <div class="name">
+                <h2 class="section--name">Manage Albums</h2>
                 <button class="add" id="add-album-btn"><i class="ri-add-line"></i> Add Album</button>
             </div>
             <div class="add-album-form" id="add-album-form">
                 <form id="album-form" data-mode="add">
-                    <h3 id="form-title">Add Album</h3>
+                    <h3 id="form-name">Add Album</h3>
                     <div class="form-group">
-                        <label for="album-title">Title *</label>
-                        <input type="text" id="album-title" required>
-                        <div class="error" id="title-error">Please enter a valid title</div>
+                        <label for="album-name">Title *</label>
+                        <input type="text" id="album-name" required>
+                        <div class="error" id="name-error">Please enter a valid name</div>
                     </div>
                     <div class="form-group">
                         <label for="album-description">Description</label>
                         <textarea id="album-description" placeholder="Describe your album here..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="album-songs">Songs *</label>
-                        <input type="text" id="song-search" placeholder="Search songs...">
+                        <label for="album-songs">Songs</label>
+                        <label for="song-search"></label><input type="text" id="song-search" placeholder="Search songs...">
                         <div id="album-songs" class="song-container">
                             <!-- Songs populated dynamically -->
                         </div>
@@ -154,11 +168,11 @@
                             <p>Selected Songs:</p>
                             <ul id="selected-songs-list"></ul>
                         </div>
-                        <div class="error" id="songs-error">Please select at least one accepted song</div>
+                        <div class="error" id="songs-error">All selected songs must have Accepted status</div>
                     </div>
                     <div class="form-group">
                         <label for="album-additional_artists">Additional Artists</label>
-                        <input type="text" id="artist-search" placeholder="Search artists...">
+                        <label for="artist-search"></label><input type="text" id="artist-search" placeholder="Search artists...">
                         <div id="album-additional_artists" class="artist-container">
                             <!-- Artists populated dynamically -->
                         </div>
@@ -169,11 +183,11 @@
                         <div class="error" id="artists-error">Please select at least one artist</div>
                     </div>
                     <div class="form-group">
-                        <label for="album-image">Image File (JPG/PNG) *</label>
-                        <input type="file" id="album-image" accept="image/jpeg,image/png">
+                        <label for="playlist-image">Image File (JPG/PNG/GIF/WEBP/BMP/TIFF/SVG)</label>
+                        <input type="file" id="playlist-image" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,image/tiff,image/svg+xml">
                         <img id="image-preview" style="display: none;" alt="Image Preview">
-                        <div class="current-image" id="current-image"></div>
-                        <div class="error" id="image-error">Please select a valid JPG or PNG file (max 5MB)</div>
+                        <div class="current-file" id="current-image"></div>
+                        <div class="error" id="image-error">Please select a valid image file (max 5MB) if provided</div>
                     </div>
                     <div class="form-group button-group">
                         <button type="submit">Save</button>
@@ -189,41 +203,45 @@
                         <option value="draft">Draft</option>
                         <option value="pending">Pending</option>
                         <option value="accepted">Accepted</option>
+                        <option value="edited">Edited</option>
                         <option value="declined">Declined</option>
                     </select>
                 </div>
                 <div>
                     <label for="sort-by">Sort by:</label>
                     <select id="sort-by">
-                        <option value="title-asc">Title A-Z</option>
-                        <option value="title-desc">Title Z-A</option>
+                        <option value="name-asc">Title A-Z</option>
+                        <option value="name-desc">Title Z-A</option>
                         <option value="date-asc">Release Date Ascending</option>
                         <option value="date-desc">Release Date Descending</option>
                     </select>
                 </div>
                 <div>
                     <label for="rows-per-page">Rows per page:</label>
-                    <input type="number" id="rows-per-page" value="10" min="1">
+                    <input type="number" id="rows-per-page" value="10" min="1" max="100">
                 </div>
             </div>
             <div class="table">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Title</th>
-                        <th>Description</th>
-                        <th>Release Date</th>
-                        <th>Additional Artists</th>
-                        <th>Songs</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody id="album-table-body">
-                    <!-- Albums populated by JavaScript -->
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Length</th>
+                            <th>Upload Date</th>
+                            <th>Additional Artists</th>
+                            <th>Songs</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="album-table-body">
+                        <!-- Albums populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="pagination"></div>
         </div>
@@ -232,16 +250,15 @@
 <div class="modal" id="content-modal">
     <div class="modal-content">
         <span class="close" id="close-modal">×</span>
-        <h3 id="modal-title">Content</h3>
-        <div id="modal-content-body" class="lyrics-content">
+        <h3 id="modal-name">Content</h3>
+        <div id="modal-content-body">
             <!-- Dynamic content: Songs table or Description textarea -->
         </div>
     </div>
 </div>
 <script src="../js/dark_mode.js"></script>
 <script type="module" src="../js/api/artist/header_sidebar.js"></script>
-<!--<script src="../js/header_siderbar.js"></script>-->
-<!--<script src="../js/artist/artist_manage_profile.js"></script>-->
-<script src="../js/artist/artist_album.js"></script>
+<script type="module" src="../js/api/artist/artist_album.js"></script>
+<script type="module" src="../js/api/account/logout.js"></script>
 </body>
 </html>

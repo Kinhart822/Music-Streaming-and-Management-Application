@@ -29,12 +29,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-top: 70px; /* Offset for fixed header */
+    padding-top: 70px;
     transition: all 0.3s ease;
-}
-
-body.dark {
-    background: var(--body-color-dark);
 }
 
 /* Header */
@@ -102,47 +98,15 @@ body.dark {
     margin: 3rem 0;
 }
 
-.wrapper .form-container form .form-group i,
-.wrapper .form-container form .form-group label {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.6rem;
-    text-transform: capitalize;
-    color: var(--labelColor);
-    padding: 0 .5rem;
-    pointer-events: none;
-    transition: all .5s ease;
-}
-
-.wrapper .form-container form .form-group i {
-    left: .5rem;
-}
-
-.wrapper .form-container form .form-group label {
-    left: 2.5rem;
-}
-
 .wrapper .form-container form .form-group input {
     width: 100%;
     height: 4rem;
-    padding: 0 1rem;
+    padding: 0 3rem 0 1rem;
     border-radius: .5rem;
-    border: none;
-    outline: none;
     border: .1rem solid var(--labelColor);
     font-size: 1.6rem;
     color: var(--labelColor);
-    background: transparent;
-}
-
-form .form-group input:focus~label,
-form .form-group input:valid~label,
-form .form-group input:focus~i,
-form .form-group input:valid~i {
-    top: 0 !important;
-    font-size: 1.2rem !important;
-    background-color: var(--whiteColor);
+    outline: none;
 }
 
 .wrapper .form-container form .forgot-pass {
@@ -177,6 +141,11 @@ form .form-group input:valid~i {
     box-shadow: 0 .2rem 1rem rgba(0, 0, 0, .4);
 }
 
+.wrapper .form-container form .btn:disabled {
+    background: #a0a0a0;
+    cursor: not-allowed;
+}
+
 .wrapper .form-container form .link {
     text-align: center;
     font-size: 1.5rem;
@@ -206,15 +175,9 @@ form .form-group input:valid~i {
 }
 
 @keyframes signin-flip {
-    0% {
-        transform: translateX(0);
-    }
-    50% {
-        transform: translateX(-50rem) scale(1.1);
-    }
-    100% {
-        transform: translateX(0) rotate(7deg) scale(1);
-    }
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-50rem) scale(1.1); }
+    100% { transform: translateX(0) rotate(7deg) scale(1); }
 }
 
 .wrapper.animated-signin .form-container.sign-up {
@@ -222,13 +185,8 @@ form .form-group input:valid~i {
 }
 
 @keyframes rotatecard {
-    0% {
-        transform: rotate(7deg);
-    }
-    100% {
-        transform: rotate(0);
-        z-index: 1;
-    }
+    0% { transform: rotate(7deg); }
+    100% { transform: rotate(0); z-index: 1; }
 }
 
 .wrapper.animated-signup .form-container.sign-up {
@@ -236,16 +194,9 @@ form .form-group input:valid~i {
 }
 
 @keyframes signup-flip {
-    0% {
-        transform: translateX(0);
-        z-index: 1;
-    }
-    50% {
-        transform: translateX(50rem) scale(1.1);
-    }
-    100% {
-        transform: translateX(0) rotate(7deg) scale(1);
-    }
+    0% { transform: translateX(0); z-index: 1; }
+    50% { transform: translateX(50rem) scale(1.1); }
+    100% { transform: translateX(0) rotate(7deg) scale(1); }
 }
 
 .wrapper.animated-signup .form-container.sign-in {
@@ -256,8 +207,8 @@ form .form-group input:valid~i {
 
 .error-message {
     color: red;
-    /*font-size: 14px;*/
-    /*margin-bottom: 10px;*/
-    /*text-align: center;*/
-    /*display: none;*/
+    font-size: 1.4rem;
+    text-align: center;
+    display: none;
+    margin-bottom: 30px;
 }

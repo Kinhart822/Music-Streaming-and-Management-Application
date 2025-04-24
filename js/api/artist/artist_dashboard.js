@@ -1,341 +1,475 @@
-import {fetchWithRefresh} from '/js/api/refresh.js';
+import { fetchWithRefresh } from '/js/api/refresh.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Song table elements
+    // DOM Elements
     const songTableBody = document.getElementById('song-table-body');
     const filterStatusSelect = document.getElementById('filter-status');
     const genreFilterSelect = document.getElementById('genre-filter');
     const sortBySelect = document.getElementById('sort-by');
-    const rowsPerPageInput = document.getElementById('rows-per-page');
     const paginationDiv = document.querySelector('.pagination');
     const searchInput = document.getElementById('search-content');
     const lyricsModal = document.getElementById('lyrics-modal');
     const modalLyricsContent = document.getElementById('modal-lyrics-content');
-    const modalClose = document.getElementById('close-modal');
+    const closeModal = document.getElementById('close-modal');
+    const modalTitle = document.getElementById('modal-title');
 
-    let songs = JSON.parse(localStorage.getItem('songs')) || [];
-    let artists = JSON.parse(localStorage.getItem('artists')) || [];
-
+    // State
+    let songs = [];
+    let genres = [];
     let currentPage = 1;
-    let rowsPerPage = parseInt(rowsPerPageInput?.value) || 10;
+    let rowsPerPage = 10; // Fixed, as rowsPerPageInput is not in HTML
     let currentFilterStatus = 'all';
     let currentFilterGenre = 'all';
-    let currentSort = 'title-asc';
+    let currentSort = 'title-asc'; // Default to match HTML
     let searchQuery = '';
+    let totalPages = 1;
+    let totalElements = 0;
 
-    // Song table handling
-    if (songTableBody) {
-        // Parse date (DD/MM/YYYY to a Date object)
-        const parseDate = (dateStr) => {
-            if (!dateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return new Date(0);
-            const [day, month, year] = dateStr.split('/').map(Number);
-            return new Date(year, month - 1, day);
+    // Utility Function to Format Numbers
+    const formatNumber = (num) => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+    };
+
+    // Utility Function to Debounce
+    const debounce = (func, delay) => {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func(...args), delay);
         };
+    };
 
-        // Validate and update rows per page
-        const updateRowsPerPage = () => {
-            const value = parseInt(rowsPerPageInput.value);
-            if (isNaN(value) || value < 1) {
-                rowsPerPageInput.value = 10;
-                rowsPerPage = 10;
-            } else {
-                rowsPerPage = value;
+    // API Functions for Cards
+    const fetchTotalSongs = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalSongs', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total songs: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total songs:', error);
+            return 0;
+        }
+    };
+
+    const fetchTotalPlaylists = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalPlaylists', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total playlists: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total playlists:', error);
+            return 0;
+        }
+    };
+
+    const fetchTotalAlbums = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalAlbums', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total albums: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total albums:', error);
+            return 0;
+        }
+    };
+
+    const fetchTotalListeners = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalListeners', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total listeners: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total listeners:', error);
+            return 0;
+        }
+    };
+
+    const fetchTotalFollowers = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalFollowers', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total followers: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total followers:', error);
+            return 0;
+        }
+    };
+
+    const fetchTotalLikes = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalLikes', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total likes: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total likes:', error);
+            return 0;
+        }
+    };
+
+    const fetchTotalDownloads = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/totalDownloads', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`Failed to fetch total downloads: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching total downloads:', error);
+            return 0;
+        }
+    };
+
+    // Function to Update Card Values
+    const updateCards = async () => {
+        try {
+            const [
+                totalSongs,
+                totalPlaylists,
+                totalAlbums,
+                totalListeners,
+                totalFollowers,
+                totalLikes,
+                totalDownloads
+            ] = await Promise.all([
+                fetchTotalSongs(),
+                fetchTotalPlaylists(),
+                fetchTotalAlbums(),
+                fetchTotalListeners(),
+                fetchTotalFollowers(),
+                fetchTotalLikes(),
+                fetchTotalDownloads()
+            ]);
+
+            // Update card values
+            const songCard = document.querySelector('[data-card="total-songs"] .card--content h1');
+            const playlistCard = document.querySelector('[data-card="total-playlists"] .card--content h1');
+            const albumCard = document.querySelector('[data-card="total-albums"] .card--content h1');
+            const listenerCard = document.querySelector('[data-card="total-listeners"] .card--content h1');
+            const followerCard = document.querySelector('[data-card="total-followers"] .card--content h1');
+            const likesCard = document.querySelector('[data-card="song-likes"] .card--content h1');
+            const downloadsCard = document.querySelector('[data-card="song-downloads"] .card--content h1');
+
+            if (songCard) songCard.textContent = formatNumber(totalSongs);
+            if (playlistCard) playlistCard.textContent = formatNumber(totalPlaylists);
+            if (albumCard) albumCard.textContent = formatNumber(totalAlbums);
+            if (listenerCard) listenerCard.textContent = formatNumber(totalListeners);
+            if (followerCard) followerCard.textContent = formatNumber(totalFollowers);
+            if (likesCard) likesCard.textContent = formatNumber(totalLikes);
+            if (downloadsCard) downloadsCard.textContent = formatNumber(totalDownloads);
+        } catch (error) {
+            console.error('Error updating cards:', error);
+            document.querySelectorAll('.card .card--content h1').forEach(h1 => h1.textContent = '0');
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                localStorage.clear();
+                window.location.href = '../auth/login_register.html';
             }
+        }
+    };
+
+    // API Functions
+    const fetchGenres = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/genre/allGenres', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Failed to fetch genres: ${response.status}`);
+
+            const data = await response.json();
+            console.log('Fetched genres:', data);
+
+            genres = data.map(genre => ({
+                id: genre.id,
+                name: genre.name || 'Unknown'
+            }));
+
+            if (genreFilterSelect) {
+                genreFilterSelect.innerHTML = '<option value="all">All Genres</option>' +
+                    genres.map(genre => `<option value="${genre.id}">${genre.name}</option>`).join('');
+            }
+        } catch (error) {
+            console.error('Error fetching genres:', error);
+            if (genreFilterSelect) {
+                genreFilterSelect.innerHTML = '<option value="all">All Genres</option>';
+            }
+        }
+    };
+
+    const fetchSongs = async () => {
+        try {
+            const { orderBy, order } = mapSortToApi(currentSort);
+            const genreId = currentFilterGenre !== 'all' ? currentFilterGenre : null;
+
+            const requestBody = {
+                page: currentPage,
+                size: rowsPerPage,
+                genreId: genreId ? parseInt(genreId) : null,
+                orderBy,
+                order,
+                search: searchQuery
+            };
+
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/songs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) throw new Error(`Failed to fetch songs: ${response.status}`);
+
+            const data = await response.json();
+            console.log('Fetched songs:', data);
+
+            songs = data.songs.map(song => ({
+                id: song.id,
+                title: song.title || 'Unknown',
+                genre: song.genreNameList?.length ? song.genreNameList[0] : 'None',
+                duration: song.duration || '0:00',
+                status: song.songStatus ? song.songStatus.toLowerCase() : 'draft',
+                songFileName: song.mp3Url || '',
+                imageName: song.imageUrl || '',
+                downloadPermission: song.downloadPermission ? 'Yes' : song.downloadPermission === false ? 'No' : 'None',
+                uploadDate: song.releaseDate || '',
+                numberOfListeners: song.numberOfListeners || 0,
+                countListen: song.countListen || 0,
+                numberOfDownload: song.numberOfDownload || 0,
+                numberOfUserLike: song.numberOfUserLike || 0,
+                lyrics: song.lyrics || '',
+                description: song.description || '',
+                additionalArtistNameList: song.additionalArtistNameList || []
+            }));
+            currentPage = data.currentPage || 1;
+            totalPages = data.totalPages || 1;
+            totalElements = data.totalElements || 0;
+
+            renderTable();
+        } catch (error) {
+            console.error('Error fetching songs:', error);
+            if (songTableBody) {
+                songTableBody.innerHTML = '<tr><td colspan="15"><span class="no-songs">Failed to load songs.</span></td></tr>';
+            }
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                localStorage.clear();
+                window.location.href = '../auth/login_register.html';
+            }
+        }
+    };
+
+    const publishSong = async (id) => {
+        try {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/song/upload/${id}`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Failed to publish song: ${response.status}`);
+
+            const data = await response.json();
+            console.log('Published song:', data);
+            return data;
+        } catch (error) {
+            throw new Error(`Failed to publish song: ${error.message}`);
+        }
+    };
+
+    const deleteSong = async (id) => {
+        try {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/song/delete/${id}`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Failed to delete song: ${response.status}`);
+
+            console.log(`Deleted song ${id}`);
+        } catch (error) {
+            throw new Error(`Failed to delete song: ${error.message}`);
+        }
+    };
+
+    // UI Functions
+    const renderTable = () => {
+        if (!songTableBody || !paginationDiv) return;
+
+        if (currentSort === 'title-asc') {
+            songs.sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+        } else if (currentSort === 'title-desc') {
+            songs.sort((a, b) => b.title.toLowerCase().localeCompare(a.title.toLowerCase()));
+        }
+
+        let filteredSongs = currentFilterStatus !== 'all'
+            ? songs.filter(s => s.status.toLowerCase() === currentFilterStatus)
+            : songs;
+
+        songTableBody.innerHTML = filteredSongs.length > 0
+            ? filteredSongs.map(song => `
+                <tr>
+                    <td class="image">
+                        ${song.imageName
+                ? `<img src="${song.imageName}" alt="${song.title}" class="song-image" style="width: 50px; height: 50px; object-fit: cover;">`
+                : '<span>No image</span>'
+            }
+                    </td>
+                    <td>${song.title || 'Unknown'}</td>
+                    <td>${song.genre || 'None'}</td>
+                    <td>${song.duration || '0:00'}</td>
+                    <td>${song.uploadDate || 'Unknown'}</td>
+                    <td>
+                        ${song.lyrics
+                ? `<a class="view-lyrics" href="#" data-id="${song.id}" title="View Lyrics">Show more...</a>`
+                : 'None'
+            }
+                    </td>
+                    <td>
+                        ${song.description
+                ? `<a class="view-description" href="#" data-id="${song.id}" title="View Description">Show more...</a>`
+                : 'None'
+            }
+                    </td>
+                    <td>${song.downloadPermission || 'None'}</td>
+                    <td class="additional-artists">${song.additionalArtistNameList.length ? song.additionalArtistNameList.join(', ') : 'None'}</td>
+                    <td>${song.numberOfListeners || 0}</td>
+                    <td>${song.countListen || 0}</td>
+                    <td>${song.numberOfDownload || 0}</td>
+                    <td>${song.numberOfUserLike || 0}</td>
+                    <td class="status ${song.status.toLowerCase()}">${song.status.charAt(0).toUpperCase() + song.status.slice(1)}</td>
+                    <td>
+                        ${song.status === 'draft' || song.status === 'edited' ?
+                `
+                                <button class="publish" data-id="${song.id}" title="Publish">Publish</button>
+                                <button class="edit" data-id="${song.id}" title="Edit">Edit</button>
+                                <button class="delete" data-id="${song.id}" title="Delete">Delete</button>
+                            `
+                : song.status === 'accepted' || song.status === 'declined' ?
+                    `
+                                    <button class="edit" data-id="${song.id}" title="Edit">Edit</button>
+                                    <button class="delete" data-id="${song.id}" title="Delete">Delete</button>
+                                `
+                    : 'None'
+            }
+                    </td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="15"><span class="no-songs">No songs found.</span></td></tr>';
+    };
+
+    // Event Listeners
+    if (filterStatusSelect) {
+        filterStatusSelect.addEventListener('change', () => {
+            currentFilterStatus = filterStatusSelect.value;
             currentPage = 1;
             renderTable();
-        };
+        });
+    }
 
-        // Render table
-        const renderTable = () => {
-            // Sort by upload date (descending) and take only the 10 most recent songs
-            let recentSongs = [...songs].sort((a, b) => {
-                return parseDate(b.uploadDate) - parseDate(a.uploadDate);
-            }).slice(0, 10);
+    if (genreFilterSelect) {
+        genreFilterSelect.addEventListener('change', () => {
+            currentFilterGenre = genreFilterSelect.value;
+            currentPage = 1;
+            fetchSongs();
+        });
+    }
 
-            let filteredSongs = [...recentSongs];
+    if (sortBySelect) {
+        sortBySelect.addEventListener('change', () => {
+            currentSort = sortBySelect.value;
+            currentPage = 1;
+            renderTable();
+        });
+    }
 
-            // Filter by status
-            if (currentFilterStatus !== 'all') {
-                filteredSongs = filteredSongs.filter(song => song.status.toLowerCase() === currentFilterStatus);
-            }
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            searchQuery = searchInput.value.trim();
+            currentPage = 1;
+            fetchSongs();
+        }, 300));
+    }
 
-            // Filter by genre
-            if (currentFilterGenre !== 'all') {
-                filteredSongs = filteredSongs.filter(song => song.genre === currentFilterGenre);
-            }
-
-            // Search
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                filteredSongs = filteredSongs.filter(song => song.title.toLowerCase().includes(query));
-            }
-
-            // Sort
-            filteredSongs = filteredSongs.sort((a, b) => {
-                if (currentSort === 'title-asc') {
-                    return a.title.localeCompare(b.title);
-                } else if (currentSort === 'title-desc') {
-                    return b.title.localeCompare(a.title);
-                } else if (currentSort === 'date-asc') {
-                    return parseDate(a.uploadDate) - parseDate(b.uploadDate);
-                } else if (currentSort === 'date-desc') {
-                    return parseDate(b.uploadDate) - parseDate(a.uploadDate);
-                } else if (currentSort === 'listeners-asc') {
-                    return (a.listeners || 0) - (b.listeners || 0);
-                } else if (currentSort === 'listeners-desc') {
-                    return (b.listeners || 0) - (a.listeners || 0);
-                }
-                return 0;
-            });
-
-            // Paginate
-            const totalPages = Math.ceil(filteredSongs.length / rowsPerPage);
-            if (currentPage > totalPages && totalPages > 0) {
-                currentPage = totalPages;
-            } else if (totalPages === 0) {
-                currentPage = 1;
-            }
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const paginatedSongs = filteredSongs.slice(start, end);
-
-            // Render table
-            songTableBody.innerHTML = paginatedSongs.length > 0
-                ? paginatedSongs.map((song, index) => {
-                    const globalIndex = songs.findIndex(s => s.id === song.id);
-                    const artistNames = song.additionalArtists
-                        ? song.additionalArtists
-                            .map(id => {
-                                const artist = artists.find(a => a.id === id);
-                                return artist ? artist.name : 'Unknown';
-                            })
-                            .join(', ')
-                        : 'None';
-                    return `
-                        <tr>
-                            <td class="image">
-                                ${song.imageName
-                        ? `<span>${song.imageName}</span>`
-                        : `<span>No image</span>`
-                    }
-                            </td>
-                            <td>${song.title || 'Unknown'}</td>
-                            <td>${song.genre || 'Unknown'}</td>
-                            <td>${song.duration || '0:00'}</td>
-                            <td>${song.uploadDate || 'Unknown'}</td>
-                            <td>${song.listeners || 0}</td>
-                            <td>
-                                ${song.lyrics
-                        ? `<a class="view-lyrics" href="#" data-index="${globalIndex}" title="View Lyrics">Show more...</a>`
-                        : 'None'
-                    }
-                            </td>
-                            <td>
-                                ${song.description
-                        ? `<a class="view-description" href="#" data-index="${globalIndex}" title="View Description">Show more...</a>`
-                        : 'None'
-                    }
-                            </td>
-                            <td>${song.downloadPermission || 'No'}</td>
-                            <td>${artistNames}</td>
-                            <td class="status ${song.status.toLowerCase()}">${song.status.charAt(0).toUpperCase() + song.status.slice(1)}</td>
-                            <td>
-                                ${
-                        song.status === 'Draft' || song.status === 'Declined'
-                            ? `
-                                            <button class="publish" data-index="${globalIndex}" title="Publish">Publish</button>
-                                            <button class="edit" data-index="${globalIndex}" title="Edit">Edit</button>
-                                            <button class="delete" data-index="${globalIndex}" title="Delete">Delete</button>
-                                        `
-                            : song.status === 'Pending' || song.status === 'Accepted'
-                                ? `
-                                                <button class="edit" data-index="${globalIndex}" title="Edit">Edit</button>
-                                                <button class="delete" data-index="${globalIndex}" title="Delete">Delete</button>
-                                            `
-                                : ''
-                    }
-                            </td>
-                        </tr>
-                    `;
-                }).join('')
-                : '<tr><td colspan="12"><span class="no-songs">No songs found.</span></td></tr>';
-
-            // Render pagination
-            paginationDiv.innerHTML = '';
-            if (totalPages > 1) {
-                const prevButton = document.createElement('button');
-                prevButton.textContent = 'Previous';
-                prevButton.disabled = currentPage === 1;
-                prevButton.addEventListener('click', () => {
-                    if (currentPage > 1) {
-                        currentPage--;
-                        renderTable();
-                    }
-                });
-                paginationDiv.appendChild(prevButton);
-
-                const maxPagesToShow = 5;
-                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-                if (endPage - startPage + 1 < maxPagesToShow) {
-                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
-                }
-
-                if (startPage > 1) {
-                    const firstPage = document.createElement('span');
-                    firstPage.textContent = '1';
-                    firstPage.addEventListener('click', () => {
-                        currentPage = 1;
-                        renderTable();
-                    });
-                    paginationDiv.appendChild(firstPage);
-                    if (startPage > 2) {
-                        paginationDiv.appendChild(document.createTextNode(' ... '));
-                    }
-                }
-
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageSpan = document.createElement('span');
-                    pageSpan.textContent = i;
-                    if (i === currentPage) {
-                        pageSpan.classList.add('active');
-                    }
-                    pageSpan.addEventListener('click', () => {
-                        currentPage = i;
-                        renderTable();
-                    });
-                    paginationDiv.appendChild(pageSpan);
-                }
-
-                if (endPage < totalPages) {
-                    if (endPage < totalPages - 1) {
-                        paginationDiv.appendChild(document.createTextNode(' ... '));
-                    }
-                    const lastPage = document.createElement('span');
-                    lastPage.textContent = totalPages;
-                    lastPage.addEventListener('click', () => {
-                        currentPage = totalPages;
-                        renderTable();
-                    });
-                    paginationDiv.appendChild(lastPage);
-                }
-
-                const nextButton = document.createElement('button');
-                nextButton.textContent = 'Next';
-                nextButton.disabled = currentPage === totalPages;
-                nextButton.addEventListener('click', () => {
-                    if (currentPage < totalPages) {
-                        currentPage++;
-                        renderTable();
-                    }
-                });
-                paginationDiv.appendChild(nextButton);
-            }
-        };
-
-        // Filter by status
-        if (filterStatusSelect) {
-            filterStatusSelect.addEventListener('change', () => {
-                currentFilterStatus = filterStatusSelect.value;
-                currentPage = 1;
-                renderTable();
-            });
-        }
-
-        // Filter by genre
-        if (genreFilterSelect) {
-            genreFilterSelect.addEventListener('change', () => {
-                currentFilterGenre = genreFilterSelect.value;
-                currentPage = 1;
-                renderTable();
-            });
-        }
-
-        // Sort by
-        if (sortBySelect) {
-            sortBySelect.addEventListener('change', () => {
-                currentSort = sortBySelect.value;
-                currentPage = 1;
-                renderTable();
-            });
-        }
-
-        // Rows per page
-        if (rowsPerPageInput) {
-            rowsPerPageInput.addEventListener('change', updateRowsPerPage);
-            rowsPerPageInput.addEventListener('input', updateRowsPerPage);
-        }
-
-        // Search
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                searchQuery = searchInput.value.trim();
-                currentPage = 1;
-                renderTable();
-            });
-        }
-
-        // Table actions
-        songTableBody.addEventListener('click', (e) => {
-            const index = e.target.dataset.index;
-            if (!index) return;
+    if (songTableBody) {
+        songTableBody.addEventListener('click', async (e) => {
+            const id = Number(e.target.dataset.id);
+            if (!id) return;
 
             e.preventDefault();
-
-            const globalIndex = parseInt(index);
-            if (globalIndex < 0 || globalIndex >= songs.length) {
-                alert('Error: Invalid song index.');
+            console.log('Clicked ID:', id, 'Songs:', songs.map(s => ({ id: s.id, title: s.title })));
+            const song = songs.find(s => s.id === id);
+            if (!song) {
+                console.error('Song not found for ID:', id);
+                alert('Error: Song not found.');
                 return;
             }
 
-            const song = songs[globalIndex];
-            if (e.target.classList.contains('view-lyrics')) {
-                document.getElementById('modal-title').textContent = 'Song Lyrics';
+            if (e.target.classList.contains('view-lyrics') && lyricsModal && modalLyricsContent && modalTitle) {
+                modalTitle.textContent = 'Song Lyrics';
                 modalLyricsContent.value = song.lyrics || '';
                 modalLyricsContent.placeholder = song.lyrics ? '' : 'No lyrics available';
                 lyricsModal.style.display = 'flex';
-            } else if (e.target.classList.contains('view-description')) {
-                document.getElementById('modal-title').textContent = 'Song Description';
+            } else if (e.target.classList.contains('view-description') && lyricsModal && modalLyricsContent && modalTitle) {
+                modalTitle.textContent = 'Song Description';
                 modalLyricsContent.value = song.description || '';
                 modalLyricsContent.placeholder = song.description ? '' : 'No description available';
                 lyricsModal.style.display = 'flex';
             } else if (e.target.classList.contains('publish')) {
                 try {
-                    songs[globalIndex].status = 'Pending';
-                    localStorage.setItem('songs', JSON.stringify(songs));
-                    renderTable();
-                    alert(`Song "${songs[globalIndex].title}" published and status changed to Pending.`);
-                } catch (e) {
-                    alert('Failed to publish song: Storage quota exceeded.');
+                    await publishSong(id);
+                    alert(`Song "${song.title}" published and status changed to Processing state.`);
+                    await fetchSongs();
+                    await updateCards();
+                } catch (error) {
+                    alert(`Failed to publish song: ${error.message}`);
                 }
             } else if (e.target.classList.contains('edit')) {
-                localStorage.setItem('editSongIndex', globalIndex);
                 window.location.href = 'artist_manage_song.html';
             } else if (e.target.classList.contains('delete')) {
-                if (confirm(`Are you sure you want to delete "${songs[globalIndex].title}"?`)) {
+                if (confirm(`Are you sure you want to delete "${song.title}"?`)) {
                     try {
-                        const deletedTitle = songs[globalIndex].title;
-                        songs.splice(globalIndex, 1);
-                        localStorage.setItem('songs', JSON.stringify(songs));
-                        renderTable();
-                        alert(`Song "${deletedTitle}" deleted successfully.`);
-                    } catch (e) {
-                        alert('Failed to delete song: Storage quota exceeded.');
+                        await deleteSong(id);
+                        alert(`Song "${song.title}" deleted successfully.`);
+                        await fetchSongs();
+                        await updateCards();
+                    } catch (error) {
+                        alert(`Failed to delete song: ${error.message}`);
                     }
                 }
             }
         });
+    }
 
-        // Close modal
-        if (modalClose) {
-            modalClose.addEventListener('click', () => {
-                lyricsModal.style.display = 'none';
-                modalLyricsContent.value = '';
-                modalLyricsContent.placeholder = 'No content available';
-            });
-        }
+    if (closeModal && lyricsModal && modalLyricsContent) {
+        closeModal.addEventListener('click', () => {
+            lyricsModal.style.display = 'none';
+            modalLyricsContent.value = '';
+            modalLyricsContent.placeholder = 'No content available';
+        });
+    }
 
-        // Close modal when clicking outside
+    if (lyricsModal && modalLyricsContent) {
         window.addEventListener('click', (e) => {
             if (e.target === lyricsModal) {
                 lyricsModal.style.display = 'none';
@@ -343,33 +477,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalLyricsContent.placeholder = 'No content available';
             }
         });
-
-        // Initial render
-        renderTable();
     }
 
-    // Update dashboard cards
-    const totalSongsCard = document.querySelector('.card-1 h1');
-    const uploadedSongsCard = document.querySelector('.card-2 h1');
-    const totalPlaylistsCard = document.querySelector('.card-3 h1');
-    const totalAlbumsCard = document.querySelector('.card-4 h1');
+    // Utility Function to Map Sort Option to API Parameters
+    const mapSortToApi = (sort) => {
+        switch (sort) {
+            case 'title-asc':
+                return { orderBy: 'title', order: 'asc' };
+            case 'title-desc':
+                return { orderBy: 'title', order: 'desc' };
+            default:
+                return { orderBy: 'title', order: 'asc' };
+        }
+    };
 
-    if (totalSongsCard) {
-        totalSongsCard.textContent = Math.min(songs.length, 10); // Reflect the limit in the total songs card
-    }
-
-    if (uploadedSongsCard) {
-        const uploadedSongs = songs.filter(song => song.status === 'Accepted').length;
-        uploadedSongsCard.textContent = Math.min(uploadedSongs, 10); // Limit to 10
-    }
-
-    if (totalPlaylistsCard) {
-        const playlists = JSON.parse(localStorage.getItem('playlists')) || [];
-        totalPlaylistsCard.textContent = playlists.length;
-    }
-
-    if (totalAlbumsCard) {
-        const albums = JSON.parse(localStorage.getItem('albums')) || [];
-        totalAlbumsCard.textContent = albums.length;
-    }
+    // Initialize
+    Promise.all([
+        fetchGenres(),
+        fetchSongs(),
+        updateCards()
+    ])
+        .catch(error => {
+            console.error('Initialization error:', error);
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                localStorage.clear();
+                window.location.href = '../auth/login_register.html';
+            }
+        });
 });

@@ -524,6 +524,15 @@ body.dark .selected-artists .remove-artist:hover {
     cursor: pointer;
 }
 
+body.dark .table a.view-lyrics,
+body.dark .table a.view-description,
+body.dark .table a.view-songs {
+    color: #fff;
+    text-decoration: underline;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
 .table a.view-lyrics:hover,
 .table a.view-description:hover,
 .table a.view-songs:hover {
