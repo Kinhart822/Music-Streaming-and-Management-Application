@@ -24,6 +24,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 import aiofiles
 from pydub import AudioSegment
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 
 # Force ProactorEventLoop on Windows
 if sys.platform == "win32":
@@ -43,20 +45,23 @@ rf_model_train = None
 vectorizer_tfidf_similarity = TfidfVectorizer(use_idf=True)
 tfidf_matrix = None
 lyrics_hash = None
-whisper_model = None
+process_pool = None  # ProcessPoolExecutor
 
 # Load spaCy English model
 nlp = spacy.load('en_core_web_sm')
 p = inflect.engine()
 
-# Semaphore to limit concurrent requests to 1
-REQUEST_SEMAPHORE = asyncio.Semaphore(1)
+# Semaphore to limit concurrent requests
+REQUEST_SEMAPHORE = asyncio.Semaphore(2)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 
 # Lifespan event handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global vectorizer_tfidf, rf_model_train, tfidf_matrix, lyrics_hash, whisper_model
+    global vectorizer_tfidf, rf_model_train, tfidf_matrix, lyrics_hash, process_pool
     logging.info("Starting up: Loading models and TF-IDF matrix...")
     # Log ffmpeg version
     try:
@@ -70,25 +75,31 @@ async def lifespan(app: FastAPI):
         logging.info(f"FFmpeg version: {ffmpeg_version.splitlines()[0]}")
     except Exception as e:
         logging.error(f"Failed to get FFmpeg version: {e}")
+
     vectorizer_tfidf = joblib.load('pkl/vectorizer_tfidf.pkl')
     rf_model_train = joblib.load('pkl/rf_model_tf_idf.pkl')
-    whisper_model = whisper.load_model("small.en")
     tfidf_matrix = processing_database()
     try:
         lyrics_hash = joblib.load(HASH_PICKLE_PATH)
     except FileNotFoundError:
         lyrics_hash = None
+
+    # Initialize ProcessPoolExecutor
+    max_workers = multiprocessing.cpu_count()  # Use the number of CPU cores
+    process_pool = ProcessPoolExecutor(max_workers=max_workers)
+    logging.info(f"Initialized ProcessPoolExecutor with {max_workers} workers")
+
     logging.info("Application startup completed: Loaded models and TF-IDF matrix.")
     yield
+
     logging.info("Shutting down: Cleaning up resources...")
     shutil.rmtree("temp", ignore_errors=True)
-    whisper_model = None
+    process_pool.shutdown(wait=True)
     logging.info("Shutdown complete.")
 
 
 # Initialize FastAPI with lifespan
 app = FastAPI(lifespan=lifespan)
-logging.basicConfig(level=logging.INFO)
 
 
 def validate_audio_file(file_path):
@@ -118,6 +129,239 @@ def safe_decode(output_bytes):
     return output_bytes.decode("utf-8", errors="replace")
 
 
+# Define module-level functions for ProcessPoolExecutor
+def run_whisper_transcription(audio_path):
+    """Run Whisper transcription in a separate process."""
+    try:
+        model = whisper.load_model("medium.en")
+        result = model.transcribe(audio_path, fp16=False)
+        lyrics = result["text"]
+        if not lyrics.strip():
+            logging.warning(f"Transcription produced empty lyrics: {audio_path}")
+            return None
+        logging.info(f"Transcription successful for {audio_path}")
+        return lyrics
+    except Exception as e:
+        logging.error(f"Whisper transcription error: {type(e).__name__}: {str(e)}")
+        return None
+
+
+def run_demucs_separation(input_file, output_folder, filename):
+    """Run Demucs vocal separation in a separate process."""
+    try:
+        os.makedirs(output_folder, exist_ok=True)
+        vocals_dir = os.path.join(output_folder, "htdemucs", filename)
+        vocals_path = os.path.join(vocals_dir, "vocals.mp3")
+        new_vocals_path = os.path.join(vocals_dir, f"{filename}_vocals.mp3")
+
+        if os.path.exists(new_vocals_path) and validate_audio_file(new_vocals_path):
+            logging.info(f"Vocals file already exists and is valid: {new_vocals_path}")
+            return new_vocals_path
+
+        if os.path.exists(new_vocals_path):
+            os.remove(new_vocals_path)
+
+        command = ["demucs", "-o", output_folder, "--mp3", "-n", "htdemucs", "--device=cpu", input_file]
+        logging.info(f"Running demucs command: {' '.join(command)}")
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=False,
+            timeout=600
+        )
+
+        if result.returncode != 0:
+            stderr = safe_decode(result.stderr)
+            logging.error(f"Demucs failed with exit code {result.returncode}: {stderr}")
+            shutil.rmtree(output_folder, ignore_errors=True)
+            return None
+
+        stdout = safe_decode(result.stdout)
+        logging.info(f"Demucs stdout: {stdout}")
+        if not os.path.exists(vocals_path):
+            logging.error(f"Vocals file not found in {vocals_dir}")
+            return None
+
+        os.rename(vocals_path, new_vocals_path)
+        if not validate_audio_file(new_vocals_path):
+            logging.error(f"Generated vocals file is invalid: {new_vocals_path}")
+            return None
+
+        logging.info(f"Renamed vocals file to: {new_vocals_path}")
+        return new_vocals_path
+    except Exception as e:
+        logging.error(f"Demucs error: {type(e).__name__}: {str(e)}")
+        return None
+
+
+def run_ffmpeg_slowdown(input_file, output_file, speed_factor):
+    """Run FFmpeg slowdown in a separate process."""
+    try:
+        command = [
+            "ffmpeg", "-i", input_file,
+            "-filter:a", f"atempo={speed_factor}", "-vn",
+            "-loglevel", "info", "-y", output_file
+        ]
+        logging.info(f"Running ffmpeg command: {' '.join(command)}")
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=False,
+            timeout=300
+        )
+
+        if result.returncode != 0:
+            stderr = safe_decode(result.stderr)
+            logging.error(f"FFmpeg failed with exit code {result.returncode}: {stderr}")
+            return None
+
+        stdout = safe_decode(result.stdout)
+        logging.info(f"FFmpeg stdout: {stdout}")
+        if not os.path.exists(output_file):
+            logging.error(f"FFmpeg output file not created: {output_file}")
+            return None
+
+        if not validate_audio_file(output_file):
+            logging.error(f"Slowed audio is invalid: {output_file}")
+            return None
+
+        return output_file
+    except Exception as e:
+        logging.error(f"FFmpeg slowdown error: {type(e).__name__}: {str(e)}")
+        return None
+
+
+def run_ffmpeg_silence_removal(input_audio, output_audio, silence_threshold, min_silence_duration):
+    """Run FFmpeg silence removal in a separate process."""
+    try:
+        command = [
+            "ffmpeg", "-i", input_audio,
+            "-af",
+            f"silenceremove=stop_periods=-1:stop_duration={min_silence_duration}:stop_threshold={silence_threshold}",
+            "-loglevel", "info", "-y", output_audio
+        ]
+        logging.info(f"Running ffmpeg silence removal command: {' '.join(command)}")
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=False,
+            timeout=300
+        )
+
+        if result.returncode != 0:
+            stderr = safe_decode(result.stderr)
+            logging.error(f"FFmpeg silence removal failed with exit code {result.returncode}: {stderr}")
+            return None
+
+        stdout = safe_decode(result.stdout)
+        logging.info(f"FFmpeg silence removal stdout: {stdout}")
+        if not os.path.exists(output_audio):
+            logging.error(f"Silence removal output file not created: {output_audio}")
+            return None
+
+        if not validate_audio_file(output_audio):
+            logging.warning(f"Silence removal produced invalid output: {output_audio}. Falling back to input audio.")
+            return input_audio
+
+        return output_audio
+    except Exception as e:
+        logging.error(f"FFmpeg silence removal error: {type(e).__name__}: {str(e)}")
+        return None
+
+
+async def transcribe_lyric_by_whisper(audio_path):
+    try:
+        if not validate_audio_file(audio_path):
+            logging.error(f"Cannot transcribe invalid audio: {audio_path}")
+            return None
+        logging.info(f"Transcribing audio: {audio_path}")
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(process_pool, run_whisper_transcription, audio_path)
+        if result is None:
+            logging.warning(f"Transcription failed for {audio_path}")
+            return None
+        logging.info("Lyrics transcribed successfully.")
+        return result
+    except Exception as e:
+        logging.error(f"Error transcribing lyrics: {type(e).__name__}: {str(e)}", exc_info=True)
+        return None
+
+
+async def separate_vocals(input_file, output_folder="demucs_output"):
+    if not os.path.exists(input_file):
+        logging.error(f"Input file '{input_file}' does not exist!")
+        return None
+    if not validate_audio_file(input_file):
+        logging.error(f"Input audio is invalid: {input_file}")
+        return None
+    try:
+        filename = os.path.splitext(os.path.basename(input_file))[0]
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            process_pool, run_demucs_separation, input_file, output_folder, filename
+        )
+        if result is None:
+            logging.error(f"Demucs vocal separation failed for {input_file}")
+            return None
+        logging.info(f"Vocals separated successfully: {result}")
+        return result
+    except Exception as e:
+        logging.error(f"Unexpected error running Demucs: {type(e).__name__}: {str(e)}", exc_info=True)
+        return None
+
+
+async def slow_down_audio_ffmpeg(input_file, output_folder="final_output", speed_factor=0.85):
+    try:
+        if not os.path.exists(input_file):
+            logging.error(f"Input file '{input_file}' does not exist!")
+            return None
+        if not validate_audio_file(input_file):
+            logging.error(f"Input audio is invalid: {input_file}")
+            return None
+        filename = os.path.splitext(os.path.basename(input_file))[0]
+        os.makedirs(output_folder, exist_ok=True)
+        slowed_audio = os.path.join(output_folder, f"{filename}_slowdown.wav")
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            process_pool, run_ffmpeg_slowdown, input_file, slowed_audio, speed_factor
+        )
+        if result is None:
+            logging.error(f"FFmpeg slowdown failed for {input_file}")
+            return None
+
+        final_output = os.path.join(output_folder, f"{filename}_final.wav")
+        result = await remove_silence(slowed_audio, final_output)
+        if os.path.exists(slowed_audio):
+            os.remove(slowed_audio)
+        return result
+    except Exception as e:
+        logging.error(f"Error running FFmpeg: {type(e).__name__}: {str(e)}", exc_info=True)
+        return None
+
+
+async def remove_silence(input_audio, output_audio, silence_threshold="-30dB", min_silence_duration="1.0"):
+    try:
+        if not validate_audio_file(input_audio):
+            logging.error(f"Input audio for silence removal is invalid: {input_audio}")
+            return None
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            process_pool, run_ffmpeg_silence_removal, input_audio, output_audio, silence_threshold, min_silence_duration
+        )
+        if result is None:
+            logging.error(f"Silence removal failed for {input_audio}")
+            return None
+        return result
+    except Exception as e:
+        logging.error(f"Error removing silence: {type(e).__name__}: {str(e)}", exc_info=True)
+        return None
+
+
+# Rest of the code remains unchanged
 def load_remove(path_to_load):
     remove_list = set()
     with open(path_to_load, "r", encoding="utf-8") as file:
@@ -231,192 +475,6 @@ def tfidf_lyrics(test_lyrics):
     return song_tfidf
 
 
-async def transcribe_lyric_by_whisper(audio_path):
-    try:
-        if not validate_audio_file(audio_path):
-            logging.error(f"Cannot transcribe invalid audio: {audio_path}")
-            return None
-        logging.info(f"Transcribing audio: {audio_path}")
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, lambda: whisper_model.transcribe(audio_path, fp16=False))
-        lyrics_transcribe = result["text"]
-        if not lyrics_transcribe.strip():
-            logging.warning(f"Transcription produced empty lyrics: {audio_path}")
-            return None
-        logging.info("Lyrics transcribed successfully.")
-        return lyrics_transcribe
-    except Exception as e:
-        logging.error(f"Error transcribing lyrics: {type(e).__name__}: {str(e)}", exc_info=True)
-        return None
-
-
-async def separate_vocals(input_file, output_folder="demucs_output"):
-    if not os.path.exists(input_file):
-        logging.error(f"Input file '{input_file}' does not exist!")
-        return None
-    if not validate_audio_file(input_file):
-        logging.error(f"Input audio is invalid: {input_file}")
-        return None
-    try:
-        os.makedirs(output_folder, exist_ok=True)
-        filename = os.path.splitext(os.path.basename(input_file))[0]
-        vocals_dir = os.path.join(output_folder, "htdemucs", filename)
-        vocals_path = os.path.join(vocals_dir, "vocals.mp3")
-        new_vocals_path = os.path.join(vocals_dir, f"{filename}_vocals.mp3")
-        if os.path.exists(new_vocals_path):
-            if validate_audio_file(new_vocals_path):
-                logging.info(f"Vocals file already exists and is valid: {new_vocals_path}")
-                return new_vocals_path
-            else:
-                logging.warning(f"Existing vocals file is invalid, reprocessing: {new_vocals_path}")
-                os.remove(new_vocals_path)
-        command = ["demucs", "-o", output_folder, "--mp3", "-n", "htdemucs", "--device=cpu", input_file]
-        logging.info(f"Running demucs command: {' '.join(command)}")
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, lambda: subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=False,
-            timeout=600
-        ))
-        if result.returncode != 0:
-            stderr = safe_decode(result.stderr)
-            logging.error(f"Demucs failed with exit code {result.returncode}: {stderr}")
-            # Log demucs and torch versions for debugging
-            try:
-                demucs_version = subprocess.run(["pip", "show", "demucs"], stdout=subprocess.PIPE, text=True).stdout
-                torch_version = subprocess.run(["pip", "show", "torch"], stdout=subprocess.PIPE, text=True).stdout
-                logging.error(f"Demucs version: {demucs_version}")
-                logging.error(f"Torch version: {torch_version}")
-            except Exception as e:
-                logging.error(f"Failed to get dependency versions: {e}")
-            # Clean up output folder on failure
-            shutil.rmtree(output_folder, ignore_errors=True)
-            return None
-        stdout = safe_decode(result.stdout)
-        logging.info(f"Demucs stdout: {stdout}")
-        logging.info(f"Vocals separated successfully: {output_folder}")
-        if not os.path.exists(vocals_path):
-            logging.error(f"Vocals file not found in {vocals_dir}")
-            return None
-        os.rename(vocals_path, new_vocals_path)
-        if not validate_audio_file(new_vocals_path):
-            logging.error(f"Generated vocals file is invalid: {new_vocals_path}")
-            return None
-        logging.info(f"Renamed vocals file to: {new_vocals_path}")
-        return new_vocals_path
-    except FileNotFoundError as e:
-        logging.error(f"Demucs command not found. Ensure demucs is installed: {e}")
-        return None
-    except PermissionError as e:
-        logging.error(f"Permission error accessing {output_folder}: {e}")
-        return None
-    except subprocess.TimeoutExpired:
-        logging.error("Demucs command timed out after 600 seconds")
-        return None
-    except Exception as e:
-        logging.error(f"Unexpected error running Demucs: {type(e).__name__}: {str(e)}", exc_info=True)
-        return None
-
-
-async def slow_down_audio_ffmpeg(input_file, output_folder="final_output", speed_factor=0.85):
-    try:
-        if not os.path.exists(input_file):
-            logging.error(f"Input file '{input_file}' does not exist!")
-            return None
-        if not validate_audio_file(input_file):
-            logging.error(f"Input audio is invalid: {input_file}")
-            return None
-        filename = os.path.splitext(os.path.basename(input_file))[0]
-        os.makedirs(output_folder, exist_ok=True)
-        slowed_audio = os.path.join(output_folder, f"{filename}_slowdown.wav")
-        command = [
-            "ffmpeg", "-i", input_file,
-            "-filter:a", f"atempo={speed_factor}", "-vn",
-            "-loglevel", "info", "-y", slowed_audio
-        ]
-        logging.info(f"Running ffmpeg command: {' '.join(command)}")
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, lambda: subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=False,
-            timeout=300
-        ))
-        if result.returncode != 0:
-            stderr = safe_decode(result.stderr)
-            logging.error(f"FFmpeg failed with exit code {result.returncode}: {stderr}")
-            return None
-        stdout = safe_decode(result.stdout)
-        logging.info(f"FFmpeg stdout: {stdout}")
-        if not os.path.exists(slowed_audio):
-            logging.error(f"FFmpeg output file not created: {slowed_audio}")
-            return None
-        if not validate_audio_file(slowed_audio):
-            logging.error(f"Slowed audio is invalid: {slowed_audio}")
-            return None
-        final_output = os.path.join(output_folder, f"{filename}_final.wav")
-        result = await remove_silence(slowed_audio, final_output)
-        if os.path.exists(slowed_audio):
-            os.remove(slowed_audio)
-        return result
-    except FileNotFoundError as e:
-        logging.error(f"FFmpeg command not found. Ensure ffmpeg is installed: {e}")
-        return None
-    except subprocess.TimeoutExpired:
-        logging.error("FFmpeg command timed out after 300 seconds")
-        return None
-    except Exception as e:
-        logging.error(f"Error running FFmpeg: {type(e).__name__}: {str(e)}", exc_info=True)
-        return None
-
-
-async def remove_silence(input_audio, output_audio, silence_threshold="-30dB", min_silence_duration="1.0"):
-    try:
-        if not validate_audio_file(input_audio):
-            logging.error(f"Input audio for silence removal is invalid: {input_audio}")
-            return None
-        command = [
-            "ffmpeg", "-i", input_audio,
-            "-af",
-            f"silenceremove=stop_periods=-1:stop_duration={min_silence_duration}:stop_threshold={silence_threshold}",
-            "-loglevel", "info", "-y", output_audio
-        ]
-        logging.info(f"Running ffmpeg silence removal command: {' '.join(command)}")
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, lambda: subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=False,
-            timeout=300
-        ))
-        if result.returncode != 0:
-            stderr = safe_decode(result.stderr)
-            logging.error(f"FFmpeg silence removal failed with exit code {result.returncode}: {stderr}")
-            return None
-        stdout = safe_decode(result.stdout)
-        logging.info(f"FFmpeg silence removal stdout: {stdout}")
-        if not os.path.exists(output_audio):
-            logging.error(f"Silence removal output file not created: {output_audio}")
-            return None
-        if not validate_audio_file(output_audio):
-            logging.warning(f"Silence removal produced invalid output: {output_audio}. Falling back to input audio.")
-            return input_audio
-        return output_audio
-    except FileNotFoundError as e:
-        logging.error(f"FFmpeg command not found. Ensure ffmpeg is installed: {e}")
-        return None
-    except subprocess.TimeoutExpired:
-        logging.error("FFmpeg silence removal timed out after 300 seconds")
-        return None
-    except Exception as e:
-        logging.error(f"Error removing silence: {type(e).__name__}: {str(e)}", exc_info=True)
-        return None
-
-
 async def process_audio(input_file, request_id):
     temp_dir = f"temp/{request_id}"
     demucs_dir = f"{temp_dir}/demucs_output"
@@ -464,7 +522,7 @@ def get_lyrics_hash(lyrics_list):
 
 
 def processing_database():
-    query = "SELECT * FROM songs WHERE status = 'ACCEPTED' OR status = 'PENDING'"
+    query = "SELECT * FROM songs WHERE status = 'ACCEPTED'"
     df = pd.read_sql(query, engine)
     current_hash = get_lyrics_hash(df["lyrics"].tolist())
     global lyrics_hash, tfidf_matrix
@@ -606,6 +664,7 @@ async def predict_genre_api(request_id: str = Form(None), lyrics: str = Form(Non
                         logging.info(f"Cleaned up temp directory: {temp_dir}")
                     logging.info("Finished predicting genre")
                     return {"genre": predicted_genre}
+                return None
             elif lyrics:
                 lyrics_processed = tfidf_lyrics(lyrics)
                 logging.info("Finished processing lyrics to TF-IDF")
