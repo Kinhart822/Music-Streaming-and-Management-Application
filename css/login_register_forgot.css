@@ -14,11 +14,22 @@
     --labelColor: #000000;
     --body-color: #E4E9F7;
     --body-color-dark: #18191A;
+    --icon-color: #303133;
+    --icon-color-dark: #ffffff;
+    --success-color: #67c23a;
+    --error-color: #f56c6c;
 }
 
 html {
     font-size: 62.5%;
     scroll-behavior: smooth;
+}
+
+html.dark {
+    --whiteColor: #2E2F30;
+    --titleColor: #ffffff;
+    --labelColor: #ffffff;
+    --body-color: #18191A;
 }
 
 body {
@@ -53,6 +64,42 @@ body {
     width: 120px;
     height: auto;
     cursor: pointer;
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 90px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    color: var(--whiteColor);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    transform: translateY(-20px);
+    font-size: 1.4rem;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.success {
+    background: var(--success-color);
+}
+
+.notification.error {
+    background: var(--error-color);
+}
+
+html.dark .notification {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Form Container */
@@ -101,12 +148,38 @@ body {
 .wrapper .form-container form .form-group input {
     width: 100%;
     height: 4rem;
-    padding: 0 3rem 0 1rem;
+    padding: 0 4rem 0 1rem; /* Tăng padding-right để chứa biểu tượng */
     border-radius: .5rem;
     border: .1rem solid var(--labelColor);
     font-size: 1.6rem;
     color: var(--labelColor);
     outline: none;
+}
+
+.wrapper .form-container form .password-container input {
+    padding-right: 4rem; /* Đảm bảo đủ không gian cho biểu tượng */
+}
+
+.toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--icon-color);
+    font-size: 1.6rem;
+}
+
+html.dark .toggle-password {
+    color: var(--icon-color-dark);
+}
+
+.toggle-password:hover {
+    color: var(--mainColor);
+}
+
+html.dark .toggle-password:hover {
+    color: #4485da;
 }
 
 .wrapper .form-container form .forgot-pass {
@@ -206,7 +279,7 @@ body {
 }
 
 .error-message {
-    color: red;
+    color: var(--error-color);
     font-size: 1.4rem;
     text-align: center;
     display: none;

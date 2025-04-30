@@ -1,6 +1,17 @@
+// Hàm hiển thị thông báo
+function showNotification(message, type = 'error') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${type} show`;
+    setTimeout(() => {
+        notification.classList.remove('show');
+        notification.style.display = 'none';
+    }, 3000);
+}
+
 // Kiểm tra người dùng đã đăng nhập khi tải trang
 document.addEventListener('DOMContentLoaded', () => {
-    const currentUserEmail = getCurrentUserEmail();
+    const currentUserEmail = sessionStorage.getItem('currentUserEmail');
     if (currentUserEmail) {
         const userType = sessionStorage.getItem(`user_${currentUserEmail}_userType`);
         if (userType === 'ARTIST') {
@@ -48,10 +59,8 @@ const checkEmailExistence = async (email) => {
         if (!email) {
             throw new Error('Email is empty');
         }
-        console.log('Checking email:', email);
         const encodedEmail = encodeURIComponent(email);
         const url = `http://localhost:8080/api/v1/account/user/sign-up/check-email-existence?query=${encodedEmail}`;
-        console.log('Fetching URL:', url);
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -60,19 +69,14 @@ const checkEmailExistence = async (email) => {
             }
         });
 
-        console.log('Check email response status:', response.status);
-
         if (!response.ok) {
             throw new Error('Failed to check email');
         }
 
         const data = await response.json();
-        console.log('Check email response data:', data);
         return data.emailExisted;
     } catch (error) {
-        console.error('Check email error:', error);
-        signUpError.textContent = 'Error checking email. Please try again.';
-        signUpError.style.display = 'block';
+        showNotification('Error checking email. Please try again.', 'error');
         return true;
     }
 };
@@ -119,9 +123,6 @@ signUpForm.addEventListener('submit', async (e) => {
     const password = signUpPassword.value.trim();
 
     try {
-        console.log('Sending sign-up request to:', 'http://localhost:8080/api/v1/account/signUpArtist');
-        console.log('Request body:', JSON.stringify({ email, password }));
-
         const response = await fetch('http://localhost:8080/api/v1/account/signUpArtist', {
             method: 'POST',
             headers: {
@@ -130,8 +131,6 @@ signUpForm.addEventListener('submit', async (e) => {
             },
             body: JSON.stringify({ email, password })
         });
-
-        console.log('Sign-up response status:', response.status);
 
         if (!response.ok) {
             let errorData;
@@ -144,12 +143,10 @@ signUpForm.addEventListener('submit', async (e) => {
         }
 
         const data = await response.json();
-        console.log('Sign-up response data:', data);
-
-        // Show success message and switch to sign-in form
         signUpError.style.color = 'green';
         signUpError.textContent = 'Artist account created successfully! Please sign in.';
         signUpError.style.display = 'block';
+        showNotification('Artist account created successfully!', 'success');
         setTimeout(() => {
             wrapper.classList.add('animated-signup');
             wrapper.classList.remove('animated-signin');
@@ -159,9 +156,9 @@ signUpForm.addEventListener('submit', async (e) => {
             signUpButton.disabled = true;
         }, 2000);
     } catch (error) {
-        console.error('Sign-up error:', error);
         signUpError.textContent = error.message === 'Email already exists' ? 'Email already exists' : 'Failed to create artist account. Please try again.';
         signUpError.style.display = 'block';
+        showNotification(error.message || 'Failed to create artist account.', 'error');
     }
 });
 
@@ -178,9 +175,6 @@ signInForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('sign-in-password').value.trim();
 
     try {
-        console.log('Sending sign-in request to:', 'http://localhost:8080/api/v1/auth/sign-in');
-        console.log('Request body:', JSON.stringify({ email, password }));
-
         const response = await fetch('http://localhost:8080/api/v1/auth/sign-in', {
             method: 'POST',
             headers: {
@@ -189,8 +183,6 @@ signInForm.addEventListener('submit', async (e) => {
             },
             body: JSON.stringify({ email, password })
         });
-
-        console.log('Sign-in response status:', response.status);
 
         if (!response.ok) {
             let errorData;
@@ -203,7 +195,6 @@ signInForm.addEventListener('submit', async (e) => {
         }
 
         const data = await response.json();
-        console.log('Sign-in response data:', data);
         const { email: userEmail, userType, accessToken, refreshToken } = data;
 
         // Validate userType
@@ -214,6 +205,8 @@ signInForm.addEventListener('submit', async (e) => {
         // Lưu thông tin người dùng
         handleLoginSuccess(userEmail, userType, accessToken, refreshToken);
 
+        showNotification('Login successful!', 'success');
+
         // Redirect based on userType
         if (userType === 'ARTIST') {
             window.location.href = '../artist/artist_dashboard.html';
@@ -222,13 +215,14 @@ signInForm.addEventListener('submit', async (e) => {
         } else if (userType === 'USER') {
             signInError.textContent = 'Invalid user type';
             signInError.style.display = 'block';
+            showNotification('Invalid user type', 'error');
         } else {
             throw new Error(`Unknown user type: ${userType}`);
         }
     } catch (error) {
-        console.error('Sign-in error:', error);
         signInError.textContent = error.message || 'Unable to connect to the server. Please try again later.';
         signInError.style.display = 'block';
+        showNotification(error.message || 'Unable to connect to the server.', 'error');
     }
 });
 
@@ -244,6 +238,4 @@ function handleLoginSuccess(email, userType, accessToken, refreshToken) {
 
     // Lưu email người dùng hiện tại
     sessionStorage.setItem('currentUserEmail', email);
-    console.log(`Đăng nhập thành công: ${email}`);
-    console.log(`Lưu accessToken tại ${accessTokenKey}, refreshToken tại ${refreshTokenKey}, userType tại ${userTypeKey}`);
 }
