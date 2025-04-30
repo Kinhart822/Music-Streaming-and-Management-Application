@@ -4,12 +4,49 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/admin/home_structure.css">
-    <link rel="stylesheet" href="../css/admin/admin_manage.css">
-    <link rel="stylesheet" href="../css/admin/table_dashboard_structure.css">
+    <link rel="stylesheet" href="../css/home_structure.css">
+    <link rel="stylesheet" href="../css/management.css">
+    <link rel="stylesheet" href="../css/admin/dashboard_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <title>Admin Dashboard</title>
+    <script>
+        // Immediately apply dark mode and sidebar state based on localStorage
+        (function () {
+            // Get current user email from sessionStorage
+            const getCurrentUserEmail = () => {
+                return sessionStorage.getItem('currentUserEmail');
+            };
+
+            // Get dark mode state
+            const getDarkModeState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`darkMode_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('darkMode_default') === 'true';
+                }
+            };
+
+            // Get sidebar collapsed state
+            const getSidebarCollapsedState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`sidebarCollapsed_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('sidebarCollapsed_default') === 'true';
+                }
+            };
+
+            // Apply dark mode
+            const isDarkMode = getDarkModeState();
+            document.documentElement.classList.toggle('dark', isDarkMode);
+
+            // Apply sidebar collapsed state
+            const isSidebarCollapsed = getSidebarCollapsedState();
+            document.documentElement.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+        })();
+    </script>
 </head>
 <body>
 <section class="header">
@@ -25,18 +62,6 @@
             <button><i class='bx bx-search-alt-2'></i></button>
         </div>
         <div class="notification--profile">
-            <div class="picon bell">
-                <i class='bx bx-bell'></i>
-                <div class="notification-dropdown">
-                    <ul class="notification-list">
-                        <li><i class="ri-user-follow-line"></i> <span>New user registered: User123</span> <small>2h ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Song "Midnight Drive" submitted for review</span> <small>4h ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Summer Vibes" submitted</span> <small>1d ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Echoes" submitted</span> <small>2d ago</small></li>
-                        <li><i class="ri-user-follow-line"></i> <span>New user: MusicFan99</span> <small>3d ago</small></li>
-                    </ul>
-                </div>
-            </div>
             <div class="picon profile">
                 <img id="profile-icon-img" src="https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg" alt="Profile Picture" class="profile-icon-image">
             </div>
@@ -48,11 +73,6 @@
                         <img id="profile-modal-img" class="profile-avatar" alt="Profile Picture">
                         <h3 id="profile-fullname"></h3>
                         <p id="profile-description"></p>
-                        <div class="profile-info">
-                            <p><strong>Gender:</strong> <span id="profile-gender"></span></p>
-                            <p><strong>Date of Birth:</strong> <span id="profile-dob"></span></p>
-                            <p><strong>Phone:</strong> <span id="profile-phone"></span></p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -96,9 +116,9 @@
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="../admin/admin_review_contents.html">
-                            <i class='bx bx-check-square'></i>
-                            <span class="text nav-text">Review Content</span>
+                        <a href="../admin/admin_manage_genres.html">
+                            <i class='bx bx-category'></i>
+                            <span class="text nav-text">Manage Genres</span>
                         </a>
                     </li>
                 </ul>
@@ -107,7 +127,7 @@
         <div class="bottom-content">
             <ul class="menu-links">
                 <li class="nav-link">
-                    <a href="../auth/login_register.html">
+                    <a class="logout">
                         <i class='bx bx-log-out icon'></i>
                         <span class="text nav-text">Logout</span>
                     </a>
@@ -137,7 +157,7 @@
                 <div class="card card-1">
                     <div class="card--data">
                         <div class="card--content">
-                            <h5 class="card--title">Total Listeners</h5>
+                            <h5 class="card--title">Total Users</h5>
                             <h1 id="total-listeners">0</h1>
                         </div>
                         <i class="ri-user-line card--icon--lg"></i>
@@ -211,27 +231,15 @@
 
         <div class="pending-content">
             <div class="title">
-                <h2 class="section--title">Recent Review Content</h2>
-                <a class="add" href="../admin/admin_review_contents.html"><i class="ri-eye-line"></i>View All</a>
+                <h2 class="section--title">Recent Contents</h2>
             </div>
             <div class="table-controls">
-                <div class="control-group">
-                    <label for="filter-type">Filter by Type:</label>
-                    <select id="filter-type">
-                        <option value="all">All</option>
-                        <option value="User">User</option>
-                        <option value="Artist">Artist</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Song">Song</option>
-                        <option value="Playlist">Playlist</option>
-                        <option value="Album">Album</option>
-                    </select>
-                </div>
                 <div class="control-group">
                     <label for="filter-status">Filter by Status:</label>
                     <select id="filter-status">
                         <option value="all">All</option>
                         <option value="draft">Draft</option>
+                        <option value="processing">Processing</option>
                         <option value="pending">Pending</option>
                         <option value="accepted">Accepted</option>
                         <option value="declined">Declined</option>
@@ -242,33 +250,32 @@
                     <select id="sort-by">
                         <option value="title-asc">Title A-Z</option>
                         <option value="title-desc">Title Z-A</option>
-                        <option value="date-asc">Submission Date Ascending</option>
-                        <option value="date-desc">Submission Date Descending</option>
+                        <option value="date-asc">Upload Date (Oldest)</option>
+                        <option value="date-desc">Upload Date (Newest)</option>
                     </select>
                 </div>
             </div>
-            <div class="table">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Type</th>
-                        <th>Purpose Upload</th>
-                        <th>Title</th>
-                        <th>Duration</th>
-                        <th>Upload Date</th>
-                        <th>Submitted By</th>
-                        <th>Description</th>
-                        <th>Artist</th>
-                        <th>Additional Artists</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody id="pending-table-body">
-                    <!-- JavaScript will populate pending content -->
-                    </tbody>
-                </table>
+            <div class="table-container">
+                <div class="table">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Upload Date</th>
+                            <th>Description</th>
+                            <th>Duration</th>
+                            <th>Artist(s)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="pending-table-body">
+                        <!-- JavaScript will populate pending content -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="pagination"></div>
         </div>
@@ -282,9 +289,9 @@
         <textarea class="lyrics-content" id="modal-description-content" readonly placeholder="No description available"></textarea>
     </div>
 </div>
-<script src="../js/dark_mode.js"></script>
-<script src="../js/admin/admin_dashboard.js"></script>
-<script src="../js/admin/admin_profile.js"></script>
+<script src="../js/api/dark_mode.js"></script>
+<script type="module" src="../js/api/admin/admin_header_siderbar.js"></script>
 <script type="module" src="../js/api/account/logout.js"></script>
+<script type="module" src="../js/api/admin/admin_dashboard.js"></script>
 </body>
 </html>

@@ -4,14 +4,57 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/admin/home_structure.css">
-    <link rel="stylesheet" href="/css/admin/form_add_user.css">
-    <link rel="stylesheet" href="/css/admin/admin_manage.css">
+    <link rel="stylesheet" href="../css/home_structure.css">
+    <link rel="stylesheet" href="../css/management.css">
+    <link rel="stylesheet" href="../css/admin/user_structure.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <title>Manage Users</title>
+    <script>
+        // Immediately apply dark mode and sidebar state based on localStorage
+        (function () {
+            // Get current user email from sessionStorage
+            const getCurrentUserEmail = () => {
+                return sessionStorage.getItem('currentUserEmail');
+            };
+
+            // Get dark mode state
+            const getDarkModeState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`darkMode_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('darkMode_default') === 'true';
+                }
+            };
+
+            // Get sidebar collapsed state
+            const getSidebarCollapsedState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`sidebarCollapsed_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('sidebarCollapsed_default') === 'true';
+                }
+            };
+
+            // Apply dark mode
+            const isDarkMode = getDarkModeState();
+            document.documentElement.classList.toggle('dark', isDarkMode);
+
+            // Apply sidebar collapsed state
+            const isSidebarCollapsed = getSidebarCollapsedState();
+            document.documentElement.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+        })();
+    </script>
 </head>
 <body>
+<!-- Notification -->
+<div class="notification" id="notification" style="display: none;">
+    <span id="notification-message"></span>
+    <span class="close-notification">×</span>
+</div>
+
 <section class="header">
     <div class="logo">
         <i class="ri-menu-line icon icon-0 menu"></i>
@@ -19,33 +62,13 @@
     </div>
     <div class="search--notification--profile">
         <div class="search">
-            <label for="search-user">
-                <input type="text" id="search-user" placeholder="Search Users...">
-            </label>
+            <label for="search-user"></label>
+            <input type="text" id="search-user" placeholder="Search Users...">
             <button><i class='bx bx-search-alt-2'></i></button>
         </div>
         <div class="notification--profile">
-            <div class="picon bell">
-                <i class='bx bx-bell'></i>
-                <div class="notification-dropdown">
-                    <ul class="notification-list">
-                        <li><i class="ri-user-follow-line"></i> <span>New user registered: User123</span> <small>2h
-                            ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Song "Midnight Drive" submitted for review</span>
-                            <small>4h ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Playlist "Summer Vibes" submitted</span> <small>1d
-                            ago</small></li>
-                        <li><i class="ri-upload-cloud-line"></i> <span>Album "Echoes" submitted</span> <small>2d
-                            ago</small></li>
-                        <li><i class="ri-user-follow-line"></i> <span>New user: MusicFan99</span> <small>3d ago</small>
-                        </li>
-                    </ul>
-                </div>
-            </div>
             <div class="picon profile">
-                <img id="profile-icon-img"
-                     src="https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg"
-                     alt="Profile Picture" class="profile-icon-image">
+                <img id="profile-icon-img" src="https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg" alt="Profile Picture" class="profile-icon-image">
             </div>
             <div class="profile-modal">
                 <div class="profile-modal-content">
@@ -55,11 +78,7 @@
                         <img id="profile-modal-img" class="profile-avatar" alt="Profile Picture">
                         <h3 id="profile-fullname"></h3>
                         <p id="profile-description"></p>
-                        <div class="profile-info">
-                            <p><strong>Gender:</strong> <span id="profile-gender"></span></p>
-                            <p><strong>Date of Birth:</strong> <span id="profile-dob"></span></p>
-                            <p><strong>Phone:</strong> <span id="profile-phone"></span></p>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -103,19 +122,18 @@
                         </a>
                     </li>
                     <li class="nav-link">
-                        <a href="../admin/admin_review_contents.html">
-                            <i class='bx bx-check-square'></i>
-                            <span class="text nav-text">Review Content</span>
+                        <a href="../admin/admin_manage_genres.html">
+                            <i class='bx bx-category'></i>
+                            <span class="text nav-text">Manage Genres</span>
                         </a>
                     </li>
                 </ul>
             </div>
         </div>
-
         <div class="bottom-content">
             <ul class="menu-links">
                 <li class="nav-link">
-                    <a href="../auth/login_register.html">
+                    <a class="logout">
                         <i class='bx bx-log-out icon'></i>
                         <span class="text nav-text">Logout</span>
                     </a>
@@ -157,9 +175,9 @@
                     <div class="form-group">
                         <label for="user-role">Role *</label>
                         <select id="user-role" required>
-                            <option value="user">User</option>
-                            <option value="artist">Artist</option>
-                            <option value="admin">Admin</option>
+                            <option value="USER">User</option>
+                            <option value="ARTIST">Artist</option>
+                            <option value="ADMIN">Admin</option>
                         </select>
                     </div>
                     <div class="form-group button-group">
@@ -173,16 +191,19 @@
                     <label for="filter-role">Filter by Role:</label>
                     <select id="filter-role">
                         <option value="all">All</option>
-                        <option value="user">User</option>
-                        <option value="artist">Artist</option>
-                        <option value="admin">Admin</option>
+                        <option value="USER">User</option>
+                        <option value="ARTIST">Artist</option>
+                        <option value="ADMIN">Admin</option>
                     </select>
                 </div>
                 <div>
-                    <label for="sort-by">Sort by:</label>
-                    <select id="sort-by">
-                        <option value="joinDate-asc">Join Date Ascending</option>
-                        <option value="joinDate-desc">Join Date Descending</option>
+                    <label for="filter-status">Filter by Status:</label>
+                    <select id="filter-status">
+                        <option value="all">All</option>
+                        <option value="-4">Locked</option>
+                        <option value="-3">Deleted</option>
+                        <option value="-1">Inactive</option>
+                        <option value="1">Active</option>
                     </select>
                 </div>
                 <div>
@@ -190,28 +211,51 @@
                     <input type="number" id="rows-per-page" value="10" min="1">
                 </div>
             </div>
-            <div class="table">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Join Date</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody id="user-table-body">
-                    <!-- JavaScript will populate users -->
-                    </tbody>
-                </table>
+            <div class="table-container">
+                <div class="table">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                        <!-- JavaScript will populate users -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="pagination"></div>
+            <!-- Modal for viewing user details -->
+            <div class="modal" id="user-details-modal">
+                <div class="modal-content">
+                    <span class="close">×</span>
+                    <h3>User Details</h3>
+                    <div class="user-details-content">
+                        <img id="user-avatar" class="user-avatar" alt="Avatar" style="display: none; max-width: 100px; border-radius: 8px; margin: 0 auto 16px;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody id="user-details-table">
+                            <!-- JavaScript will populate table rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
-<script src="../js/dark_mode.js"></script>
-<script src="/js/admin/admin_manage_user.js"></script>
-<script src="../js/admin/admin_profile.js"></script>
+<script src="../js/api/dark_mode.js"></script>
+<script type="module" src="../js/api/admin/admin_header_siderbar.js"></script>
+<script type="module" src="../js/api/account/logout.js"></script>
+<script type="module" src="../js/api/admin/admin_manage_user.js"></script>
 </body>
 </html>

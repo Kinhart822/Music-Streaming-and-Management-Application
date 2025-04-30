@@ -2,16 +2,25 @@
 import { fetchWithRefresh } from '/js/api/refresh.js';
 
 /**
- * Handle user logout by sending a request to the server and clearing localStorage
+ * Handle user logout by sending a request to the server and clearing sessionStorage
  */
 const handleLogout = async () => {
     try {
         console.log('Initiating logout');
+        const currentUserEmail = sessionStorage.getItem('currentUserEmail');
+        if (!currentUserEmail) {
+            console.warn('No user is currently logged in');
+            window.location.href = '../auth/login_register.html';
+            return;
+        }
+
+        const accessToken = sessionStorage.getItem(`user_${currentUserEmail}_accessToken`);
         const response = await fetchWithRefresh('http://localhost:8080/api/v1/auth/sign-out', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${accessToken}` // Thêm token vào header nếu API yêu cầu
             }
         });
 
@@ -30,23 +39,32 @@ const handleLogout = async () => {
         const data = await response.json();
         console.log('Logout response data:', data);
 
-        // Clear localStorage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('email');
-        console.log('localStorage cleared');
+        // Clear sessionStorage for the current user
+        clearCurrentUserData();
+        console.log('sessionStorage cleared for user:', currentUserEmail);
 
         // Redirect to login page
         window.location.href = '../auth/login_register.html';
     } catch (error) {
         console.error('Logout error:', error);
-        // Clear localStorage and redirect even on error to ensure logout
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('email');
+        // Clear sessionStorage and redirect even on error to ensure logout
+        clearCurrentUserData();
         window.location.href = '../auth/login_register.html';
     }
 };
+
+/**
+ * Clear sessionStorage data for the current user
+ */
+function clearCurrentUserData() {
+    const currentUserEmail = sessionStorage.getItem('currentUserEmail');
+    if (currentUserEmail) {
+        sessionStorage.removeItem(`user_${currentUserEmail}_accessToken`);
+        sessionStorage.removeItem(`user_${currentUserEmail}_refreshToken`);
+        sessionStorage.removeItem(`user_${currentUserEmail}_userType`);
+        sessionStorage.removeItem('currentUserEmail');
+    }
+}
 
 // Attach logout handler to the logout link
 document.addEventListener('DOMContentLoaded', () => {

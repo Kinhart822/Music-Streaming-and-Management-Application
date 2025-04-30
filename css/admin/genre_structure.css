@@ -234,7 +234,7 @@ html.dark .modal-content .close:hover {
 #confirm-action-modal .button-group button {
     padding: 12px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius:  sprocket8px;
     cursor: pointer;
     font-size: 14px;
     color: #fff;
@@ -285,35 +285,35 @@ html.dark #confirm-action-modal .button-group button.cancel:hover {
 }
 
 /* Form Styles */
-.add-song-form {
+.add-genre-form {
     display: none;
     background: var(--bg-light);
     padding: 24px;
     border-radius: 12px;
     box-shadow: var(--shadow);
-    max-width: 900px;
+    max-width: 800px;
     width: 90%;
     margin: 60px auto;
     box-sizing: border-box;
 }
 
-.add-song-form.active {
+.add-genre-form.show-form {
     display: block;
 }
 
-html.dark .add-song-form {
+html.dark .add-genre-form {
     background: var(--bg-light);
     box-shadow: var(--shadow);
 }
 
-.add-song-form h3 {
+.add-genre-form h3 {
     margin: 0 0 24px;
     font-size: 1.6em;
     color: var(--text-color);
     text-align: center;
 }
 
-html.dark .add-song-form h3 {
+html.dark .add-genre-form h3 {
     color: var(--text-light);
 }
 
@@ -336,11 +336,8 @@ html.dark .form-group label {
 }
 
 .form-group input[type="text"],
-.form-group select,
 .form-group input[type="file"],
-.form-group textarea,
-.form-group input#artist-search,
-.form-group input#song-genre-search {
+.form-group textarea {
     padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -349,31 +346,17 @@ html.dark .form-group label {
     width: 100%;
     box-sizing: border-box;
     background: var(--bg-light);
-    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input[type="text"]:focus,
-.form-group select:focus,
-.form-group textarea:focus,
-.form-group input#artist-search:focus,
-.form-group input#song-genre-search:focus {
+.form-group textarea:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
     outline: none;
 }
 
-.form-group input[type="file"]:disabled {
-    background: var(--bg-hover);
-    color: var(--cancel-bg);
-    cursor: not-allowed;
-}
-
 html.dark .form-group input[type="text"],
-html.dark .form-group select,
 html.dark .form-group input[type="file"],
-html.dark .form-group textarea,
-html.dark .form-group input#artist-search,
-html.dark .form-group input#song-genre-search {
+html.dark .form-group textarea {
     background: var(--bg-hover);
     border-color: var(--border-color);
     color: var(--text-light);
@@ -384,18 +367,14 @@ html.dark .form-group input#song-genre-search {
     resize: vertical;
 }
 
-.form-group .note,
-.form-group .current-file,
 .form-group .current-image {
     font-style: italic;
     color: var(--cancel-bg);
     margin-top: 8px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
-html.dark .form-group .note,
-.html.dark .form-group .current-file,
-.html.dark .form-group .current-image {
+html.dark .form-group .current-image {
     color: var(--cancel-hover);
 }
 
@@ -450,218 +429,6 @@ html.dark .form-group .note,
     display: none;
 }
 
-/* Genre and Artist Containers */
-.genre-container,
-.artist-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-light);
-    border-radius: 8px;
-    width: 100%;
-    box-sizing: border-box;
-    scrollbar-width: auto;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
-}
-
-.genre-container::-webkit-scrollbar,
-.artist-container::-webkit-scrollbar {
-    width: 12px;
-}
-
-.genre-container::-webkit-scrollbar-track,
-.artist-container::-webkit-scrollbar-track {
-    background: var(--scrollbar-bg);
-    border-radius: 8px;
-    margin: 4px;
-}
-
-.genre-container::-webkit-scrollbar-thumb,
-.artist-container::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 8px;
-    border: 2px solid var(--scrollbar-bg);
-}
-
-.genre-container::-webkit-scrollbar-thumb:hover,
-.artist-container::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover);
-}
-
-html.dark .genre-container,
-html.dark .artist-container {
-    background: var(--bg-hover);
-    border-color: var(--border-color);
-}
-
-.genre-row,
-.artist-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-}
-
-.genre-item,
-.artist-item {
-    flex: 1;
-    padding: 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--text-light);
-    font-size: 14px;
-    text-align: center;
-    transition: background 0.2s, color 0.2s;
-}
-
-.genre-item:hover,
-.artist-item:hover {
-    background: var(--bg-hover);
-}
-
-.genre-item.selected,
-.artist-item.selected {
-    background: var(--bg-selected);
-    color: var(--primary-color);
-}
-
-html.dark .genre-item,
-html.dark .artist-item {
-    color: var(--text-light);
-}
-
-html.dark .genre-item:hover,
-.html.dark .artist-item:hover {
-    background: var(--bg-selected);
-}
-
-html.dark .genre-item.selected,
-.html.dark .artist-item.selected {
-    background: var(--bg-selected);
-    color: var(--primary-hover);
-}
-
-/* Selected Genres and Artists */
-.selected-genres,
-.selected-artists {
-    margin-top: 16px;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-light);
-    max-height: 200px;
-    overflow-y: auto;
-    scrollbar-width: auto;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
-}
-
-.selected-genres::-webkit-scrollbar,
-.selected-artists::-webkit-scrollbar {
-    width: 12px;
-}
-
-.selected-genres::-webkit-scrollbar-track,
-.selected-artists::-webkit-scrollbar-track {
-    background: var(--scrollbar-bg);
-    border-radius: 8px;
-    margin: 4px;
-}
-
-.selected-genres::-webkit-scrollbar-thumb,
-.selected-artists::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 8px;
-    border: 2px solid var(--scrollbar-bg);
-}
-
-.selected-genres::-webkit-scrollbar-thumb:hover,
-.selected-artists::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover);
-}
-
-html.dark .selected-genres,
-html.dark .selected-artists {
-    background: var(--bg-hover);
-    border-color: var(--border-color);
-}
-
-.selected-genres p,
-.selected-artists p {
-    font-weight: 500;
-    color: var(--text-color);
-    margin: 0 0 12px;
-    font-size: 16px;
-}
-
-html.dark .selected-genres p,
-.html.dark .selected-artists p {
-    color: var(--text-light);
-}
-
-.selected-genres ul,
-.selected-artists ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.selected-genres li,
-.selected-artists li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: var(--bg-hover);
-    border-radius: 4px;
-    font-size: 14px;
-    color: var(--text-light);
-}
-
-.selected-genres li:hover,
-.selected-artists li:hover {
-    background: var(--bg-selected);
-}
-
-html.dark .selected-genres li,
-.html.dark .selected-artists li {
-    background: var(--bg-selected);
-    color: var(--text-light);
-}
-
-html.dark .selected-genres li:hover,
-.html.dark .selected-artists li:hover {
-    background: var(--bg-hover);
-}
-
-.selected-genres .remove-genre,
-.selected-artists .remove-artist {
-    cursor: pointer;
-    color: var(--error-color);
-    font-size: 16px;
-    transition: color 0.2s;
-}
-
-.selected-genres .remove-genre:hover,
-.selected-artists .remove-artist:hover {
-    color: var(--error-hover);
-}
-
-html.dark .selected-genres .remove-genre,
-.html.dark .selected-artists .remove-artist {
-    color: var(--error-color);
-}
-
-html.dark .selected-genres .remove-genre:hover,
-.html.dark .selected-artists .remove-artist:hover {
-    color: var(--error-hover);
-}
-
 /* Table Styles */
 .table-container {
     overflow-x: auto;
@@ -700,7 +467,7 @@ html.dark .table-container {
 
 .table table {
     width: 100%;
-    min-width: 1200px;
+    min-width: 1000px;
     border-collapse: collapse;
 }
 
@@ -751,31 +518,31 @@ html.dark .table td.image span {
     color: var(--cancel-hover);
 }
 
-.table a.view-lyrics,
-.table a.view-description {
+.table a.view-brief-description,
+.table a.view-full-description {
     color: black;
     text-decoration: underline;
     font-size: 14px;
     cursor: pointer;
 }
 
-.table a.view-lyrics:hover,
-.table a.view-description:hover {
+.table a.view-brief-description:hover,
+.table a.view-full-description:hover {
     color: var(--primary-hover);
 }
 
-html.dark .table a.view-lyrics,
-html.dark .table a.view-description {
+html.dark .table a.view-brief-description,
+html.dark .table a.view-full-description {
     color: #fff;
 }
 
-html.dark .table a.view-lyrics:hover,
-html.dark .table a.view-description:hover {
+html.dark .table a.view-brief-description:hover,
+.html.dark .table a.view-full-description:hover {
     color: var(--primary-color);
 }
 
 .table button {
-    min-width: 80px;
+    min-width: 90px;
     padding: 8px 16px;
     border: none;
     border-radius: 8px;
@@ -786,21 +553,12 @@ html.dark .table a.view-description:hover {
     transition: background 0.2s, transform 0.1s;
 }
 
-.table button.publish {
-    background: var(--success-color);
-}
-
 .table button.edit {
     background: var(--warning-color);
 }
 
 .table button.delete {
     background: var(--error-color);
-}
-
-.table button.publish:hover {
-    background: var(--success-dark);
-    transform: translateY(-1px);
 }
 
 .table button.edit:hover {
@@ -819,14 +577,6 @@ html.dark .table a.view-description:hover {
     transform: none;
 }
 
-html.dark .table button.publish {
-    background: var(--success-dark);
-}
-
-.html.dark .table button.publish:hover {
-    background: var(--success-color);
-}
-
 html.dark .table button.edit {
     background: var(--warning-dark);
 }
@@ -839,7 +589,7 @@ html.dark .table button.delete {
     background: var(--error-color);
 }
 
-.html.dark .table button.delete:hover {
+html.dark .table button.delete:hover {
     background: var(--error-hover);
 }
 
@@ -847,51 +597,19 @@ html.dark .table button:disabled {
     background: var(--cancel-hover);
 }
 
-.table td.status.draft {
-    color: var(--neutral-color);
-}
-
-.table td.status.pending {
-    color: var(--warning-color);
-}
-
-.table td.status.accepted {
-    color: var(--success-color);
-}
-
-.table td.status.declined {
-    color: var(--error-color);
-}
-
-html.dark .table td.status.draft {
-    color: var(--neutral-color);
-}
-
-html.dark .table td.status.pending {
-    color: var(--warning-dark);
-}
-
-.html.dark .table td.status.accepted {
-    color: var(--success-dark);
-}
-
-.html.dark .table td.status.declined {
-    color: var(--error-color);
-}
-
-.table td[colspan="15"] {
+.table td[colspan="6"] {
     text-align: center;
     padding: 24px;
     font-size: 14px;
     color: var(--text-light);
 }
 
-.no-songs {
+.no-genres {
     color: var(--text-light);
     font-size: 14px;
 }
 
-html.dark .no-songs {
+html.dark .no-genres {
     color: var(--text-light);
 }
 
@@ -966,7 +684,7 @@ html.dark .table-controls label {
 }
 
 html.dark .table-controls select,
-.html.dark .table-controls input[type="number"] {
+html.dark .table-controls input[type="number"] {
     background: var(--bg-hover);
     border-color: var(--border-color);
     color: var(--text-light);
@@ -1085,7 +803,7 @@ html.dark .add:hover {
         padding: 16px;
     }
 
-    .add-song-form {
+    .add-genre-form {
         padding: 16px;
         max-width: 100%;
         margin: 16px auto;
@@ -1096,11 +814,8 @@ html.dark .add:hover {
     }
 
     .form-group input[type="text"],
-    .form-group select,
     .form-group input[type="file"],
-    .form-group textarea,
-    .form-group input#artist-search,
-    .form-group input#song-genre-search {
+    .form-group textarea {
         padding: 10px;
         font-size: 14px;
     }
@@ -1115,30 +830,19 @@ html.dark .add:hover {
         min-width: 100%;
     }
 
-    .genre-row,
-    .artist-row {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .genre-item,
-    .artist-item {
-        text-align: left;
-    }
-
     .table-container::-webkit-scrollbar {
         height: 14px;
     }
 }
 
 @media (max-width: 600px) {
-    .add-song-form {
+    .add-genre-form {
         padding: 16px;
         max-width: 100%;
         margin: 16px auto;
     }
 
-    .add-song-form h3 {
+    .add-genre-form h3 {
         font-size: 1.3em;
     }
 
@@ -1196,11 +900,7 @@ html.dark .add:hover {
 
     .table-container::-webkit-scrollbar,
     .modal-content::-webkit-scrollbar,
-    .modal-content .lyrics-content::-webkit-scrollbar,
-    .genre-container::-webkit-scrollbar,
-    .artist-container::-webkit-scrollbar,
-    .selected-genres::-webkit-scrollbar,
-    .selected-artists::-webkit-scrollbar {
+    .modal-content .lyrics-content::-webkit-scrollbar {
         width: 16px;
         height: 16px;
     }

@@ -1,4 +1,4 @@
-import {fetchWithRefresh} from '/js/api/refresh.js';
+import { fetchWithRefresh } from '/js/api/refresh.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('profile-form');
@@ -17,9 +17,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     const genderInputs = document.querySelectorAll('input[name="gender"]');
     const dobInput = document.getElementById('dob');
     const phoneInput = document.getElementById('phone');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    // Create notification element
+    const createNotificationElement = () => {
+        const notification = document.createElement('div');
+        notification.id = 'notification';
+        notification.className = 'notification';
+        notification.style.display = 'none';
+        notification.innerHTML = `
+            <span id="notification-message"></span>
+            <span class="close-notification">×</span>
+        `;
+        document.body.appendChild(notification);
+        notification.querySelector('.close-notification').addEventListener('click', () => {
+            notification.style.display = 'none';
+        });
+        return notification;
+    };
+
+    // Show notification
+    const showNotification = (message, isError = false) => {
+        const notification = document.getElementById('notification') || createNotificationElement();
+        const messageSpan = document.getElementById('notification-message');
+        messageSpan.textContent = message;
+        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
+        notification.style.display = 'flex';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    };
+
+    // Show spinner
+    const showSpinner = () => {
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner';
+        spinner.style.margin = '20px auto';
+        form.appendChild(spinner);
+        return spinner;
+    };
+
+    // Hide spinner
+    const hideSpinner = (spinner) => {
+        if (spinner && spinner.parentNode) {
+            spinner.parentNode.removeChild(spinner);
+        }
+    };
 
     // Load initial profile data from API
     const loadProfile = async () => {
+        const spinner = showSpinner();
         try {
             const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/profile/artist', {
                 method: 'GET',
@@ -29,7 +76,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to fetch profile data');
+                const errorText = await response.text();
+                throw new Error(`Failed to fetch profile data: ${response.status} - ${errorText}`);
             }
 
             const profileData = await response.json();
@@ -44,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     input.checked = true;
                 }
             });
-            // Convert dd/MM/yyyy to YYYY-MM-DD for <input type="date">
             if (profileData.birthDay) {
                 const [day, month, year] = profileData.birthDay.split('/');
                 dobInput.value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -61,11 +108,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('Error loading profile:', error);
-            alert('Failed to load profile data. Please try again.');
+            showNotification('Failed to load profile data. Please try again.', true);
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                sessionStorage.clear();
+                window.location.href = '../auth/login_register.html';
+            }
+        } finally {
+            hideSpinner(spinner);
         }
     };
 
-    // Load profile on a page load
+    // Load profile on page load
     await loadProfile();
 
     // List of allowed image MIME types
@@ -90,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             reader.readAsDataURL(file);
         } else {
-            alert('Please select a valid image file (JPEG, PNG, GIF, WEBP, BMP, TIFF, or SVG).');
+            showNotification('Please select a valid image file (JPEG, PNG, GIF, WEBP, BMP, TIFF, or SVG).', true);
             avatarInput.value = '';
         }
     });
@@ -106,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             reader.readAsDataURL(file);
         } else {
-            alert('Please select a valid image file (JPEG, PNG, GIF, WEBP, BMP, TIFF, or SVG).');
+            showNotification('Please select a valid image file (JPEG, PNG, GIF, WEBP, BMP, TIFF, or SVG).', true);
             backgroundInput.value = '';
         }
     });
@@ -119,24 +172,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const lastName = lastNameInput.value.trim();
         const description = descriptionInput.value.trim();
         const gender = document.querySelector('input[name="gender"]:checked');
-        const dob = dobInput.value; // YYYY-MM-DD
+        const dob = dobInput.value;
         const phone = phoneInput.value.trim();
 
         // Validation
         if (!firstName || !lastName || !gender || !dob || !phone) {
-            alert('Please fill out all required fields.');
+            showNotification('Please fill out all required fields.', true);
             return;
         }
 
         if (!/^[0-9]{10,15}$/.test(phone)) {
-            alert('Please enter a valid phone number (10-15 digits).');
+            showNotification('Please enter a valid phone number (10-15 digits).', true);
             return;
         }
 
-        // Validate description length (150 words)
         const wordCount = description.split(/\s+/).filter(word => word.length > 0).length;
         if (wordCount > 150) {
-            alert('Description must not exceed 150 words.');
+            showNotification('Description must not exceed 150 words.', true);
             return;
         }
 
@@ -150,12 +202,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             dateOfBirth = `${day}/${month}/${year}`;
         }
 
-        // Prepare FormData for multipart/form-data
+        // Prepare FormData
         const formData = new FormData();
         formData.append('firstName', firstName);
         formData.append('lastName', lastName);
         formData.append('description', description);
-        formData.append('gender', gender.value); // Sends Male, Female, Other
+        formData.append('gender', gender.value);
         formData.append('dateOfBirth', dateOfBirth);
         formData.append('phone', phone);
 
@@ -166,19 +218,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             formData.append('backgroundImage', backgroundInput.files[0]);
         }
 
-        // Log FormData entries for debugging
-        console.log('FormData entries:');
-        for (const [key, value] of formData.entries()) {
-            console.log(`${key}:`, value);
-        }
-
         try {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Updating...';
             const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/updateArtist', {
                 method: 'PUT',
                 body: formData
             });
-
-            console.log('Update response status:', response.status);
 
             if (!response.ok) {
                 let errorData;
@@ -191,18 +237,38 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const data = await response.json();
-            console.log('Update response data:', data);
-
-            // Handle success response (accept multiple success codes)
             if (data.code === 'OK' || data.code === 'SUCCESS' || data.message === 'SUCCESS') {
-                alert('Profile updated successfully!');
-                window.location.href = 'artist_dashboard.html';
+                showNotification('Profile updated successfully!');
+                // Dispatch profile updated event
+                const profileUpdatedEvent = new CustomEvent('profileUpdated', {
+                    detail: {
+                        firstName,
+                        lastName,
+                        description,
+                        gender: gender.value,
+                        dateOfBirth,
+                        phone,
+                        avatar: avatarPreview.src,
+                        backgroundImage: backgroundPreview.src
+                    }
+                });
+                window.dispatchEvent(profileUpdatedEvent);
+                setTimeout(() => {
+                    window.location.href = 'artist_dashboard.html';
+                }, 1000);
             } else {
                 throw new Error(data.message || 'Unexpected response format');
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert(`Failed to update profile: ${error.message || 'Please try again.'}`);
+            showNotification(`Failed to update profile: ${error.message || 'Please try again.'}`, true);
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                sessionStorage.clear();
+                window.location.href = '../auth/login_register.html';
+            }
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Update Profile';
         }
     });
 });

@@ -1,3 +1,16 @@
+// Kiểm tra người dùng đã đăng nhập khi tải trang
+document.addEventListener('DOMContentLoaded', () => {
+    const currentUserEmail = getCurrentUserEmail();
+    if (currentUserEmail) {
+        const userType = sessionStorage.getItem(`user_${currentUserEmail}_userType`);
+        if (userType === 'ARTIST') {
+            window.location.href = '../artist/artist_dashboard.html';
+        } else if (userType === 'ADMIN') {
+            window.location.href = '../admin/admin_dashboard.html';
+        }
+    }
+});
+
 // Toggle between sign-in and sign-up forms
 const wrapper = document.querySelector('.wrapper');
 const signUpLink = document.querySelector('.signup-link');
@@ -191,17 +204,15 @@ signInForm.addEventListener('submit', async (e) => {
 
         const data = await response.json();
         console.log('Sign-in response data:', data);
-        const { accessToken, refreshToken, userType } = data;
+        const { email: userEmail, userType, accessToken, refreshToken } = data;
 
         // Validate userType
         if (!userType) {
             throw new Error('Invalid response: userType missing');
         }
 
-        // Store tokens and email in localStorage
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('email', email);
+        // Lưu thông tin người dùng
+        handleLoginSuccess(userEmail, userType, accessToken, refreshToken);
 
         // Redirect based on userType
         if (userType === 'ARTIST') {
@@ -220,3 +231,19 @@ signInForm.addEventListener('submit', async (e) => {
         signInError.style.display = 'block';
     }
 });
+
+// Lưu thông tin đăng nhập
+function handleLoginSuccess(email, userType, accessToken, refreshToken) {
+    // Lưu token theo email
+    const accessTokenKey = `user_${email}_accessToken`;
+    const refreshTokenKey = `user_${email}_refreshToken`;
+    const userTypeKey = `user_${email}_userType`;
+    sessionStorage.setItem(accessTokenKey, accessToken);
+    sessionStorage.setItem(refreshTokenKey, refreshToken);
+    sessionStorage.setItem(userTypeKey, userType);
+
+    // Lưu email người dùng hiện tại
+    sessionStorage.setItem('currentUserEmail', email);
+    console.log(`Đăng nhập thành công: ${email}`);
+    console.log(`Lưu accessToken tại ${accessTokenKey}, refreshToken tại ${refreshTokenKey}, userType tại ${userTypeKey}`);
+}

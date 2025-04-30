@@ -13,7 +13,7 @@ const refreshAccessToken = async (email, refreshToken) => {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({email, refreshToken})
+            body: JSON.stringify({ email, refreshToken })
         });
 
         console.log('Refresh response status:', response.status);
@@ -32,16 +32,14 @@ const refreshAccessToken = async (email, refreshToken) => {
         console.log('Refresh response data:', data);
         const newAccessToken = data;
 
-        // Store new tokens
-        localStorage.setItem('accessToken', newAccessToken);
+        // Store new access token
+        sessionStorage.setItem(`user_${email}_accessToken`, newAccessToken);
 
         return newAccessToken;
     } catch (error) {
         console.error('Refresh token error:', error);
-        // Clear tokens and redirect to log in
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('email');
+        // Clear sessionStorage for the current user and redirect to login
+        clearCurrentUserData();
         window.location.href = '../auth/login_register.html';
         throw error;
     }
@@ -54,14 +52,21 @@ const refreshAccessToken = async (email, refreshToken) => {
  * @returns {Promise<Response>} Fetch response
  */
 const fetchWithRefresh = async (url, options = {}) => {
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    const email = localStorage.getItem('email');
-
-    if (!accessToken || !refreshToken || !email) {
-        console.error('Missing tokens or email, redirecting to login');
+    const currentUserEmail = sessionStorage.getItem('currentUserEmail');
+    if (!currentUserEmail) {
+        console.error('No current user email found, redirecting to login');
         window.location.href = '../auth/login_register.html';
-        throw new Error('No tokens or email available');
+        throw new Error('No current user email available');
+    }
+
+    const accessToken = sessionStorage.getItem(`user_${currentUserEmail}_accessToken`);
+    const refreshToken = sessionStorage.getItem(`user_${currentUserEmail}_refreshToken`);
+
+    if (!accessToken || !refreshToken) {
+        console.error('Missing tokens for user:', currentUserEmail, 'redirecting to login');
+        clearCurrentUserData();
+        window.location.href = '../auth/login_register.html';
+        throw new Error('No tokens available');
     }
 
     // Add Authorization header, set Content-Type only if not FormData
@@ -86,7 +91,7 @@ const fetchWithRefresh = async (url, options = {}) => {
         if (response.status === 401 || response.status === 403) {
             console.log('Token expired or unauthorized, attempting to refresh');
             // Try refreshing the token
-            const newAccessToken = await refreshAccessToken(email, refreshToken);
+            const newAccessToken = await refreshAccessToken(currentUserEmail, refreshToken);
             // Update Authorization header
             options.headers['Authorization'] = `Bearer ${newAccessToken}`;
             // Retry original request
@@ -96,6 +101,7 @@ const fetchWithRefresh = async (url, options = {}) => {
 
             if (retryResponse.status === 401 || retryResponse.status === 403) {
                 console.error('Retry failed, redirecting to login');
+                clearCurrentUserData();
                 window.location.href = '../auth/login_register.html';
                 throw new Error('Unauthorized after token refresh');
             }
@@ -114,5 +120,18 @@ const fetchWithRefresh = async (url, options = {}) => {
     }
 };
 
+/**
+ * Clear sessionStorage data for the current user
+ */
+function clearCurrentUserData() {
+    const currentUserEmail = sessionStorage.getItem('currentUserEmail');
+    if (currentUserEmail) {
+        sessionStorage.removeItem(`user_${currentUserEmail}_accessToken`);
+        sessionStorage.removeItem(`user_${currentUserEmail}_refreshToken`);
+        sessionStorage.removeItem(`user_${currentUserEmail}_userType`);
+        sessionStorage.removeItem('currentUserEmail');
+    }
+}
+
 // Export fetchWithRefresh for use in other modules
-export {fetchWithRefresh};
+export { fetchWithRefresh };
