@@ -1,4 +1,4 @@
-package vn.edu.usth.msma.data.dto.response
+package vn.edu.usth.msma.data.dto.response.profile
 
 import vn.edu.usth.msma.utils.constants.UserType
 

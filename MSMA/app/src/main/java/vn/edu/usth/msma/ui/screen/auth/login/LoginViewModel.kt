@@ -2,18 +2,21 @@ package vn.edu.usth.msma.ui.screen.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import vn.edu.usth.msma.data.preferences.UserPreferences
+import vn.edu.usth.msma.data.PreferencesManager
+import vn.edu.usth.msma.data.dto.request.auth.SignInRequest
+import vn.edu.usth.msma.network.ApiService
+import java.util.regex.Pattern
 
 data class LoginState(
     val email: String = "",
-    val password: String = "",
     val emailError: String? = null,
+    val password: String = "",
     val passwordError: String? = null,
     val isLoading: Boolean = false,
     val loginError: String? = null,
@@ -21,92 +24,87 @@ data class LoginState(
     val passwordVisible: Boolean = false
 )
 
-class LoginViewModel(private val userPreferences: UserPreferences) : ViewModel() {
-    private val _loginState = MutableStateFlow(LoginState())
-    val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
+class LoginViewModel(
+    private val preferencesManager: PreferencesManager,
+    private val apiService: ApiService
+) : ViewModel() {
+    private val _state = MutableStateFlow(LoginState())
+    val loginState: StateFlow<LoginState> = _state.asStateFlow()
 
     fun updateEmail(email: String) {
-        _loginState.update { it.copy(email = email, emailError = null) }
+        _state.value = _state.value.copy(email = email, emailError = null)
     }
 
     fun updatePassword(password: String) {
-        _loginState.update { it.copy(password = password, passwordError = null) }
+        _state.value = _state.value.copy(password = password, passwordError = null)
     }
 
     fun togglePasswordVisibility() {
-        _loginState.update { it.copy(passwordVisible = !it.passwordVisible) }
+        _state.value = _state.value.copy(passwordVisible = !_state.value.passwordVisible)
     }
 
     fun login() {
-        val currentState = _loginState.value
+        val email = _state.value.email
+        val password = _state.value.password
+        var isValid = true
 
-        // Validate email
-        val emailError = when {
-            currentState.email.isBlank() -> "Email cannot be empty"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches() -> "Invalid email format"
-            else -> null
+        if (!isValidEmail(email)) {
+            _state.value = _state.value.copy(emailError = "Invalid email format")
+            isValid = false
+        }
+        if (password.isEmpty()) {
+            _state.value = _state.value.copy(passwordError = "Password cannot be empty")
+            isValid = false
         }
 
-        // Validate password
-        val passwordError = when {
-            currentState.password.isBlank() -> "Password cannot be empty"
-            currentState.password.length < 6 -> "Password must be at least 6 characters"
-            else -> null
-        }
+        if (!isValid) return
 
-        if (emailError != null || passwordError != null) {
-            _loginState.update {
-                it.copy(
-                    emailError = emailError,
-                    passwordError = passwordError
-                )
-            }
-            return
-        }
-
-        _loginState.update { it.copy(isLoading = true) }
-
-        // Simulate login process (replace with actual API call)
-        MainScope().launch {
+        _state.value = _state.value.copy(isLoading = true)
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Simulate network delay
-                kotlinx.coroutines.delay(1000)
-
-                // Example: Check credentials (replace with real authentication)
-                if (currentState.email == "test@example.com" && currentState.password == "password123") {
-                    userPreferences.saveLoginState(true)
-                    _loginState.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoggedIn = true,
-                            loginError = null
-                        )
-                    }
-                } else {
-                    _loginState.update {
-                        it.copy(
-                            isLoading = false,
-                            loginError = "Invalid email or password"
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _loginState.update {
-                    it.copy(
+                val response = apiService.getUnAuthApi().signIn(SignInRequest(email, password))
+                if (response.isSuccessful && response.body() != null) {
+                    val signInResponse = response.body()!!
+                    preferencesManager.saveEmail(email)
+                    preferencesManager.saveAccessToken(signInResponse.accessToken)
+                    preferencesManager.saveRefreshToken(signInResponse.refreshToken)
+                    preferencesManager.saveIsLoggedIn(true)
+                    _state.value = _state.value.copy(
                         isLoading = false,
-                        loginError = "Login failed: ${e.message}"
+                        isLoggedIn = true,
+                        loginError = null
+                    )
+                } else {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        loginError = "Login failed: ${response.message()}"
                     )
                 }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    loginError = "Login failed: ${e.message}"
+                )
             }
         }
     }
+
+    private fun isValidEmail(email: String): Boolean {
+        val emailPattern = Pattern.compile(
+            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"
+        )
+        return emailPattern.matcher(email).matches()
+    }
 }
 
-class LoginViewModelFactory(private val userPreferences: UserPreferences) : ViewModelProvider.Factory {
+class LoginViewModelFactory(
+    private val preferencesManager: PreferencesManager,
+    private val apiService: ApiService = ApiService
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(userPreferences) as T
+            return LoginViewModel(preferencesManager, apiService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

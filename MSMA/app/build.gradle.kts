@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "vn.edu.usth.msma"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
 
@@ -52,6 +52,7 @@ dependencies {
     // Core Compose UI
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation(libs.androidx.ui.graphics)
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
@@ -83,6 +84,9 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+
+    // Navigation Bottom
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Media Playback (Media3)
     implementation("androidx.media3:media3-exoplayer:1.5.0")

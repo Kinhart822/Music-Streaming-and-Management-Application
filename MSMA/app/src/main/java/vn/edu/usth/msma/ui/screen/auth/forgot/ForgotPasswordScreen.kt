@@ -1,5 +1,7 @@
 package vn.edu.usth.msma.ui.screen.auth.forgot
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,10 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.airbnb.lottie.compose.*
 import vn.edu.usth.msma.R
 
@@ -22,9 +26,18 @@ import vn.edu.usth.msma.R
 fun ForgotPasswordScreen(
     viewModel: ForgotPasswordViewModel,
     onNavigateToLogin: () -> Unit,
-    onNavigateToOtp: (String) -> Unit
+    onNavigateToOtp: (String, String, String) -> Unit,
+    navController: NavController
 ) {
-    val state by viewModel.forgotPasswordState.collectAsState()
+    val forgotPasswordState by viewModel.forgotPasswordState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(forgotPasswordState.error) {
+        forgotPasswordState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Log.e("ForgotPasswordScreen", "Error: $it")
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -60,12 +73,12 @@ fun ForgotPasswordScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         TextField(
-            value = state.email,
+            value = forgotPasswordState.email,
             onValueChange = { viewModel.updateEmail(it) },
             label = {
                 Text(
-                    state.emailError ?: "Email",
-                    color = if (state.emailError != null) Color.Red else Color.Unspecified
+                    forgotPasswordState.emailError ?: "Email",
+                    color = if (forgotPasswordState.emailError != null) Color.Red else Color.Unspecified
                 )
             },
             leadingIcon = {
@@ -86,8 +99,15 @@ fun ForgotPasswordScreen(
 
         Button(
             onClick = {
-                viewModel.submitEmail { email ->
-                    onNavigateToOtp(email)
+                viewModel.submitEmail { email, sessionId, otpDueDate ->
+                    Log.d("ForgotPasswordScreen", "Navigating to otp with email=$email, sessionId=$sessionId, otpDueDate=$otpDueDate")
+                    if (otpDueDate.isNotEmpty()) {
+                        Toast.makeText(context, "OTP has been sent successfully to your email!", Toast.LENGTH_SHORT).show()
+                        navController.navigate("otp/$email/$sessionId/$otpDueDate")
+                    } else {
+                        Toast.makeText(context, "OTP due date is invalid", Toast.LENGTH_SHORT).show()
+                        Log.e("ForgotPasswordScreen", "OTP due date is empty or null")
+                    }
                 }
             },
             modifier = Modifier
@@ -95,9 +115,9 @@ fun ForgotPasswordScreen(
                 .padding(horizontal = 90.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            enabled = !state.isLoading
+            enabled = !forgotPasswordState.isLoading
         ) {
-            if (state.isLoading) {
+            if (forgotPasswordState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary
@@ -107,30 +127,12 @@ fun ForgotPasswordScreen(
             }
         }
 
-        state.error?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        if (state.isSubmitted) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "OTP sent to your email!",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
         Spacer(modifier = Modifier.height(50.dp))
 
         Row {
             Text(text = "Back to ")
             Text(
-                text = "Login",
+                text = "Login!",
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { onNavigateToLogin() }
             )

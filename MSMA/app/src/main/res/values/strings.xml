@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MSMA</string>
+    <string name="title_activity_notification">NotificationActivity</string>
 </resources>

@@ -1,14 +1,18 @@
 package vn.edu.usth.msma.ui.screen.auth.reset
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import vn.edu.usth.msma.ui.screen.auth.otp.OtpViewModel
+import kotlinx.coroutines.withContext
+import vn.edu.usth.msma.data.dto.request.auth.NewPasswordRequest
+import vn.edu.usth.msma.network.ApiService
 
 data class ResetPasswordState(
     val newPassword: String = "",
@@ -22,7 +26,10 @@ data class ResetPasswordState(
     val confirmPasswordVisible: Boolean = false
 )
 
-class ResetPasswordViewModel : ViewModel() {
+class ResetPasswordViewModel(
+    private val apiService: ApiService,
+    private val sessionId: String
+) : ViewModel() {
     private val _resetPasswordState = MutableStateFlow(ResetPasswordState())
     val resetPasswordState: StateFlow<ResetPasswordState> = _resetPasswordState.asStateFlow()
 
@@ -71,38 +78,64 @@ class ResetPasswordViewModel : ViewModel() {
 
         _resetPasswordState.update { it.copy(isLoading = true) }
 
-        // Simulate password reset (replace with actual API call)
-        MainScope().launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Simulate network delay
-                kotlinx.coroutines.delay(1000)
-
-                // Simulate successful password reset
-                _resetPasswordState.update {
-                    it.copy(
-                        isLoading = false,
-                        isReset = true,
-                        error = null
-                    )
+                val request = NewPasswordRequest(sessionId = sessionId, password = currentState.newPassword)
+                val response = apiService.getUnAccountApi().forgotPasswordFinish(request)
+                if (response.isSuccessful && response.body() != null) {
+                    val apiResponse = response.body()!!
+                    withContext(Dispatchers.Main) {
+                        if (apiResponse.status == "200") {
+                            _resetPasswordState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isReset = true,
+                                    error = null
+                                )
+                            }
+                            onSuccess()
+                        } else {
+                            _resetPasswordState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = "Password reset failed: ${apiResponse.message}"
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        _resetPasswordState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "Password reset failed: ${response.message()}"
+                            )
+                        }
+                    }
                 }
-                onSuccess()
             } catch (e: Exception) {
-                _resetPasswordState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = "Password reset failed: ${e.message}"
-                    )
+                withContext(Dispatchers.Main) {
+                    _resetPasswordState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = "Password reset failed: ${e.message}"
+                        )
+                    }
                 }
+                Log.e("ResetPasswordViewModel", "Exception: ${e.message}")
             }
         }
     }
 }
 
-class ResetPasswordViewModelFactory() : ViewModelProvider.Factory {
+class ResetPasswordViewModelFactory(
+    private val apiService: ApiService = ApiService,
+    private val sessionId: String
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ResetPasswordViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ResetPasswordViewModel() as T
+            return ResetPasswordViewModel(apiService, sessionId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

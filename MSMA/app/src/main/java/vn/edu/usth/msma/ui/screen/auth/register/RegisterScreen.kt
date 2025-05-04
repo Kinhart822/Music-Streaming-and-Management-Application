@@ -1,5 +1,6 @@
 package vn.edu.usth.msma.ui.screen.auth.register
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,11 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
@@ -27,6 +28,20 @@ import vn.edu.usth.msma.R
 @Composable
 fun RegisterScreen(viewModel: RegisterViewModel, onNavigateToLogin: () -> Unit) {
     val registerState by viewModel.registerState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(registerState.isRegistered) {
+        if (registerState.isRegistered) {
+            Toast.makeText(context, "Registration Successful!", Toast.LENGTH_SHORT).show()
+            onNavigateToLogin()
+        }
+    }
+
+    LaunchedEffect(registerState.registerError) {
+        registerState.registerError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -180,24 +195,6 @@ fun RegisterScreen(viewModel: RegisterViewModel, onNavigateToLogin: () -> Unit) 
             } else {
                 Text(text = "Register")
             }
-        }
-
-        registerState.registerError?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        if (registerState.isRegistered) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Registration successful!",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
         }
 
         Spacer(modifier = Modifier.height(50.dp))

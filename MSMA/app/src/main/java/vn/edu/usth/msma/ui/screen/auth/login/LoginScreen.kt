@@ -1,5 +1,6 @@
 package vn.edu.usth.msma.ui.screen.auth.login
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -30,6 +32,20 @@ fun LoginScreen(
     onNavigateToHome: () -> Unit
 ) {
     val loginState by viewModel.loginState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(loginState.isLoggedIn) {
+        if (loginState.isLoggedIn) {
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+            onNavigateToHome()
+        }
+    }
+
+    LaunchedEffect(loginState.loginError) {
+        loginState.loginError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -153,24 +169,6 @@ fun LoginScreen(
                 onNavigateToForgotPassword()
             }
         )
-
-        loginState.loginError?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        if (loginState.isLoggedIn) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Login successful!",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
 
         Spacer(modifier = Modifier.height(50.dp))
 

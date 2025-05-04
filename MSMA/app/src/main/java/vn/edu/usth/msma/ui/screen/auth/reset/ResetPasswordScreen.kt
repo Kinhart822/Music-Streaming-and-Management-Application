@@ -1,5 +1,7 @@
 package vn.edu.usth.msma.ui.screen.auth.reset
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -28,6 +31,14 @@ fun ResetPasswordScreen(
     onNavigateToLogin: () -> Unit
 ) {
     val resetPasswordState by viewModel.resetPasswordState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(resetPasswordState.error) {
+        resetPasswordState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Log.e("ResetPasswordScreen", "Error: $it")
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -131,7 +142,12 @@ fun ResetPasswordScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { viewModel.resetPassword { onNavigateToLogin() } },
+            onClick = {
+                viewModel.resetPassword {
+                    Toast.makeText(context, "Password reset successful!", Toast.LENGTH_SHORT).show()
+                    onNavigateToLogin()
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 90.dp),
@@ -149,30 +165,12 @@ fun ResetPasswordScreen(
             }
         }
 
-        resetPasswordState.error?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        if (resetPasswordState.isReset) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Password reset successful!",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
         Spacer(modifier = Modifier.height(50.dp))
 
         Row {
             Text(text = "Back to ")
             Text(
-                text = "Login",
+                text = "Login!",
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { onNavigateToLogin() }
             )

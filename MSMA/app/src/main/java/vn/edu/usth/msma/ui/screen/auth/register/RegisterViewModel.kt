@@ -2,12 +2,17 @@ package vn.edu.usth.msma.ui.screen.auth.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import vn.edu.usth.msma.data.PreferencesManager
+import vn.edu.usth.msma.data.dto.request.auth.SignUpRequest
+import vn.edu.usth.msma.data.dto.response.*
+import vn.edu.usth.msma.network.ApiService
 
 data class RegisterState(
     val email: String = "",
@@ -23,7 +28,10 @@ data class RegisterState(
     val confirmPasswordVisible: Boolean = false
 )
 
-class RegisterViewModel : ViewModel() {
+class RegisterViewModel(
+    private val preferencesManager: PreferencesManager,
+    private val apiService: ApiService
+) : ViewModel() {
     private val _registerState = MutableStateFlow(RegisterState())
     val registerState: StateFlow<RegisterState> = _registerState.asStateFlow()
 
@@ -36,7 +44,12 @@ class RegisterViewModel : ViewModel() {
     }
 
     fun updateConfirmPassword(confirmPassword: String) {
-        _registerState.update { it.copy(confirmPassword = confirmPassword, confirmPasswordError = null) }
+        _registerState.update {
+            it.copy(
+                confirmPassword = confirmPassword,
+                confirmPasswordError = null
+            )
+        }
     }
 
     fun togglePasswordVisibility() {
@@ -53,7 +66,9 @@ class RegisterViewModel : ViewModel() {
         // Validate email
         val emailError = when {
             currentState.email.isBlank() -> "Email cannot be empty"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches() -> "Invalid email format"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email)
+                .matches() -> "Invalid email format"
+
             else -> null
         }
 
@@ -84,26 +99,62 @@ class RegisterViewModel : ViewModel() {
 
         _registerState.update { it.copy(isLoading = true) }
 
-        // Simulate register process (replace with actual API call)
-        MainScope().launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Simulate network delay
-                kotlinx.coroutines.delay(1000)
-
-                // Example: Simulate successful registration
-                if (currentState.email != "test@example.com") { // Simulate email not taken
+                // Step 1: Check if email exists
+                val emailCheckResponse =
+                    apiService.getUnAccountApi().checkEmailExistence(currentState.email)
+                if (!emailCheckResponse.isSuccessful || emailCheckResponse.body() == null) {
                     _registerState.update {
                         it.copy(
                             isLoading = false,
-                            isRegistered = true,
-                            registerError = null
+                            registerError = "Email check failed: ${emailCheckResponse.message()}"
                         )
+                    }
+                    return@launch
+                }
+
+                val emailExistence = emailCheckResponse.body()!!
+                if (emailExistence.emailExisted) {
+                    _registerState.update {
+                        it.copy(
+                            isLoading = false,
+                            emailError = "Email already exists",
+                            registerError = "Email already exists"
+                        )
+                    }
+                    return@launch
+                }
+
+                // Step 2: Proceed with registration
+                val signUpRequest = SignUpRequest(
+                    email = currentState.email,
+                    password = currentState.password
+                )
+                val signUpResponse = apiService.getUnAccountApi().signUpFinish(signUpRequest)
+                if (signUpResponse.isSuccessful && signUpResponse.body() != null) {
+                    val apiResponse = signUpResponse.body()!!
+                    if (apiResponse.status == "200") {
+                        _registerState.update {
+                            it.copy(
+                                isLoading = false,
+                                isRegistered = true,
+                                registerError = null
+                            )
+                        }
+                    } else {
+                        _registerState.update {
+                            it.copy(
+                                isLoading = false,
+                                registerError = "Registration failed: ${apiResponse.message}"
+                            )
+                        }
                     }
                 } else {
                     _registerState.update {
                         it.copy(
                             isLoading = false,
-                            registerError = "Email already exists"
+                            registerError = "Registration failed: ${signUpResponse.message()}"
                         )
                     }
                 }
@@ -119,11 +170,14 @@ class RegisterViewModel : ViewModel() {
     }
 }
 
-class RegisterViewModelFactory : ViewModelProvider.Factory {
+class RegisterViewModelFactory(
+    private val preferencesManager: PreferencesManager,
+    private val apiService: ApiService = ApiService
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RegisterViewModel() as T
+            return RegisterViewModel(preferencesManager, apiService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

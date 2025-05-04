@@ -7,16 +7,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import vn.edu.usth.msma.data.preferences.UserPreferences
+import androidx.navigation.navArgument
+import vn.edu.usth.msma.data.PreferencesManager
+import vn.edu.usth.msma.navigation.NavigationBar
 import vn.edu.usth.msma.ui.screen.SplashScreen
 import vn.edu.usth.msma.ui.screen.auth.forgot.ForgotPasswordScreen
 import vn.edu.usth.msma.ui.screen.auth.forgot.ForgotPasswordViewModel
@@ -35,8 +36,6 @@ import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModel
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModelFactory
 import vn.edu.usth.msma.ui.theme.MSMATheme
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,55 +48,19 @@ class MainActivity : ComponentActivity() {
                 ) {
                     var showSplash by remember { mutableStateOf(true) }
                     val navController = rememberNavController()
-                    val userPreferences = UserPreferences(dataStore)
+                    val preferencesManager = PreferencesManager(this)
+                    val context = LocalContext.current
+                    val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
 
                     if (showSplash) {
                         SplashScreen(onTimeout = { showSplash = false })
                     } else {
-                        NavHost(navController = navController, startDestination = "login") {
-                            composable("login") {
-                                val viewModel = LoginViewModelFactory(userPreferences).create(LoginViewModel::class.java)
-                                LoginScreen(
-                                    viewModel = viewModel,
-                                    onNavigateToRegister = { navController.navigate("register") },
-                                    onNavigateToForgotPassword = { navController.navigate("forgot_password") },
-                                    onNavigateToHome = { navController.navigate("home") }
-                                )
-                            }
-                            composable("register") {
-                                val viewModel = RegisterViewModelFactory().create(RegisterViewModel::class.java)
-                                RegisterScreen(
-                                    viewModel = viewModel,
-                                    onNavigateToLogin = { navController.navigate("login") }
-                                )
-                            }
-                            composable("forgot_password") {
-                                val viewModel = ForgotPasswordViewModelFactory().create(ForgotPasswordViewModel::class.java)
-                                ForgotPasswordScreen(
-                                    viewModel = viewModel,
-                                    onNavigateToLogin = { navController.navigate("login") },
-                                    onNavigateToOtp = { navController.navigate("otp") }
-                                )
-                            }
-                            composable("otp") { backStackEntry ->
-                                val viewModel = OtpViewModelFactory().create(OtpViewModel::class.java)
-                                OtpScreen(
-                                    viewModel = viewModel,
-                                    onNavigateToResetPassword = { navController.navigate("reset_password") },
-                                    onNavigateToLogin = { navController.navigate("login") }
-                                )
-                            }
-                            composable("reset_password") { backStackEntry ->
-                                val viewModel = ResetPasswordViewModelFactory().create(ResetPasswordViewModel::class.java)
-                                ResetPasswordScreen(
-                                    viewModel = viewModel,
-                                    onNavigateToLogin = { navController.navigate("login") }
-                                )
-                            }
-                            composable("home") {
-                                Text("Home Screen")
-                            }
-                        }
+                        AppNavigation(
+                            navController = navController,
+                            isLoggedIn = isLoggedIn,
+                            preferencesManager = preferencesManager,
+                            context = context
+                        )
                     }
                 }
             }
@@ -105,10 +68,81 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun DefaultPreview() {
-//    MSMATheme {
-//        // Preview content
-//    }
-//}
+@Composable
+private fun AppNavigation(
+    navController: NavHostController,
+    isLoggedIn: Boolean,
+    preferencesManager: PreferencesManager,
+    context: Context
+) {
+    NavHost(
+        navController = navController,
+        startDestination = if (isLoggedIn) "home" else "login"
+    ) {
+        composable("login") {
+            val viewModel = LoginViewModelFactory(preferencesManager).create(LoginViewModel::class.java)
+            LoginScreen(
+                viewModel = viewModel,
+                onNavigateToRegister = { navController.navigate("register") },
+                onNavigateToForgotPassword = { navController.navigate("forgot_password") },
+                onNavigateToHome = { navController.navigate("home") }
+            )
+        }
+        composable("register") {
+            val viewModel = RegisterViewModelFactory(preferencesManager).create(RegisterViewModel::class.java)
+            RegisterScreen(
+                viewModel = viewModel,
+                onNavigateToLogin = { navController.navigate("login") }
+            )
+        }
+        composable("forgot_password") {
+            val viewModel = ForgotPasswordViewModelFactory().create(ForgotPasswordViewModel::class.java)
+            ForgotPasswordScreen(
+                viewModel = viewModel,
+                onNavigateToLogin = { navController.navigate("login") },
+                onNavigateToOtp = { email, sessionId, otpDueDate -> navController.navigate("otp/$email/$sessionId/$otpDueDate") },
+                navController = navController
+            )
+        }
+        composable(
+            "otp/{email}/{sessionId}/{otpDueDate}",
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("sessionId") { type = NavType.StringType },
+                navArgument("otpDueDate") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val viewModel = OtpViewModelFactory(
+                initialEmail = backStackEntry.arguments?.getString("email") ?: "",
+                initialSessionId = backStackEntry.arguments?.getString("sessionId") ?: "",
+                initialOtpDueDate = backStackEntry.arguments?.getString("otpDueDate") ?: ""
+            ).create(OtpViewModel::class.java)
+            OtpScreen(
+                viewModel = viewModel,
+                onNavigateToResetPassword = { sessionId -> navController.navigate("reset_password/$sessionId") },
+                onNavigateToLogin = { navController.navigate("login") },
+                navBackStackEntry = backStackEntry,
+                navController = navController
+            )
+        }
+        composable(
+            "reset_password/{sessionId}",
+            arguments = listOf(
+                navArgument("sessionId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+            val viewModel = ResetPasswordViewModelFactory(sessionId = sessionId).create(ResetPasswordViewModel::class.java)
+            ResetPasswordScreen(
+                viewModel = viewModel,
+                onNavigateToLogin = { navController.navigate("login") }
+            )
+        }
+        composable("home") {
+            NavigationBar(
+                context = context,
+                parentNavController = navController
+            )
+        }
+    }
+}
