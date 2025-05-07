@@ -2,6 +2,7 @@ package vn.edu.usth.msma.navigation
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,27 +33,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.lifecycle.HiltViewModel
+import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.ui.screen.notification.NotificationActivity
-import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.ui.screen.home.HomeScreen
 import vn.edu.usth.msma.ui.screen.library.LibraryScreen
-import vn.edu.usth.msma.ui.screen.search.SearchScreen
+import vn.edu.usth.msma.ui.screen.search.SearchNavigation
 import vn.edu.usth.msma.ui.screen.settings.SettingScreen
 import vn.edu.usth.msma.ui.screen.settings.SettingViewModel
-import vn.edu.usth.msma.ui.screen.settings.SettingViewModelFactory
+import javax.inject.Inject
+
+@HiltViewModel
+class NavigationViewModel @Inject constructor(
+    val songRepository: SongRepository
+) : ViewModel()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationBar(
     context: Context,
     parentNavController: NavHostController,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    settingViewModel: SettingViewModel = hiltViewModel()
 ) {
     val items = listOf(
         NavigationItems("Home", Icons.Filled.Home),
@@ -63,7 +72,6 @@ fun NavigationBar(
 
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    // Update selectedItemIndex based on navigation destination
     navController.addOnDestinationChangedListener { _, destination, _ ->
         selectedItemIndex = when (destination.route) {
             "Home" -> 0
@@ -108,8 +116,8 @@ fun NavigationBar(
                             imageVector = Icons.Filled.Notifications,
                             contentDescription = "Notifications",
                             modifier = Modifier
-                                .height(25.dp)
-                                .width(30.dp),
+                                .height(30.dp)
+                                .width(40.dp),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -119,8 +127,7 @@ fun NavigationBar(
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(top = 2.dp)
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
@@ -153,7 +160,19 @@ fun NavigationBar(
                                 },
                                 modifier = Modifier.size(if (selectedItemIndex == index) 30.dp else 25.dp)
                             )
-                        }
+                        },
+                        label = {
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (selectedItemIndex == index) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                                }
+                            )
+                        },
+                        alwaysShowLabel = true
                     )
                 }
             }
@@ -162,17 +181,14 @@ fun NavigationBar(
         NavHost(
             navController = navController,
             startDestination = "Home",
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
             composable("Home") { HomeScreen() }
-            composable("Search") { SearchScreen() }
+            composable("Search") { SearchNavigation() }
             composable("Library") { LibraryScreen() }
-            composable("Settings") {
-                val preferencesManager = PreferencesManager(context)
-                val factory = SettingViewModelFactory(preferencesManager)
-                val viewModel: SettingViewModel = viewModel(factory = factory)
-                SettingScreen(context, parentNavController, viewModel)
-            }
+            composable("Settings") { SettingScreen(context, parentNavController, settingViewModel) }
         }
     }
 }

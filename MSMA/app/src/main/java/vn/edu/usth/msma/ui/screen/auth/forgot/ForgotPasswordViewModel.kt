@@ -3,8 +3,8 @@ package vn.edu.usth.msma.ui.screen.auth.forgot
 import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import android.os.SystemClock
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import vn.edu.usth.msma.data.dto.request.auth.SendOtpRequest
 import vn.edu.usth.msma.network.ApiService
+import javax.inject.Inject
 
 data class ForgotPasswordState(
     val email: String = "",
@@ -27,7 +28,8 @@ data class ForgotPasswordState(
     val otpDueDate: String? = null
 )
 
-class ForgotPasswordViewModel(
+@HiltViewModel
+class ForgotPasswordViewModel @Inject constructor(
     private val apiService: ApiService
 ) : ViewModel() {
     private val _forgotPasswordState = MutableStateFlow(ForgotPasswordState())
@@ -97,17 +99,5 @@ class ForgotPasswordViewModel(
                 Log.e("ForgotPasswordViewModel", "Exception: ${e.message}")
             }
         }
-    }
-}
-
-class ForgotPasswordViewModelFactory(
-    private val apiService: ApiService = ApiService
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ForgotPasswordViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ForgotPasswordViewModel(apiService) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

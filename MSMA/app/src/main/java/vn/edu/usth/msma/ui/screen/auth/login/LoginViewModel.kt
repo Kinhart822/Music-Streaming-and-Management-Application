@@ -1,17 +1,20 @@
 package vn.edu.usth.msma.ui.screen.auth.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.dto.request.auth.SignInRequest
 import vn.edu.usth.msma.network.ApiService
 import java.util.regex.Pattern
+import javax.inject.Inject
 
 data class LoginState(
     val email: String = "",
@@ -21,26 +24,43 @@ data class LoginState(
     val isLoading: Boolean = false,
     val loginError: String? = null,
     val isLoggedIn: Boolean = false,
-    val passwordVisible: Boolean = false
+    val passwordVisible: Boolean = false,
+    val rememberMe: Boolean = false
 )
 
-class LoginViewModel(
+@HiltViewModel
+class LoginViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val apiService: ApiService
 ) : ViewModel() {
     private val _state = MutableStateFlow(LoginState())
-    val loginState: StateFlow<LoginState> = _state.asStateFlow()
+    val state: StateFlow<LoginState> = _state.asStateFlow()
+
+    init {
+        // Load saved email if exists
+        viewModelScope.launch {
+            preferencesManager.getLastLoginEmail().collect { savedEmail ->
+                if (savedEmail != null) {
+                    _state.update { it.copy(email = savedEmail, rememberMe = true) }
+                }
+            }
+        }
+    }
 
     fun updateEmail(email: String) {
-        _state.value = _state.value.copy(email = email, emailError = null)
+        _state.update { it.copy(email = email, emailError = null) }
     }
 
     fun updatePassword(password: String) {
-        _state.value = _state.value.copy(password = password, passwordError = null)
+        _state.update { it.copy(password = password, passwordError = null) }
     }
 
     fun togglePasswordVisibility() {
-        _state.value = _state.value.copy(passwordVisible = !_state.value.passwordVisible)
+        _state.update { it.copy(passwordVisible = !it.passwordVisible) }
+    }
+
+    fun onRememberMeChanged(rememberMe: Boolean) {
+        _state.update { it.copy(rememberMe = rememberMe) }
     }
 
     fun login() {
@@ -49,42 +69,67 @@ class LoginViewModel(
         var isValid = true
 
         if (!isValidEmail(email)) {
-            _state.value = _state.value.copy(emailError = "Invalid email format")
+            _state.update { it.copy(emailError = "Invalid email format") }
             isValid = false
         }
         if (password.isEmpty()) {
-            _state.value = _state.value.copy(passwordError = "Password cannot be empty")
+            _state.update { it.copy(passwordError = "Password cannot be empty") }
             isValid = false
         }
 
         if (!isValid) return
 
-        _state.value = _state.value.copy(isLoading = true)
+        _state.update { it.copy(isLoading = true, loginError = null) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = apiService.getUnAuthApi().signIn(SignInRequest(email, password))
                 if (response.isSuccessful && response.body() != null) {
-                    val signInResponse = response.body()!!
+                    val loginResponse = response.body()!!
+                    
+                    // Save email if remember me is checked
+                    if (_state.value.rememberMe) {
+                        preferencesManager.saveLastLoginEmail(email)
+                    } else {
+                        preferencesManager.clearLastLoginEmail()
+                    }
+
+                    // Save tokens and user info
                     preferencesManager.saveEmail(email)
-                    preferencesManager.saveAccessToken(signInResponse.accessToken)
-                    preferencesManager.saveRefreshToken(signInResponse.refreshToken)
-                    preferencesManager.saveIsLoggedIn(true)
-                    _state.value = _state.value.copy(
+                    preferencesManager.saveAccessToken(email, loginResponse.accessToken)
+                    preferencesManager.saveRefreshToken(email, loginResponse.refreshToken)
+                    preferencesManager.saveIsLoggedIn(email, true)
+                    preferencesManager.setCurrentUser(email)
+
+                    _state.update { it.copy(
                         isLoading = false,
                         isLoggedIn = true,
                         loginError = null
-                    )
+                    ) }
                 } else {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        loginError = "Login failed: ${response.message()}"
-                    )
+                    val errorMessage = response.errorBody()?.string()?.let {
+                        try {
+                            val json = org.json.JSONObject(it)
+                            json.getString("message")
+                        } catch (e: Exception) {
+                            "Login failed"
+                        }
+                    } ?: "Login failed"
+                    
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            loginError = errorMessage
+                        )
+                    }
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    loginError = "Login failed: ${e.message}"
-                )
+                Log.e("LoginViewModel", "Login error: ${e.message}", e)
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        loginError = "Login error: ${e.message}"
+                    )
+                }
             }
         }
     }
@@ -94,18 +139,5 @@ class LoginViewModel(
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"
         )
         return emailPattern.matcher(email).matches()
-    }
-}
-
-class LoginViewModelFactory(
-    private val preferencesManager: PreferencesManager,
-    private val apiService: ApiService = ApiService
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(preferencesManager, apiService) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

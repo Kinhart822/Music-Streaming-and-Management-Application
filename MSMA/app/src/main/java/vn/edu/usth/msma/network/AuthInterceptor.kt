@@ -7,10 +7,13 @@ import okhttp3.Response
 import vn.edu.usth.msma.data.PreferencesManager
 import java.io.IOException
 
-class AuthInterceptor(private val authPrefsManager: PreferencesManager) : Interceptor {
+class AuthInterceptor(private val preferencesManager: PreferencesManager) : Interceptor {
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
-        val accessToken = runBlocking { authPrefsManager.accessToken.first() }
+        val email = runBlocking { preferencesManager.currentUserEmailFlow.first() }
+        val accessToken = email?.let {
+            runBlocking { preferencesManager.getAccessTokenFlow(it).first() }
+        }
         val originalRequest = chain.request()
         if (accessToken == null) {
             return chain.proceed(originalRequest)

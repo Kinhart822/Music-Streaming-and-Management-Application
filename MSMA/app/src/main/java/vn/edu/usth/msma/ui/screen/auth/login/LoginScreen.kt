@@ -20,18 +20,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
 import vn.edu.usth.msma.R
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel,
+    viewModel: LoginViewModel = hiltViewModel(),
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onNavigateToHome: () -> Unit
 ) {
-    val loginState by viewModel.loginState.collectAsState()
+    val loginState by viewModel.state.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(loginState.isLoggedIn) {
@@ -138,6 +139,19 @@ fun LoginScreen(
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = loginState.rememberMe,
+                onCheckedChange = { viewModel.onRememberMeChanged(it) }
+            )
+            Text("Remember Me")
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 

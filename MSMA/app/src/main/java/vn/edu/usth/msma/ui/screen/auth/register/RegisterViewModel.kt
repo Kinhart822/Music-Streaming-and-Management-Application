@@ -1,18 +1,17 @@
 package vn.edu.usth.msma.ui.screen.auth.register
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.dto.request.auth.SignUpRequest
-import vn.edu.usth.msma.data.dto.response.*
 import vn.edu.usth.msma.network.ApiService
+import javax.inject.Inject
 
 data class RegisterState(
     val email: String = "",
@@ -28,8 +27,8 @@ data class RegisterState(
     val confirmPasswordVisible: Boolean = false
 )
 
-class RegisterViewModel(
-    private val preferencesManager: PreferencesManager,
+@HiltViewModel
+class RegisterViewModel @Inject constructor(
     private val apiService: ApiService
 ) : ViewModel() {
     private val _registerState = MutableStateFlow(RegisterState())
@@ -68,7 +67,6 @@ class RegisterViewModel(
             currentState.email.isBlank() -> "Email cannot be empty"
             !android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email)
                 .matches() -> "Invalid email format"
-
             else -> null
         }
 
@@ -167,18 +165,5 @@ class RegisterViewModel(
                 }
             }
         }
-    }
-}
-
-class RegisterViewModelFactory(
-    private val preferencesManager: PreferencesManager,
-    private val apiService: ApiService = ApiService
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return RegisterViewModel(preferencesManager, apiService) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

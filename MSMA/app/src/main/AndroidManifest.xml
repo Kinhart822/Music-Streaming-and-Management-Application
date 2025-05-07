@@ -5,12 +5,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/logo"
         android:label="MusicHub"
@@ -18,8 +21,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MSMA"
         android:usesCleartextTraffic="true"
-        tools:targetApi="31"
-        tools:ignore="ObsoleteSdkInt">
+        tools:ignore="ObsoleteSdkInt"
+        tools:targetApi="31">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -36,8 +39,57 @@
             android:name=".ui.screen.notification.NotificationActivity"
             android:exported="false"
             android:label="@string/title_activity_notification"
+            android:theme="@style/Theme.MSMA" />
+        <activity
+            android:name=".ui.screen.settings.profile.edit.EditAccountInfoActivity"
+            android:exported="false"
+            android:label="@string/title_activity_notification"
+            android:theme="@style/Theme.MSMA" />
+        <activity
+            android:name=".ui.screen.settings.profile.view.ViewProfileActivity"
+            android:exported="false"
+            android:label="@string/title_activity_view_profile"
+            android:theme="@style/Theme.MSMA" />
+        <activity
+            android:name=".ui.screen.settings.profile.change_password.ChangePasswordActivity"
+            android:exported="false"
+            android:label="@string/title_activity_change_password"
+            android:theme="@style/Theme.MSMA" />
+        <activity
+            android:name=".ui.screen.settings.history_listen.ViewHistoryListenActivity"
+            android:exported="false"
+            android:label="@string/title_activity_view_history_listen"
+            android:theme="@style/Theme.MSMA" />
+        <activity
+            android:name=".ui.screen.search.genres.GenreActivity"
+            android:exported="false"
+            android:label="@string/title_activity_genre"
+            android:theme="@style/Theme.MSMA" />
+        <activity
+            android:name=".ui.screen.search.songs.DetailsSongActivity"
+            android:exported="false"
+            android:label="@string/title_activity_details_song"
             android:theme="@style/Theme.MSMA">
         </activity>
+
+        <service
+            android:name=".service.MusicService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            tools:ignore="ForegroundServicePermission" />
+
+        <receiver
+            android:name=".service.MusicActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="PLAY" />
+                <action android:name="PAUSE" />
+                <action android:name="PREVIOUS" />
+                <action android:name="NEXT" />
+                <action android:name="CLOSE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

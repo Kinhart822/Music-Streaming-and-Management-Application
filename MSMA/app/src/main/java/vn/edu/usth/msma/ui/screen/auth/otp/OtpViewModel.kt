@@ -1,9 +1,10 @@
 package vn.edu.usth.msma.ui.screen.auth.otp
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import vn.edu.usth.msma.data.dto.request.auth.CheckOtpRequest
 import vn.edu.usth.msma.network.ApiService
+import javax.inject.Inject
 
 data class OtpState(
     val otp: String = "",
@@ -23,12 +25,15 @@ data class OtpState(
     val otpDueDate: String? = null
 )
 
-class OtpViewModel(
+@HiltViewModel
+class OtpViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val initialEmail: String,
-    private val initialSessionId: String,
-    initialOtpDueDate: String
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    private val initialEmail: String = savedStateHandle.get<String>("email") ?: ""
+    private val initialSessionId: String = savedStateHandle.get<String>("sessionId") ?: ""
+    private val initialOtpDueDate: String = savedStateHandle.get<String>("otpDueDate") ?: ""
+
     private val _otpState = MutableStateFlow(OtpState(otpDueDate = initialOtpDueDate))
     val otpState: StateFlow<OtpState> = _otpState.asStateFlow()
 
@@ -107,20 +112,5 @@ class OtpViewModel(
                 Log.e("OtpViewModel", "Exception: ${e.message}")
             }
         }
-    }
-}
-
-class OtpViewModelFactory(
-    private val apiService: ApiService = ApiService,
-    private val initialEmail: String,
-    private val initialSessionId: String,
-    private val initialOtpDueDate: String
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(OtpViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return OtpViewModel(apiService, initialEmail, initialSessionId, initialOtpDueDate) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

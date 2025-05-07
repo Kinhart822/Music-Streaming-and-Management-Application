@@ -1,9 +1,10 @@
 package vn.edu.usth.msma.ui.screen.auth.reset
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import vn.edu.usth.msma.data.dto.request.auth.NewPasswordRequest
 import vn.edu.usth.msma.network.ApiService
+import javax.inject.Inject
 
 data class ResetPasswordState(
     val newPassword: String = "",
@@ -26,10 +28,13 @@ data class ResetPasswordState(
     val confirmPasswordVisible: Boolean = false
 )
 
-class ResetPasswordViewModel(
+@HiltViewModel
+class ResetPasswordViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val sessionId: String
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    private val sessionId: String = savedStateHandle.get<String>("sessionId") ?: ""
+
     private val _resetPasswordState = MutableStateFlow(ResetPasswordState())
     val resetPasswordState: StateFlow<ResetPasswordState> = _resetPasswordState.asStateFlow()
 
@@ -125,18 +130,5 @@ class ResetPasswordViewModel(
                 Log.e("ResetPasswordViewModel", "Exception: ${e.message}")
             }
         }
-    }
-}
-
-class ResetPasswordViewModelFactory(
-    private val apiService: ApiService = ApiService,
-    private val sessionId: String
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ResetPasswordViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ResetPasswordViewModel(apiService, sessionId) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

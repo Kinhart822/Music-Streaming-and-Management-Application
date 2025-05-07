@@ -1,45 +1,42 @@
 package vn.edu.usth.msma.network
 
-import android.content.Context
 import vn.edu.usth.msma.network.apis.AccountApi
 import vn.edu.usth.msma.network.apis.AuthApi
+import vn.edu.usth.msma.network.apis.SearchApi
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object ApiService {
-    private var unAuthApi: AuthApi? = null
-    private var authApi: AuthApi? = null
-    private var accountApi: AccountApi? = null
-
-    fun getUnAuthApi(): AuthApi {
-        if (unAuthApi == null) {
-            unAuthApi = ApiClient.getUnauthenticatedClient().create(AuthApi::class.java)
-        }
-        return unAuthApi!!
+@Singleton
+class ApiService @Inject constructor(
+    private val apiClient: ApiClient
+) {
+    private val _unAuthApi: AuthApi by lazy {
+        apiClient.getUnauthenticatedClient().create(AuthApi::class.java)
     }
 
-    fun getAuthApi(context: Context): AuthApi {
-        if (authApi == null) {
-            authApi = ApiClient.getAuthenticatedClient(context).create(AuthApi::class.java)
-        }
-        return authApi!!
+    private val _authApi: AuthApi by lazy {
+        apiClient.getAuthenticatedClient().create(AuthApi::class.java)
     }
 
-    fun getUnAccountApi(): AccountApi {
-        if (accountApi == null) {
-            accountApi = ApiClient.getUnauthenticatedClient().create(AccountApi::class.java)
-        }
-        return accountApi!!
+    private val _unAccountApi: AccountApi by lazy {
+        apiClient.getUnauthenticatedClient().create(AccountApi::class.java)
     }
 
-    fun getAccountApi(context: Context): AccountApi {
-        if (accountApi == null) {
-            accountApi = ApiClient.getAuthenticatedClient(context).create(AccountApi::class.java)
-        }
-        return accountApi!!
+    private val _accountApi: AccountApi by lazy {
+        apiClient.getAuthenticatedClient().create(AccountApi::class.java)
     }
 
-    fun resetApis() {
-        unAuthApi = null
-        authApi = null
-        accountApi = null
+    private val _searchApi: SearchApi by lazy {
+        apiClient.getAuthenticatedClient().create(SearchApi::class.java)
     }
+
+    fun getUnAuthApi(): AuthApi = _unAuthApi
+
+    fun getAuthApi(): AuthApi = _authApi
+
+    fun getUnAccountApi(): AccountApi = _unAccountApi
+
+    fun getAccountApi(): AccountApi = _accountApi
+
+    fun getSearchApi(): SearchApi = _searchApi
 }

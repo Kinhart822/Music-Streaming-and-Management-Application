@@ -79,7 +79,7 @@ fun NotificationUI(onBackClick: () -> Unit) {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back to Home"
+                            contentDescription = "Back"
                         )
                     }
                 },

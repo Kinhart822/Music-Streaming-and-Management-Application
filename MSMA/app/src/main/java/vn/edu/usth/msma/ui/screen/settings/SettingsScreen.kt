@@ -1,36 +1,45 @@
 package vn.edu.usth.msma.ui.screen.settings
 
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import vn.edu.usth.msma.ui.screen.settings.history_listen.ViewHistoryListenActivity
+import vn.edu.usth.msma.ui.screen.settings.profile.change_password.ChangePasswordActivity
+import vn.edu.usth.msma.ui.screen.settings.profile.edit.EditAccountInfoActivity
+import vn.edu.usth.msma.ui.screen.settings.profile.view.ViewProfileActivity
 
 data class SettingItem(
     val title: String,
+    val userName: String? = null,
+    val email: String? = null,
+    val avatarUrl: String? = null,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val isUserInfo: Boolean = false,
+    val icon: @Composable () -> Unit = {},
     val onClick: () -> Unit,
     val isLoading: Boolean = false
 )
@@ -43,9 +52,22 @@ fun SettingScreen(
 ) {
     val settingState by viewModel.settingState.collectAsState()
 
+    // Trạng thái cho dialog
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showSignOutDialog by remember { mutableStateOf(false) }
+
     // Navigate to login screen when sign-out is successful
     LaunchedEffect(settingState.isSignedOut) {
         if (settingState.isSignedOut) {
+            navController.navigate("login") {
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
+    }
+
+    // Navigate to login screen when account is deleted
+    LaunchedEffect(settingState.isAccountDeleted) {
+        if (settingState.isAccountDeleted) {
             navController.navigate("login") {
                 popUpTo(navController.graph.id) { inclusive = true }
             }
@@ -59,68 +81,141 @@ fun SettingScreen(
         }
     }
 
+    // Show error toast when delete account fails
+    LaunchedEffect(settingState.deleteAccountError) {
+        settingState.deleteAccountError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val accountItems = listOf(
+        SettingItem(
+            title = "User Info",
+            userName = settingState.userName,
+            email = settingState.email,
+            avatarUrl = settingState.avatar,
+            firstName = settingState.firstName,
+            lastName = settingState.lastName,
+            isUserInfo = true,
+            onClick = {
+                context.startActivity(Intent(context, ViewProfileActivity::class.java))
+            }
+        )
+    )
+
     val settingItems = listOf(
         SettingItem(
-            title = "Details",
-            onClick = {
-                Toast.makeText(context, "Details clicked", Toast.LENGTH_SHORT).show()
-            }
-        ),
-        SettingItem(
             title = "Edit / Update",
+            icon = { Icon(Icons.Default.Edit, contentDescription = "Edit") },
             onClick = {
-                Toast.makeText(context, "Edit / Update clicked", Toast.LENGTH_SHORT).show()
+                context.startActivity(Intent(context, EditAccountInfoActivity::class.java))
             }
         ),
         SettingItem(
             title = "Change Password",
+            icon = { Icon(Icons.Default.Lock, contentDescription = "Lock") },
             onClick = {
-                Toast.makeText(context, "Change Password clicked", Toast.LENGTH_SHORT).show()
+                context.startActivity(Intent(context, ChangePasswordActivity::class.java))
             }
         ),
         SettingItem(
-            title = "View History",
+            title = "View History Listen",
+            icon = { Icon(Icons.Default.History, contentDescription = "History") },
             onClick = {
-                Toast.makeText(context, "View History clicked", Toast.LENGTH_SHORT).show()
+                context.startActivity(Intent(context, ViewHistoryListenActivity::class.java))
             }
         ),
         SettingItem(
             title = "Delete Account",
-            onClick = {
-                Toast.makeText(context, "Delete Account clicked", Toast.LENGTH_SHORT).show()
-            }
+            icon = { Icon(Icons.Default.Delete, contentDescription = "Delete") },
+            onClick = { showDeleteDialog = true },
+            isLoading = settingState.isDeleteLoading
         ),
         SettingItem(
             title = "Sign Out",
-            onClick = { viewModel.signOut() },
-            isLoading = settingState.isLoading
+            icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Sign Out") },
+            onClick = { showSignOutDialog = true },
+            isLoading = settingState.isSignOutLoading
         )
     )
 
-    // Split items into two
-    val dividerIndex = settingItems.indexOfFirst { it.title == "Delete Account" } + 1
-    val itemsBeforeDivider = settingItems.subList(0, dividerIndex)
-    val itemsAfterDivider = settingItems.subList(dividerIndex, settingItems.size)
-
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        items(itemsBeforeDivider) { item ->
+        // Account section (no title)
+        items(accountItems) { item ->
             SettingCard(item)
         }
+
+        // Settings section
         item {
-            Divider(
-                modifier = Modifier.padding(vertical = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                thickness = 1.dp
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
-        items(itemsAfterDivider) { item ->
+        items(settingItems) { item ->
             SettingCard(item)
         }
+
+        // Add Spacer to fill remaining vertical space
+        item {
+            Spacer(modifier = Modifier.fillMaxHeight())
+        }
+    }
+
+    // Dialog xác nhận xóa tài khoản
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Account") },
+            text = { Text("Are you sure you want to delete your account? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAccount()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Confirm", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Dialog xác nhận đăng xuất
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            title = { Text("Sign Out") },
+            text = { Text("Are you sure you want to sign out?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.signOut()
+                        showSignOutDialog = false
+                    }
+                ) {
+                    Text("Confirm", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -129,37 +224,107 @@ fun SettingCard(item: SettingItem) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = !item.isLoading) { item.onClick() },
+            .then(
+                if (item.isUserInfo) Modifier
+                else Modifier.clickable(enabled = !item.isLoading) { item.onClick() }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = MaterialTheme.shapes.medium
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (item.title in listOf("Delete Account", "Sign Out")) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                }
-            )
-            if (item.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
+        if (item.isUserInfo) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = when {
+                        item.firstName != null && item.lastName != null -> "${item.firstName} ${item.lastName}"
+                        item.firstName != null -> item.firstName
+                        item.lastName != null -> item.lastName
+                        else -> "user"
+                    },
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.ArrowForward,
-                    contentDescription = "Navigate to ${item.title}",
-                    tint = MaterialTheme.colorScheme.onSurface
+                Spacer(modifier = Modifier.height(8.dp))
+                item.avatarUrl?.let { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "User Avatar",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } ?: Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "View Profile",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { item.onClick() }
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = item.email ?: "No email",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    item.icon()
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (item.title in listOf("Delete Account", "Sign Out")) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+
+                if (item.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                shape = CircleShape
+                            )
+                            .size(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowForward,
+                            contentDescription = "Navigate to ${item.title}",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         }
     }
