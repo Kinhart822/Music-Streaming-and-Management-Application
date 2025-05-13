@@ -23,6 +23,7 @@
         android:usesCleartextTraffic="true"
         tools:ignore="ObsoleteSdkInt"
         tools:targetApi="31">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -66,11 +67,10 @@
             android:label="@string/title_activity_genre"
             android:theme="@style/Theme.MSMA" />
         <activity
-            android:name=".ui.screen.search.songs.DetailsSongActivity"
+            android:name=".ui.screen.songs.SongDetailsActivity"
             android:exported="false"
-            android:label="@string/title_activity_details_song"
-            android:theme="@style/Theme.MSMA">
-        </activity>
+            android:label="@string/title_activity_song_details"
+            android:theme="@style/Theme.MSMA" />
 
         <service
             android:name=".service.MusicService"
@@ -83,11 +83,13 @@
             android:name=".service.MusicActionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="PLAY" />
-                <action android:name="PAUSE" />
-                <action android:name="PREVIOUS" />
-                <action android:name="NEXT" />
-                <action android:name="CLOSE" />
+                <action android:name="vn.edu.usth.msma.ACTION_PLAY" />
+                <action android:name="vn.edu.usth.msma.ACTION_PAUSE" />
+                <action android:name="vn.edu.usth.msma.ACTION_PREVIOUS" />
+                <action android:name="vn.edu.usth.msma.ACTION_NEXT" />
+                <action android:name="vn.edu.usth.msma.ACTION_CLOSE" />
+                <action android:name="vn.edu.usth.msma.ACTION_MINIMIZE" />
+                <action android:name="vn.edu.usth.msma.ACTION_EXPAND" />
             </intent-filter>
         </receiver>
     </application>

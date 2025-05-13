@@ -1,5 +1,9 @@
-package vn.edu.usth.msma.ui.screen.search.songs
+package vn.edu.usth.msma.data
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class Song(
     val id: Long,
     val title: String,
@@ -17,5 +21,4 @@ data class Song(
     val countListen: Long?,
     val numberOfUserLike: Long?,
     val numberOfDownload: Long?
-)
-
+): Parcelable

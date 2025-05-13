@@ -7,5 +7,5 @@
     <string name="title_activity_change_password">ChangePasswordActivity</string>
     <string name="title_activity_view_history_listen">ViewHistoryListenActivity</string>
     <string name="title_activity_genre">GenreActivity</string>
-    <string name="title_activity_details_song">DetailsSongActivity</string>
+    <string name="title_activity_song_details">SongDetailsActivity</string>
 </resources>

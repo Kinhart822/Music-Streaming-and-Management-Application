@@ -7,8 +7,11 @@ import android.util.Log
 import android.widget.Toast
 import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.Authenticator
@@ -18,17 +21,11 @@ import okhttp3.Response
 import okhttp3.Route
 import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.dto.request.auth.RefreshRequest
+import vn.edu.usth.msma.utils.eventbus.Event.SessionExpiredEvent
+import vn.edu.usth.msma.utils.eventbus.EventBus
 import java.io.IOException
-import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-import vn.edu.usth.msma.utils.eventbus.EventBus
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import vn.edu.usth.msma.utils.eventbus.Event.SessionExpiredEvent
 
 @Singleton
 class CustomAuthenticator @Inject constructor(
@@ -46,25 +43,50 @@ class CustomAuthenticator @Inject constructor(
 
     @Throws(IOException::class)
     override fun authenticate(route: Route?, response: Response): Request? {
-        val responseBody = response.body?.string()
-        val isJwtExpired = responseBody?.let {
-            try {
-                val json = JSONObject(it)
-                json.has("message") && json.getString("message").contains("JWT expired") ||
-                        json.has("description") && json.getString("description").contains("JWT expired")
-            } catch (e: Exception) {
-                Log.e(tag, "Error parsing response body", e)
-                false
-            }
-        } == true
+        // Buffer the response body to allow multiple reads
+        val responseBody = response.peekBody(Long.MAX_VALUE).string()
+        return handleJwtExpiration(response, responseBody)
+    }
 
-        if (response.code == 401 || response.code == 403) {
-            Log.d(tag, "authenticate: need refresh due to ${response.code} or JWT expired")
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        val response = chain.proceed(request)
+
+        if (!response.isSuccessful) {
+            val responseBody = response.peekBody(Long.MAX_VALUE).string()
+            try {
+                if (response.code == 500) {
+                    Log.d(tag, "intercept: JWT expired in 500 response, attempting to refresh token")
+                    val newRequest = handleJwtExpiration(response, responseBody)
+                    if (newRequest != null) {
+                        // Retry the request with the new token
+                        return chain.proceed(newRequest)
+                    } else {
+                        // If refresh fails, clear session and notify
+                        scope.launch {
+                            preferencesManager.logout()
+                            EventBus.publish(SessionExpiredEvent)
+                        }
+                        showSessionExpiredToast()
+                        callback?.invoke()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(tag, "intercept: Error parsing response: ${e.message}")
+            }
+        }
+
+        return response
+    }
+
+    private fun handleJwtExpiration(response: Response, responseBody: String): Request? {
+        if (response.code in listOf(401, 403, 500)) {
+            Log.d(tag, "handleJwtExpiration: Need refresh due to ${response.code} and JWT expired")
             synchronized(this) {
                 return runBlocking {
                     try {
                         val email = preferencesManager.currentUserEmailFlow.first() ?: run {
-                            Log.d(tag, "authenticate: no current user, navigating to Login screen")
+                            Log.d(tag, "handleJwtExpiration: No current user, navigating to Login screen")
                             preferencesManager.logout()
                             showSessionExpiredToast()
                             callback?.invoke()
@@ -72,7 +94,7 @@ class CustomAuthenticator @Inject constructor(
                         }
                         val refreshToken = preferencesManager.getRefreshTokenFlow(email).first()
                         if (refreshToken == null) {
-                            Log.d(tag, "authenticate: refresh token is null, navigating to Login screen")
+                            Log.d(tag, "handleJwtExpiration: Refresh token is null, navigating to Login screen")
                             preferencesManager.logout()
                             showSessionExpiredToast()
                             callback?.invoke()
@@ -85,22 +107,25 @@ class CustomAuthenticator @Inject constructor(
                         if (refreshResponse.isSuccessful && refreshResponse.body() != null) {
                             val newAccessToken = refreshResponse.body()!!.accessToken
                             preferencesManager.saveAccessToken(email, newAccessToken)
-                            Log.d(tag, "authenticate: accessToken is refreshed")
+                            Log.d(tag, "handleJwtExpiration: Access token refreshed")
                             response.request.newBuilder()
                                 .header("Authorization", "Bearer $newAccessToken")
                                 .build()
                         } else if (refreshResponse.code() == 401) {
-                            Log.d(tag, "authenticate: refresh token expired")
+                            Log.d(tag, "handleJwtExpiration: Refresh token expired")
                             preferencesManager.logout()
                             showSessionExpiredToast()
                             callback?.invoke()
                             null
                         } else {
-                            Log.d(tag, "authenticate: refresh failed with code ${refreshResponse.code()}")
+                            Log.d(tag, "handleJwtExpiration: Refresh failed with code ${refreshResponse.code()}")
+                            preferencesManager.logout()
+                            showSessionExpiredToast()
+                            callback?.invoke()
                             null
                         }
                     } catch (e: Exception) {
-                        Log.e(tag, "authenticate: error refreshing token", e)
+                        Log.e(tag, "handleJwtExpiration: Error refreshing token", e)
                         preferencesManager.logout()
                         showSessionExpiredToast()
                         callback?.invoke()
@@ -108,8 +133,10 @@ class CustomAuthenticator @Inject constructor(
                     }
                 }
             }
+        } else {
+            Log.d(tag, "handleJwtExpiration: No JWT expiration detected for response code ${response.code}, body: $responseBody")
+            return null
         }
-        return null
     }
 
     private fun showSessionExpiredToast() {
@@ -120,34 +147,5 @@ class CustomAuthenticator @Inject constructor(
                 Toast.LENGTH_SHORT
             ).show()
         }
-    }
-
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request()
-        val response = chain.proceed(request)
-
-        // Check if response is error and contains JWT expired message
-        if (!response.isSuccessful) {
-            val responseBody = response.body?.string()
-            try {
-                val jsonObject = Gson().fromJson(responseBody, JsonObject::class.java)
-                val message = jsonObject.get("message")?.asString
-                val description = jsonObject.get("description")?.asString
-
-                if (message == "INTERNAL_SERVER_ERROR" || 
-                    description?.contains("JWT expired") == true) {
-                    Log.d("CustomAuthenticator", "JWT expired, clearing session")
-                    // Clear user session and publish event in coroutine
-                    scope.launch {
-                        preferencesManager.logout()
-                        EventBus.publish(SessionExpiredEvent)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("CustomAuthenticator", "Error parsing response: ${e.message}")
-            }
-        }
-
-        return response
     }
 }

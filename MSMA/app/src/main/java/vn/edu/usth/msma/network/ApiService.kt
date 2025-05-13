@@ -3,6 +3,7 @@ package vn.edu.usth.msma.network
 import vn.edu.usth.msma.network.apis.AccountApi
 import vn.edu.usth.msma.network.apis.AuthApi
 import vn.edu.usth.msma.network.apis.SearchApi
+import vn.edu.usth.msma.network.apis.SongApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +31,10 @@ class ApiService @Inject constructor(
         apiClient.getAuthenticatedClient().create(SearchApi::class.java)
     }
 
+    private val _songApi: SongApi by lazy {
+        apiClient.getAuthenticatedClient().create(SongApi::class.java)
+    }
+
     fun getUnAuthApi(): AuthApi = _unAuthApi
 
     fun getAuthApi(): AuthApi = _authApi
@@ -39,4 +44,6 @@ class ApiService @Inject constructor(
     fun getAccountApi(): AccountApi = _accountApi
 
     fun getSearchApi(): SearchApi = _searchApi
+
+    fun getSongApi(): SongApi = _songApi
 }

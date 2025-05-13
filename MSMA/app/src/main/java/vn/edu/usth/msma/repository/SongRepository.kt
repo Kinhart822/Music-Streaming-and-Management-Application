@@ -1,22 +1,34 @@
 package vn.edu.usth.msma.repository
 
 import vn.edu.usth.msma.data.dto.response.management.ContentItem
-import vn.edu.usth.msma.ui.screen.search.songs.Song
+import vn.edu.usth.msma.data.dto.response.management.SongResponse
+import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.utils.helpers.toSong
 
 class SongRepository {
-    private var songItems: List<ContentItem.SongItem> = emptyList()
+    private var songs: List<Song> = emptyList()
 
-    fun updateSongs(newSongItems: List<ContentItem.SongItem>) {
-        songItems = newSongItems
+    fun updateSongs(newSongs: List<Song>) {
+        songs = newSongs
     }
 
-    fun getSongs(): List<Song> {
-        return songItems.map { it.toSong() }
+    fun updateSearchSongs(newSongItems: List<ContentItem.SongItem>) {
+        songs = newSongItems.map { it.toSong() }
+    }
+
+    fun updateSongResponseList(newSongItems: List<SongResponse>) {
+        songs = newSongItems.map { it.toSong() }
+    }
+
+    fun getAllSongs(): List<Song> {
+        return songs
+    }
+
+    fun getSongById(songId: Long): Song? {
+        return songs.find { it.id == songId }
     }
 
     fun getNextSong(currentSongId: Long?): Song? {
-        val songs = getSongs()
         if (songs.isEmpty()) return null
 
         val currentIndex = songs.indexOfFirst { it.id == currentSongId }
@@ -28,7 +40,6 @@ class SongRepository {
     }
 
     fun getPreviousSong(currentSongId: Long?): Song? {
-        val songs = getSongs()
         if (songs.isEmpty()) return null
 
         val currentIndex = songs.indexOfFirst { it.id == currentSongId }
@@ -40,14 +51,10 @@ class SongRepository {
     }
 
     fun playRandomSong(): Song? {
-        val songs = getSongs()
         return songs.randomOrNull()
     }
 
-    fun getSongById(songId: Long): Song? {
-        return getSongs().find { it.id == songId }
+    fun clearAllSongs() {
+        songs = emptyList()
     }
-
-    // Favorite Songs (Call API and DataStore) - Save/Remove/Check/Get
-
 }

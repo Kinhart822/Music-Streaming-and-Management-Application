@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import vn.edu.usth.msma.data.dto.request.management.HistoryListenResponse
+import vn.edu.usth.msma.ui.components.LoadingScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,12 +67,7 @@ fun ViewHistoryListenScreen(
         ) {
             when {
                 state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    LoadingScreen(message = "Loading listening history...")
                 }
                 state.history.isEmpty() -> {
                     Text(

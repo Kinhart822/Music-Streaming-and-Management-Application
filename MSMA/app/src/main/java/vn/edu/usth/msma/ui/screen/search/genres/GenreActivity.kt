@@ -6,12 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
-import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
-import vn.edu.usth.msma.network.ApiService
-import vn.edu.usth.msma.network.CustomAuthenticator
 import vn.edu.usth.msma.ui.theme.MSMATheme
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class GenreActivity : ComponentActivity() {
@@ -24,7 +20,7 @@ class GenreActivity : ComponentActivity() {
             ?: throw IllegalArgumentException("Genre data is required")
 
         // Initialize ViewModel with genre data
-        viewModel.initialize(genre)
+        viewModel.init(genre)
 
         setContent {
             MSMATheme {

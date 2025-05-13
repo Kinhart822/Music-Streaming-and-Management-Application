@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.data.dto.response.management.SongResponse
 import vn.edu.usth.msma.network.ApiService
+import vn.edu.usth.msma.repository.SongRepository
 import javax.inject.Inject
 
 data class GenreState(
@@ -25,48 +26,22 @@ data class GenreState(
 @HiltViewModel
 class GenreViewModel @Inject constructor(
     private val apiService: ApiService,
+    val songRepository: SongRepository
 ) : ViewModel() {
-    private val _state = MutableStateFlow(GenreState(genre = GenreResponse(
-        id = 0, name = "", briefDescription = "", fullDescription = "", imageUrl = "",
+    private val _state = MutableStateFlow(GenreState(GenreResponse(
+        id = 0,
+        name = "",
+        briefDescription = "",
+        fullDescription = "",
+        imageUrl = "",
         createdDate = "",
         lastModifiedDate = ""
     )))
     val state: StateFlow<GenreState> = _state.asStateFlow()
 
-    fun initialize(genre: GenreResponse) {
+    fun init(genre: GenreResponse) {
         _state.update { it.copy(genre = genre) }
-        fetchSongs(genre.id)
-    }
-
-    private fun fetchSongs(genreId: Long) {
-        _state.update { it.copy(isLoadingSongs = true, error = null) }
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getSearchApi().getSongsByGenre(genreId)
-                if (response.isSuccessful && response.body() != null) {
-                    _state.update {
-                        it.copy(
-                            songs = response.body()!!,
-                            isLoadingSongs = false
-                        )
-                    }
-                } else {
-                    _state.update {
-                        it.copy(
-                            isLoadingSongs = false,
-                            error = "Failed to load songs: ${response.message()}"
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoadingSongs = false,
-                        error = "Error loading songs: ${e.message}"
-                    )
-                }
-            }
-        }
+        fetchSongsByGenre(genre.id)
     }
 
     fun toggleFullDescription() {
@@ -75,5 +50,38 @@ class GenreViewModel @Inject constructor(
 
     fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+
+    private fun fetchSongsByGenre(genreId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _state.update { it.copy(isLoadingSongs = true) }
+                val response = apiService.getSearchApi().getSongsByGenre(genreId)
+                if (response.isSuccessful && response.body() != null) {
+                    val songs = response.body()!!
+                    songRepository.updateSongResponseList(songs)
+                    _state.update { 
+                        it.copy(
+                            songs = songs,
+                            isLoadingSongs = false
+                        )
+                    }
+                } else {
+                    _state.update { 
+                        it.copy(
+                            error = "Failed to load songs",
+                            isLoadingSongs = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        error = e.message ?: "An error occurred",
+                        isLoadingSongs = false
+                    )
+                }
+            }
+        }
     }
 }

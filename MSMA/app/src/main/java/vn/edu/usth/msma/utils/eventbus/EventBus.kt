@@ -16,4 +16,7 @@ object EventBus {
 sealed class Event {
     object ProfileUpdatedEvent : Event()
     object SessionExpiredEvent : Event()
-} 
+    object InitializeDataLibrary: Event()
+    object SongFavouriteUpdateEvent : Event()
+    object MediaNotificationCancelSongEvent: Event()
+}

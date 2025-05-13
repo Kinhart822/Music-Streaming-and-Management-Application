@@ -1,20 +1,31 @@
 package vn.edu.usth.msma.data
 
+import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.os.Build
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import kotlinx.coroutines.flow.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.preferencesDataStoreFile
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import java.util.concurrent.ConcurrentHashMap
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import vn.edu.usth.msma.service.MusicService
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Singleton
 class PreferencesManager @Inject constructor(
@@ -30,6 +41,8 @@ class PreferencesManager @Inject constructor(
         private val AUTH_REFRESH_TOKEN = stringPreferencesKey("auth_refresh_token")
         private val AUTH_IS_LOGGED_IN = booleanPreferencesKey("auth_is_logged_in")
         private val LAST_LOGIN_EMAIL = stringPreferencesKey("last_login_email")
+        private val MINI_PLAYER_VISIBLE = booleanPreferencesKey("mini_player_visible")
+        private val FAVORITE_SONGS = stringPreferencesKey("favorite_songs")
     }
 
     // Cache for user-specific DataStores and their scopes
@@ -113,19 +126,35 @@ class PreferencesManager @Inject constructor(
     }
 
     // Logout: Clear all data except LAST_LOGIN_EMAIL
+    @SuppressLint("ObsoleteSdkInt")
     suspend fun logout() {
         val email = appDataStore.data.first()[CURRENT_USER_EMAIL_PREF]
-        email?.let { 
+        email?.let {
+            // Stop music playback and close notification
+            val intent = Intent(context, MusicService::class.java).apply {
+                action = "CLOSE"
+            }
+            context.startService(intent)
+
+            // Close notification channel
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.getNotificationChannel("music_channel")?.let { channel ->
+                    channel.enableLights(false)
+                    channel.enableVibration(false)
+                    channel.setSound(null, null)
+                }
+            }
+
             // Clear user data
             clearUserData(it)
-            // Clear current user
             clearCurrentUser()
-            // Clear tokens and login state
             appDataStore.edit { preferences ->
                 preferences.remove(AUTH_ACCESS_TOKEN)
                 preferences.remove(AUTH_REFRESH_TOKEN)
                 preferences.remove(AUTH_IS_LOGGED_IN)
                 preferences.remove(CURRENT_USER_EMAIL_PREF)
+                preferences.remove(MINI_PLAYER_VISIBLE)
             }
         }
         // Cancel all scopes and clear the map
@@ -134,8 +163,26 @@ class PreferencesManager @Inject constructor(
     }
 
     // Delete: Clear everything including LAST_LOGIN_EMAIL
+    @SuppressLint("ObsoleteSdkInt")
     suspend fun delete() {
         val email = appDataStore.data.first()[CURRENT_USER_EMAIL_PREF]
+
+        // Stop music playback and close notification
+        val intent = Intent(context, MusicService::class.java).apply {
+            action = "CLOSE"
+        }
+        context.startService(intent)
+
+        // Close notification channel
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.getNotificationChannel("music_channel")?.let { channel ->
+                channel.enableLights(false)
+                channel.enableVibration(false)
+                channel.setSound(null, null)
+            }
+        }
+
         email?.let { clearUserData(it) }
         clearCurrentUser()
         // Clear everything including LAST_LOGIN_EMAIL
@@ -163,5 +210,47 @@ class PreferencesManager @Inject constructor(
         return appDataStore.data.map { preferences ->
             preferences[LAST_LOGIN_EMAIL]
         }
+    }
+
+    val isMiniPlayerVisibleFlow: Flow<Boolean> = appDataStore.data.map { preferences ->
+        preferences[MINI_PLAYER_VISIBLE] == true
+    }
+
+    suspend fun setMiniPlayerVisible(visible: Boolean) {
+        appDataStore.edit { preferences ->
+            preferences[MINI_PLAYER_VISIBLE] = visible
+        }
+    }
+
+    suspend fun addToFavorites(songId: Long) {
+        appDataStore.edit { preferences ->
+            val currentFavorites = preferences[FAVORITE_SONGS]?.split(",")?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+            val newFavorites = currentFavorites + songId.toString()
+            preferences[FAVORITE_SONGS] = newFavorites.joinToString(",")
+        }
+        broadcastFavoriteChange(songId, true)
+    }
+
+    suspend fun removeFromFavorites(songId: Long) {
+        appDataStore.edit { preferences ->
+            val currentFavorites = preferences[FAVORITE_SONGS]?.split(",")?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+            val newFavorites = currentFavorites - songId.toString()
+            preferences[FAVORITE_SONGS] = newFavorites.joinToString(",")
+        }
+        broadcastFavoriteChange(songId, false)
+    }
+
+    private suspend fun broadcastFavoriteChange(songId: Long, isFavorite: Boolean) {
+        val intent = Intent("MUSIC_EVENT").apply {
+            putExtra("ACTION", if (isFavorite) "ADDED_TO_FAVORITES" else "REMOVED_FROM_FAVORITES")
+            putExtra("SONG_ID", songId)
+        }
+        context.sendBroadcast(intent)
+    }
+
+    suspend fun clearAll() {
+        val email = appDataStore.data.first()[CURRENT_USER_EMAIL_PREF]
+        email?.let { clearUserData(it) }
+        clearCurrentUser()
     }
 }

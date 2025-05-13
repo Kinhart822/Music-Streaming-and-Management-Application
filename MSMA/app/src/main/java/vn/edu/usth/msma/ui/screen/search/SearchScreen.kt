@@ -10,48 +10,30 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.google.gson.Gson
 import vn.edu.usth.msma.data.dto.response.management.ContentItem
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
+import vn.edu.usth.msma.ui.components.LoadingScreen
 import vn.edu.usth.msma.ui.screen.search.genres.GenreActivity
-import vn.edu.usth.msma.ui.screen.search.songs.DetailsSongActivity
-
-@Composable
-fun SearchNavigation() {
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "search") {
-        composable("search") {
-            SearchScreen()
-        }
-    }
-}
+import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +43,7 @@ fun SearchScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     var isSearchFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     // Show error toast
     LaunchedEffect(state.error) {
@@ -106,6 +89,7 @@ fun SearchScreen(
                 TextButton(onClick = {
                     viewModel.onSearchQueryChange("")
                     isSearchFocused = false
+                    focusManager.clearFocus()
                 }) {
                     Text(
                         text = "Cancel",
@@ -116,15 +100,11 @@ fun SearchScreen(
             }
         }
 
-        // Show genres
+        // Show genres or search results
         if (!isSearchFocused && state.searchQuery.isEmpty()) {
             // Loading indicator for genres
             if (state.isLoadingGenres) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 16.dp)
-                )
+                LoadingScreen(message = "Loading music genres...")
             } else if (state.genres.isNotEmpty()) {
                 // Genres grid
                 Text(
@@ -154,11 +134,15 @@ fun SearchScreen(
                     }
                 }
             } else {
-                Text(
-                    text = "No genres available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No genres available",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         } else {
             // Show tabs
@@ -180,18 +164,16 @@ fun SearchScreen(
 
             // Loading indicator for contents
             if (state.isLoadingContents) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 16.dp)
-                )
+                LoadingScreen(message = "Searching...")
             } else if (state.contents.isNotEmpty()) {
                 Text(
                     text = "Search results for \"${state.searchQuery}\"",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier.weight(1f)
+                ) {
                     items(state.contents) { content ->
                         ContentItemView(
                             content = content,
@@ -200,14 +182,19 @@ fun SearchScreen(
                     }
                 }
             } else {
-                Text(
-                    text = "No data available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No results found",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
     }
+
 }
 
 @Composable
@@ -251,67 +238,182 @@ fun ContentItemView(
     content: ContentItem,
     context: Context
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable {
-                if (content is ContentItem.SongItem) {
-                    val intent = Intent(context, DetailsSongActivity::class.java).apply {
-                        putExtra("SONG_ID", content.id)
-                    }
-                    context.startActivity(intent)
-                }
-            },
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = when (content) {
-                    is ContentItem.SongItem -> content.imageUrl
-                    is ContentItem.PlaylistItem -> content.imageUrl
-                    is ContentItem.AlbumItem -> content.imageUrl
-                    is ContentItem.ArtistItem -> content.avatar ?: content.image
-                },
-                contentDescription = when (content) {
-                    is ContentItem.SongItem -> content.title
-                    is ContentItem.PlaylistItem -> content.playlistName
-                    is ContentItem.AlbumItem -> content.albumName
-                    is ContentItem.ArtistItem -> content.artistName
-                },
+    when (content) {
+        is ContentItem.SongItem -> {
+            Card(
                 modifier = Modifier
-                    .size(48.dp)
-                    .aspectRatio(1f)
-                    .clip(if (content is ContentItem.ArtistItem) CircleShape else MaterialTheme.shapes.small),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(
-                    text = when (content) {
-                        is ContentItem.SongItem -> content.title
-                        is ContentItem.PlaylistItem -> content.playlistName
-                        is ContentItem.AlbumItem -> content.albumName
-                        is ContentItem.ArtistItem -> content.artistName ?: "${content.firstName} ${content.lastName}"
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable {
+                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
+                            putExtra("SONG_ID", content.id)
+                        }
+                        context.startActivity(intent)
                     },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = when (content) {
-                        is ContentItem.SongItem -> "Song"
-                        is ContentItem.PlaylistItem -> "Playlist"
-                        is ContentItem.AlbumItem -> "Album"
-                        is ContentItem.ArtistItem -> "Artist"
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = content.imageUrl,
+                        contentDescription = content.title,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .aspectRatio(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = content.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Song - ${content.artistNameList?.joinToString(", ") ?: ""}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
+
+        is ContentItem.PlaylistItem -> {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable {
+                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
+                            putExtra("playlistId", content.id)
+                        }
+                        context.startActivity(intent)
                     },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = content.imageUrl,
+                        contentDescription = content.playlistName,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .aspectRatio(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = content.playlistName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Playlist",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
+
+        is ContentItem.AlbumItem -> {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable {
+                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
+                            putExtra("albumId", content.id)
+                        }
+                        context.startActivity(intent)
+                    },
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = content.imageUrl,
+                        contentDescription = content.albumName,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .aspectRatio(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = content.albumName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Album",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
+
+        is ContentItem.ArtistItem -> {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable {
+                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
+                            putExtra("artistId", content.id)
+                        }
+                        context.startActivity(intent)
+                    },
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = content.avatar ?: content.image,
+                        contentDescription = content.artistName,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .aspectRatio(1f)
+                            .clip(MaterialTheme.shapes.small),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = content.artistName ?: "${content.firstName} ${content.lastName}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Artist",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
             }
         }
     }

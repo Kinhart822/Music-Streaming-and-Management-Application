@@ -51,18 +51,35 @@ class SettingViewModel @Inject constructor(
     private val _state = MutableStateFlow(SettingState())
     val settingState: StateFlow<SettingState> = _state.asStateFlow()
 
+    private var isInitialized = false // Biến cờ để kiểm soát khởi tạo
+
     init {
-        fetchUserDetails()
-        // Listen for profile update events
+        // Chỉ gọi fetchUserDetails lần đầu nếu chưa khởi tạo
+        if (!isInitialized) {
+            fetchUserDetails()
+            isInitialized = true
+        }
+
+        // Lắng nghe sự kiện từ EventBus
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
                     is ProfileUpdatedEvent -> {
-                        fetchUserDetails()
+                        fetchUserDetails() // Gọi lại khi có sự kiện ProfileUpdatedEvent
+                    }
+                    is SessionExpiredEvent -> {
+                        ""
                     }
 
-                    is SessionExpiredEvent -> {
-                        TODO()
+                    is Event.SongFavouriteUpdateEvent -> {
+                        ""
+                    }
+
+                    is Event.InitializeDataLibrary -> {
+                        ""
+                    }
+                    is Event.MediaNotificationCancelSongEvent -> {
+                        ""
                     }
                 }
             }

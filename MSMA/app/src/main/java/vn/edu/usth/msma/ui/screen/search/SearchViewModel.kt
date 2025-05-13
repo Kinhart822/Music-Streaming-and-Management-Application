@@ -121,7 +121,7 @@ class SearchViewModel @Inject constructor(
                     val contentResponse = gson.fromJson(gson.toJson(response.body()), ContentResponse::class.java)
 
                     val songItems = contentResponse.content.filterIsInstance<ContentItem.SongItem>()
-                    songRepository.updateSongs(songItems)
+                    songRepository.updateSearchSongs(songItems)
 
                     _state.update {
                         it.copy(

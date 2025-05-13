@@ -29,18 +29,10 @@ import vn.edu.usth.msma.R
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     onNavigateToRegister: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit,
-    onNavigateToHome: () -> Unit
+    onNavigateToForgotPassword: () -> Unit
 ) {
     val loginState by viewModel.state.collectAsState()
     val context = LocalContext.current
-
-    LaunchedEffect(loginState.isLoggedIn) {
-        if (loginState.isLoggedIn) {
-            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-            onNavigateToHome()
-        }
-    }
 
     LaunchedEffect(loginState.loginError) {
         loginState.loginError?.let {
@@ -152,8 +144,6 @@ fun LoginScreen(
             )
             Text("Remember Me")
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = { viewModel.login() },
