@@ -74,22 +74,7 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(navController.graph.id) { inclusive = true }
                                     }
                                 }
-
-                                is ProfileUpdatedEvent -> {
-                                    ""
-                                }
-
-                                is Event.SongFavouriteUpdateEvent -> {
-                                    ""
-                                }
-
-                                is Event.InitializeDataLibrary -> {
-                                    ""
-                                }
-
-                                is Event.MediaNotificationCancelSongEvent -> {
-                                    ""
-                                }
+                                else -> {}
                             }
                         }
                     }

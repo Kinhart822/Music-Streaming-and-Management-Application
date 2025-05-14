@@ -27,6 +27,7 @@ import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.ui.components.LoadingScreen
 import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
 import vn.edu.usth.msma.utils.eventbus.Event
+import vn.edu.usth.msma.utils.eventbus.Event.InitializeDataLibrary
 import vn.edu.usth.msma.utils.eventbus.EventBus
 
 @Composable
@@ -41,7 +42,7 @@ fun LibraryScreen(
     // Emit InitializeDataLibrary event when the screen is first composed
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            EventBus.publish(Event.InitializeDataLibrary)
+            EventBus.publish(InitializeDataLibrary)
         }
     }
 
@@ -77,7 +78,23 @@ fun LibraryScreen(
                         try {
                             val intent = Intent(context, SongDetailsActivity::class.java).apply {
                                 putExtra("SONG_ID", song.id)
+                                putExtra("FROM_MINI_PLAYER", false)
+                                putExtra("IS_PLAYING", false)
+                                putExtra("IS_LOOP_ENABLED", false)
+                                putExtra("IS_SHUFFLE_ENABLED", false)
                             }
+                            // Send broadcast to update MiniPlayer
+                            val broadcastIntent = Intent("MUSIC_EVENT").apply {
+                                putExtra("ACTION", "CURRENT_SONG")
+                                putExtra("SONG_ID", song.id)
+                                putExtra("SONG_TITLE", song.title)
+                                putExtra("SONG_ARTIST", song.artistNameList?.joinToString(", ") ?: "Unknown Artist")
+                                putExtra("SONG_IMAGE", song.imageUrl)
+                                putExtra("IS_PLAYING", false)
+                                putExtra("IS_LOOP_ENABLED", false)
+                                putExtra("IS_SHUFFLE_ENABLED", false)
+                            }
+                            context.sendBroadcast(broadcastIntent)
                             context.startActivity(intent)
                             Log.d("LibraryScreen", "Intent started for SongDetailsActivity")
                         } catch (e: Exception) {

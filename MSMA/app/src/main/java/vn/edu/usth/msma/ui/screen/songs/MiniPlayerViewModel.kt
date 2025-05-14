@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -19,7 +18,7 @@ import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.network.ApiService
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
-import vn.edu.usth.msma.utils.eventbus.Event.SongFavouriteUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.*
 import vn.edu.usth.msma.utils.eventbus.EventBus
 import javax.inject.Inject
 
@@ -43,11 +42,8 @@ class MiniPlayerViewModel @Inject constructor(
     private val _isShuffleEnabled = MutableStateFlow(false)
     val isShuffleEnabled: StateFlow<Boolean> = _isShuffleEnabled.asStateFlow()
 
-    private val _currentPosition = mutableLongStateOf(0L)
-    val currentPosition = _currentPosition
-
-    private val _duration = mutableLongStateOf(0L)
-    val duration = _duration
+    var currentPosition = mutableLongStateOf(0L)
+    var duration = mutableLongStateOf(0L)
 
     private var musicEventReceiver: BroadcastReceiver? = null
     private var positionUpdateReceiver: BroadcastReceiver? = null
@@ -64,6 +60,39 @@ class MiniPlayerViewModel @Inject constructor(
     fun registerReceivers(context: Context) {
         registerMusicEventReceiver(context)
         registerPositionUpdateReceiver(context)
+
+        // Subscribe to EventBus events
+        viewModelScope.launch {
+            EventBus.events.collect { event ->
+                when (event) {
+                    is SongPlayingUpdateEvent -> { 
+                        _isPlaying.value = true 
+                        Log.d("MiniPlayerViewModel", "Updated isPlaying to true from EventBus")
+                    }
+                    is SongPauseUpdateEvent -> { 
+                        _isPlaying.value = false 
+                        Log.d("MiniPlayerViewModel", "Updated isPlaying to false from EventBus")
+                    }
+                    is SongLoopUpdateEvent -> {
+                        _isLoopEnabled.value = true
+                        Log.d("MiniPlayerViewModel", "Updated isLoopEnabled to true from EventBus")
+                    }
+                    is SongUnLoopUpdateEvent -> {
+                        _isLoopEnabled.value = false
+                        Log.d("MiniPlayerViewModel", "Updated isLoopEnabled to false from EventBus")
+                    }
+                    is SongShuffleUpdateEvent -> {
+                        _isShuffleEnabled.value = true
+                        Log.d("MiniPlayerViewModel", "Updated isShuffleEnabled to true from EventBus")
+                    }
+                    is SongUnShuffleUpdateEvent -> {
+                        _isShuffleEnabled.value = false
+                        Log.d("MiniPlayerViewModel", "Updated isShuffleEnabled to false from EventBus")
+                    }
+                    else -> {}
+                }
+            }
+        }
     }
 
     private fun registerMusicEventReceiver(context: Context) {
@@ -84,41 +113,51 @@ class MiniPlayerViewModel @Inject constructor(
                             Log.d("MiniPlayerViewModel", "Updating isPlaying to false for PAUSED")
                             _isPlaying.value = false
                         }
+
                         "RESUMED" -> {
                             Log.d("MiniPlayerViewModel", "Updating isPlaying to true for RESUMED")
                             _isPlaying.value = true
                         }
+
                         "LOADED" -> {
                             Log.d("MiniPlayerViewModel", "Updating isPlaying to true for LOADED")
                             _isPlaying.value = true
                         }
+
+                        "COMPLETED" -> {
+                            Log.d("MiniPlayerViewModel", "Updating isPlaying to false for COMPLETED")
+                            _isPlaying.value = false
+                        }
+
                         "ADDED_TO_FAVORITES" -> {
                             Log.d("MiniPlayerViewModel", "Updating isFavorite to true")
                             _isFavorite.value = true
                         }
+
                         "REMOVED_FROM_FAVORITES" -> {
                             Log.d("MiniPlayerViewModel", "Updating isFavorite to false")
                             _isFavorite.value = false
                         }
+
                         "MINIMIZE", "CURRENT_SONG", "EXPAND", "NEXT", "PREVIOUS" -> {
                             val songId = intent.getLongExtra("SONG_ID", 0L)
                             Log.d("MiniPlayerViewModel", "Processing $action for songId: $songId")
                             if (songId != 0L) {
-                                _currentSong.value = songRepository.getSongById(songId)
-                                if (_currentSong.value == null) {
+                                val song = songRepository.getSongById(songId)
+                                if (song == null) {
                                     Log.e("MiniPlayerViewModel", "Failed to find song with ID $songId")
                                 } else {
-                                    Log.d("MiniPlayerViewModel", "Updated current song: ${_currentSong.value?.title}")
+                                    Log.d("MiniPlayerViewModel", "Updated current song: ${song.title}")
+                                    _currentSong.value = song
+                                    _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
+                                    _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                    _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                    _isFavorite.value = intent.getBooleanExtra("IS_FAVORITE", false)
+                                    currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                                    duration.longValue = intent.getLongExtra("DURATION", 0L)
+                                    checkFavoriteStatus(songId)
                                 }
-                                _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
-                                _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
-                                _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
-                                _isFavorite.value = intent.getBooleanExtra("IS_FAVORITE", false)
                             }
-                        }
-                        "COMPLETED" -> {
-                            Log.d("MiniPlayerViewModel", "Updating isPlaying to false for COMPLETED")
-                            _isPlaying.value = false
                         }
                     }
                 }
@@ -141,8 +180,8 @@ class MiniPlayerViewModel @Inject constructor(
         positionUpdateReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == "POSITION_UPDATE") {
-                    _currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
-                    _duration.longValue = intent.getLongExtra("DURATION", 0L)
+                    currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                    duration.longValue = intent.getLongExtra("DURATION", 0L)
                 }
             }
         }
@@ -178,7 +217,7 @@ class MiniPlayerViewModel @Inject constructor(
         Log.d("MiniPlayerViewModel", "openDetails called")
         _currentSong.value?.let { song ->
             Log.d("MiniPlayerViewModel", "Opening details for song: ${song.id} - ${song.title}")
-            
+
             // Send broadcast to MusicService
             val intent = Intent(context, MusicService::class.java).apply {
                 action = "EXPAND"
@@ -191,6 +230,8 @@ class MiniPlayerViewModel @Inject constructor(
                 putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
                 putExtra("IS_FAVORITE", _isFavorite.value)
                 putExtra("FROM_MINI_PLAYER", true)
+                putExtra("CURRENT_POSITION", currentPosition.longValue)
+                putExtra("DURATION", duration.longValue)
             }
             Log.d("MiniPlayerViewModel", "Sending EXPAND broadcast to MusicService")
             context.startService(intent)
@@ -202,9 +243,11 @@ class MiniPlayerViewModel @Inject constructor(
                 putExtra("IS_LOOP_ENABLED", _isLoopEnabled.value)
                 putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
                 putExtra("IS_FAVORITE", _isFavorite.value)
+                putExtra("CURRENT_POSITION", currentPosition.longValue)
+                putExtra("DURATION", duration.longValue)
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
-            Log.d("MiniPlayerViewModel", "Starting SongDetailsActivity with flags: ${activityIntent.flags}")
+            Log.d("MiniPlayerViewModel", "Starting SongDetailsActivity")
             try {
                 context.startActivity(activityIntent)
                 Log.d("MiniPlayerViewModel", "Successfully started SongDetailsActivity")
@@ -222,7 +265,7 @@ class MiniPlayerViewModel @Inject constructor(
             putExtra("POSITION", position)
         }
         context.startService(intent)
-        _currentPosition.longValue = position
+        currentPosition.longValue = position
     }
 
     fun toggleFavorite(context: Context, songId: Long) {
@@ -236,16 +279,11 @@ class MiniPlayerViewModel @Inject constructor(
 
                 if (response.isSuccessful) {
                     _isFavorite.value = !_isFavorite.value
-                    Log.d(
-                        "MiniPlayerViewModel",
-                        "Successfully ${if (_isFavorite.value) "liked" else "unliked"} song $songId"
-                    )
+                    Log.d("MiniPlayerViewModel", "Successfully ${if (_isFavorite.value) "liked" else "unliked"} song $songId")
                     val intent = Intent(context, MusicService::class.java).apply {
-                        action =
-                            if (_isFavorite.value) "ADDED_TO_FAVORITES" else "REMOVED_FROM_FAVORITES"
+                        action = if (_isFavorite.value) "ADDED_TO_FAVORITES" else "REMOVED_FROM_FAVORITES"
                         putExtra("SONG_ID", songId)
                     }
-                    // Publish event to update library
                     EventBus.publish(SongFavouriteUpdateEvent)
                     context.startService(intent)
                 } else {
@@ -263,15 +301,9 @@ class MiniPlayerViewModel @Inject constructor(
                 val response = apiService.getSongApi().checkLikedSongs(songId)
                 if (response.isSuccessful) {
                     _isFavorite.value = response.body() ?: false
-                    Log.d(
-                        "MiniPlayerViewModel",
-                        "Favorite status for song $songId: ${_isFavorite.value}"
-                    )
+                    Log.d("MiniPlayerViewModel", "Favorite status for song $songId: ${_isFavorite.value}")
                 } else {
-                    Log.e(
-                        "MiniPlayerViewModel",
-                        "Failed to check favorite status: ${response.code()}"
-                    )
+                    Log.e("MiniPlayerViewModel", "Failed to check favorite status: ${response.code()}")
                 }
             } catch (e: Exception) {
                 Log.e("MiniPlayerViewModel", "Error checking favorite status", e)

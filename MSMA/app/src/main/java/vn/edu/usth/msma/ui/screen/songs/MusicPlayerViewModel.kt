@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -15,21 +14,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.network.ApiService
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
-import vn.edu.usth.msma.utils.eventbus.Event.SongFavouriteUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.*
 import vn.edu.usth.msma.utils.eventbus.EventBus
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class MusicPlayerViewModel @Inject constructor(
@@ -65,6 +59,15 @@ class MusicPlayerViewModel @Inject constructor(
     val progress: Float
         get() = if (duration.longValue > 0) currentPosition.longValue.toFloat() / duration.longValue else 0f
 
+    fun updateCurrentSong(song: Song) {
+        _currentSong.value = song
+        checkFavoriteStatus(song.id)
+        // Sync shuffle state with MusicService
+        if (_isShuffleEnabled.value) {
+            sendCommandToService(context!!, "SHUFFLE_ON")
+        }
+    }
+
     fun updatePlaybackState(isPlaying: Boolean) {
         _isPlaying.value = isPlaying
     }
@@ -89,40 +92,59 @@ class MusicPlayerViewModel @Inject constructor(
                             "LOADING" -> {
                                 _isPlaying.value = false
                             }
+
                             "LOADED" -> {
                                 _isPlaying.value = true
                                 updateCurrentSongFromIntent(intent)
                             }
+
                             "PAUSED" -> _isPlaying.value = false
                             "RESUMED" -> _isPlaying.value = true
                             "COMPLETED" -> {
                                 _isPlaying.value = false
                                 currentPosition.longValue = 0
+                                if (_isShuffleEnabled.value) {
+                                    playNextSong(context)
+                                }
                             }
+
                             "NEXT", "PREVIOUS" -> {
                                 currentPosition.longValue = 0
                                 _isPlaying.value = true
                                 updateCurrentSongFromIntent(intent)
-                                _isLoopEnabled.value =
-                                    intent.getBooleanExtra("IS_LOOP_ENABLED", false)
-                                _isShuffleEnabled.value =
-                                    intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
                             }
 
-                            "LOOP_ON" -> {
-                                _isLoopEnabled.value = true
+                            "ADDED_TO_FAVORITES" -> {
+                                Log.d("MusicPlayerViewModel", "Updating isFavorite to true")
+                                _isFavorite.value = true
                             }
 
-                            "LOOP_OFF" -> {
-                                _isLoopEnabled.value = false
+                            "REMOVED_FROM_FAVORITES" -> {
+                                Log.d("MusicPlayerViewModel", "Updating isFavorite to false")
+                                _isFavorite.value = false
                             }
 
-                            "SHUFFLE_ON" -> {
-                                _isShuffleEnabled.value = true
-                            }
-
-                            "SHUFFLE_OFF" -> {
-                                _isShuffleEnabled.value = false
+                            "MINIMIZE", "CURRENT_SONG", "EXPAND" -> {
+                                val songId = intent.getLongExtra("SONG_ID", 0L)
+                                val action = intent.getStringExtra("ACTION")
+                                Log.d("MusicPlayerViewModel", "Processing $action for songId: $songId")
+                                if (songId != 0L) {
+                                    val song = songRepository.getSongById(songId)
+                                    if (song == null) {
+                                        Log.e("MusicPlayerViewModel", "Failed to find song with ID $songId")
+                                    } else {
+                                        Log.d("MusicPlayerViewModel", "Updated current song: ${song.title}")
+                                        _currentSong.value = song
+                                        checkFavoriteStatus(songId)
+                                        _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
+                                        _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                        _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                        currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                                        duration.longValue = intent.getLongExtra("DURATION", 0L)
+                                    }
+                                }
                             }
                         }
                     }
@@ -140,6 +162,21 @@ class MusicPlayerViewModel @Inject constructor(
             intentFilter,
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+
+        // Subscribe to EventBus events
+        viewModelScope.launch {
+            EventBus.events.collect { event ->
+                when (event) {
+                    is SongPlayingUpdateEvent -> { _isPlaying.value = true }
+                    is SongPauseUpdateEvent -> { _isPlaying.value = false }
+                    is SongLoopUpdateEvent -> { _isLoopEnabled.value = true }
+                    is SongUnLoopUpdateEvent -> { _isLoopEnabled.value = false }
+                    is SongShuffleUpdateEvent -> { _isShuffleEnabled.value = true }
+                    is SongUnShuffleUpdateEvent -> { _isShuffleEnabled.value = false }
+                    else -> {}
+                }
+            }
+        }
     }
 
     private fun updateCurrentSongFromIntent(intent: Intent) {
@@ -210,12 +247,9 @@ class MusicPlayerViewModel @Inject constructor(
             intent.putExtra("SONG_ID", song.id)
             intent.putExtra("IS_LOOP_ENABLED", _isLoopEnabled.value)
             intent.putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
+            intent.putExtra("IS_FAVORITE", _isFavorite.value)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ContextCompat.startForegroundService(context, intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startService(intent)
         }
         currentSongId = song.id
         _currentSong.value = song
@@ -251,7 +285,6 @@ class MusicPlayerViewModel @Inject constructor(
 
     fun toggleLoop(context: Context) {
         val newLoopState = !_isLoopEnabled.value
-        _isLoopEnabled.value = newLoopState
         sendCommandToService(
             context,
             if (newLoopState) "LOOP_ON" else "LOOP_OFF"
@@ -260,7 +293,6 @@ class MusicPlayerViewModel @Inject constructor(
 
     fun toggleShuffle(context: Context) {
         val newShuffleState = !_isShuffleEnabled.value
-        _isShuffleEnabled.value = newShuffleState
         sendCommandToService(
             context,
             if (newShuffleState) "SHUFFLE_ON" else "SHUFFLE_OFF"
@@ -333,7 +365,6 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
 
-    @SuppressLint("ObsoleteSdkInt")
     private fun sendCommandToService(
         context: Context, action: String, position: Long? = null
     ) {
@@ -342,11 +373,7 @@ class MusicPlayerViewModel @Inject constructor(
             position?.let { putExtra("POSITION", it) }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ContextCompat.startForegroundService(context, intent)
-        } else {
-            context.startService(intent)
-        }
+        context.startService(intent)
     }
 
     override fun onCleared() {

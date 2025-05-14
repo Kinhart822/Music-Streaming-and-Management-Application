@@ -46,9 +46,7 @@ class LibraryViewModel @Inject constructor(
                             Log.d("LibraryViewModel", "Initialize Song Favorite Data")
                             loadFavoriteSongs()
                         }
-                        is Event.MediaNotificationCancelSongEvent -> {
-                            ""
-                        }
+                        else -> {}
                     }
                 }
             } catch (e: Exception) {

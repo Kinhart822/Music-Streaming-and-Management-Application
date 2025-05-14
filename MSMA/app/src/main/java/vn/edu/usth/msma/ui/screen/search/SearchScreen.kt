@@ -247,7 +247,23 @@ fun ContentItemView(
                     .clickable {
                         val intent = Intent(context, SongDetailsActivity::class.java).apply {
                             putExtra("SONG_ID", content.id)
+                            putExtra("FROM_MINI_PLAYER", false)
+                            putExtra("IS_PLAYING", false)
+                            putExtra("IS_LOOP_ENABLED", false)
+                            putExtra("IS_SHUFFLE_ENABLED", false)
                         }
+                        // Send broadcast to update MiniPlayer
+                        val broadcastIntent = Intent("MUSIC_EVENT").apply {
+                            putExtra("ACTION", "CURRENT_SONG")
+                            putExtra("SONG_ID", content.id)
+                            putExtra("SONG_TITLE", content.title)
+                            putExtra("SONG_ARTIST", content.artistNameList?.joinToString(", ") ?: "Unknown Artist")
+                            putExtra("SONG_IMAGE", content.imageUrl)
+                            putExtra("IS_PLAYING", false)
+                            putExtra("IS_LOOP_ENABLED", false)
+                            putExtra("IS_SHUFFLE_ENABLED", false)
+                        }
+                        context.sendBroadcast(broadcastIntent)
                         context.startActivity(intent)
                     },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

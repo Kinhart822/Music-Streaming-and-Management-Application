@@ -67,20 +67,7 @@ class SettingViewModel @Inject constructor(
                     is ProfileUpdatedEvent -> {
                         fetchUserDetails() // Gọi lại khi có sự kiện ProfileUpdatedEvent
                     }
-                    is SessionExpiredEvent -> {
-                        ""
-                    }
-
-                    is Event.SongFavouriteUpdateEvent -> {
-                        ""
-                    }
-
-                    is Event.InitializeDataLibrary -> {
-                        ""
-                    }
-                    is Event.MediaNotificationCancelSongEvent -> {
-                        ""
-                    }
+                    else -> {}
                 }
             }
         }

@@ -116,6 +116,8 @@ fun MiniPlayerScreen(
                             putExtra("IS_LOOP_ENABLED", isLoopEnabled)
                             putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
                             putExtra("IS_FAVORITE", isFavorite)
+                            putExtra("POSITION", currentPosition)
+                            putExtra("DURATION", duration)
                         }
                         context.startService(intent)
                         onMiniPlayerClick()
