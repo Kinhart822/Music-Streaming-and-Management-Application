@@ -21,7 +21,13 @@ import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.network.ApiService
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
-import vn.edu.usth.msma.utils.eventbus.Event.*
+import vn.edu.usth.msma.utils.eventbus.Event.SongFavouriteUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.SongLoopUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.SongPauseUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.SongPlayingUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.SongShuffleUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.SongUnLoopUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.Event.SongUnShuffleUpdateEvent
 import vn.edu.usth.msma.utils.eventbus.EventBus
 import javax.inject.Inject
 
@@ -114,6 +120,7 @@ class MusicPlayerViewModel @Inject constructor(
                                 updateCurrentSongFromIntent(intent)
                                 _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
                                 _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                refreshCurrentSongData(context)
                             }
 
                             "ADDED_TO_FAVORITES" -> {
@@ -126,7 +133,29 @@ class MusicPlayerViewModel @Inject constructor(
                                 _isFavorite.value = false
                             }
 
-                            "MINIMIZE", "CURRENT_SONG", "EXPAND" -> {
+                            "MINIMIZE", "EXPAND" -> {
+                                val songId = intent.getLongExtra("SONG_ID", 0L)
+                                val action = intent.getStringExtra("ACTION")
+                                Log.d("MusicPlayerViewModel", "Processing $action for songId: $songId")
+                                if (songId != 0L) {
+                                    val song = songRepository.getSongById(songId)
+                                    if (song == null) {
+                                        Log.e("MusicPlayerViewModel", "Failed to find song with ID $songId")
+                                    } else {
+                                        Log.d("MusicPlayerViewModel", "Updated current song: ${song.title}")
+                                        _currentSong.value = song
+                                        checkFavoriteStatus(songId)
+                                        _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
+                                        _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                        _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                        currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                                        duration.longValue = intent.getLongExtra("DURATION", 0L)
+                                    }
+                                }
+                                refreshCurrentSongData(context)
+                            }
+
+                            "CURRENT_SONG" -> {
                                 val songId = intent.getLongExtra("SONG_ID", 0L)
                                 val action = intent.getStringExtra("ACTION")
                                 Log.d("MusicPlayerViewModel", "Processing $action for songId: $songId")
@@ -177,6 +206,14 @@ class MusicPlayerViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun refreshCurrentSongData(context: Context) {
+        Log.d("MusicPlayerViewModel", "Refreshing current song data")
+        val intent = Intent(context, MusicService::class.java).apply {
+            action = "GET_CURRENT_SONG"
+        }
+        context.startService(intent)
     }
 
     private fun updateCurrentSongFromIntent(intent: Intent) {

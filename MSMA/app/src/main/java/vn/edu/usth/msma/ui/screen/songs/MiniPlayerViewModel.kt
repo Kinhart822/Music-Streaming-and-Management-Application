@@ -139,7 +139,44 @@ class MiniPlayerViewModel @Inject constructor(
                             _isFavorite.value = false
                         }
 
-                        "MINIMIZE", "CURRENT_SONG", "EXPAND", "NEXT", "PREVIOUS" -> {
+                        "NEXT", "PREVIOUS" -> {
+                            val songId = intent.getLongExtra("SONG_ID", 0L)
+                            Log.d("MiniPlayerViewModel", "Processing $action for songId: $songId")
+                            if (songId != 0L) {
+                                val song = songRepository.getSongById(songId)
+                                if (song == null) {
+                                    Log.e("MiniPlayerViewModel", "Failed to find song with ID $songId")
+                                } else {
+                                    Log.d("MiniPlayerViewModel", "Updated current song: ${song.title}")
+                                    _currentSong.value = song
+                                    _isPlaying.value = true
+                                    _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                    _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                    currentPosition.longValue = 0L
+                                    duration.longValue = intent.getLongExtra("DURATION", 0L)
+                                    checkFavoriteStatus(songId)
+
+                                    // Broadcast the current song update to all screens
+                                    val broadcastIntent = Intent("MUSIC_EVENT").apply {
+                                        putExtra("ACTION", "CURRENT_SONG")
+                                        putExtra("SONG_ID", song.id)
+                                        putExtra("SONG_TITLE", song.title)
+                                        putExtra("SONG_ARTIST", song.artistNameList?.joinToString(", ") ?: "Unknown Artist")
+                                        putExtra("SONG_IMAGE", song.imageUrl)
+                                        putExtra("IS_PLAYING", true)
+                                        putExtra("IS_LOOP_ENABLED", _isLoopEnabled.value)
+                                        putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
+                                        putExtra("POSITION", 0L)
+                                        putExtra("DURATION", duration.longValue)
+                                    }
+                                    context.sendBroadcast(broadcastIntent)
+
+                                    refreshCurrentSongData(context)
+                                }
+                            }
+                        }
+
+                        "MINIMIZE", "EXPAND" -> {
                             val songId = intent.getLongExtra("SONG_ID", 0L)
                             Log.d("MiniPlayerViewModel", "Processing $action for songId: $songId")
                             if (songId != 0L) {
@@ -156,6 +193,28 @@ class MiniPlayerViewModel @Inject constructor(
                                     currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
                                     duration.longValue = intent.getLongExtra("DURATION", 0L)
                                     checkFavoriteStatus(songId)
+                                }
+                            }
+                            refreshCurrentSongData(context)
+                        }
+
+                        "CURRENT_SONG" -> {
+                            val songId = intent.getLongExtra("SONG_ID", 0L)
+                            val action = intent.getStringExtra("ACTION")
+                            Log.d("MusicPlayerViewModel", "Processing $action for songId: $songId")
+                            if (songId != 0L) {
+                                val song = songRepository.getSongById(songId)
+                                if (song == null) {
+                                    Log.e("MusicPlayerViewModel", "Failed to find song with ID $songId")
+                                } else {
+                                    Log.d("MusicPlayerViewModel", "Updated current song: ${song.title}")
+                                    _currentSong.value = song
+                                    checkFavoriteStatus(songId)
+                                    _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
+                                    _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                    _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                    currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                                    duration.longValue = intent.getLongExtra("DURATION", 0L)
                                 }
                             }
                         }
@@ -180,8 +239,20 @@ class MiniPlayerViewModel @Inject constructor(
         positionUpdateReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == "POSITION_UPDATE") {
-                    currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
-                    duration.longValue = intent.getLongExtra("DURATION", 0L)
+                    val newPosition = intent.getLongExtra("POSITION", 0L)
+                    val newDuration = intent.getLongExtra("DURATION", 0L)
+                    
+                    // Update position and duration
+                    currentPosition.longValue = newPosition
+                    duration.longValue = newDuration
+                    
+                    // Broadcast position update to all screens
+                    val broadcastIntent = Intent("MUSIC_EVENT").apply {
+                        putExtra("ACTION", "POSITION_UPDATE")
+                        putExtra("POSITION", newPosition)
+                        putExtra("DURATION", newDuration)
+                    }
+                    context.sendBroadcast(broadcastIntent)
                 }
             }
         }
@@ -207,6 +278,7 @@ class MiniPlayerViewModel @Inject constructor(
     }
 
     fun refreshCurrentSongData(context: Context) {
+        Log.d("MiniPlayerViewModel", "Refreshing current song data")
         val intent = Intent(context, MusicService::class.java).apply {
             action = "GET_CURRENT_SONG"
         }
@@ -217,6 +289,9 @@ class MiniPlayerViewModel @Inject constructor(
         Log.d("MiniPlayerViewModel", "openDetails called")
         _currentSong.value?.let { song ->
             Log.d("MiniPlayerViewModel", "Opening details for song: ${song.id} - ${song.title}")
+
+            // First refresh current song data to ensure we have the latest state
+            refreshCurrentSongData(context)
 
             // Send broadcast to MusicService
             val intent = Intent(context, MusicService::class.java).apply {
@@ -266,6 +341,14 @@ class MiniPlayerViewModel @Inject constructor(
         }
         context.startService(intent)
         currentPosition.longValue = position
+        
+        // Broadcast seek update to all screens
+        val broadcastIntent = Intent("MUSIC_EVENT").apply {
+            putExtra("ACTION", "POSITION_UPDATE")
+            putExtra("POSITION", position)
+            putExtra("DURATION", duration.longValue)
+        }
+        context.sendBroadcast(broadcastIntent)
     }
 
     fun toggleFavorite(context: Context, songId: Long) {

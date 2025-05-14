@@ -206,7 +206,8 @@ fun SongDetailsScreen(
                                             currentDisplayedSong = it
                                             miniPlayerViewModel.updateCurrentSong(it)
                                             musicPlayerViewModel.updateCurrentSong(it)
-                                            duration = parseDuration(it.duration?.toString() ?: "0:00")
+                                            duration =
+                                                parseDuration(it.duration?.toString() ?: "0:00")
                                             currentPosition = 0L
                                             musicPlayerViewModel.updatePlaybackState(true)
                                             miniPlayerViewModel.updatePlaybackState(true)
@@ -216,11 +217,21 @@ fun SongDetailsScreen(
                                                 putExtra("ACTION", "CURRENT_SONG")
                                                 putExtra("SONG_ID", it.id)
                                                 putExtra("SONG_TITLE", it.title)
-                                                putExtra("SONG_ARTIST", it.artistNameList?.joinToString(", ") ?: "Unknown Artist")
+                                                putExtra(
+                                                    "SONG_ARTIST",
+                                                    it.artistNameList?.joinToString(", ")
+                                                        ?: "Unknown Artist"
+                                                )
                                                 putExtra("SONG_IMAGE", it.imageUrl)
                                                 putExtra("IS_PLAYING", true)
-                                                putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
-                                                putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                                                putExtra(
+                                                    "IS_LOOP_ENABLED",
+                                                    musicPlayerViewModel.isLoopEnabled.value
+                                                )
+                                                putExtra(
+                                                    "IS_SHUFFLE_ENABLED",
+                                                    musicPlayerViewModel.isShuffleEnabled.value
+                                                )
                                                 putExtra("POSITION", 0L)
                                                 putExtra("DURATION", duration)
                                             }
@@ -286,24 +297,20 @@ fun SongDetailsScreen(
         }
     }
 
-    if (currentDisplayedSong == null && songId != 0L) {
-        LoadingScreen(message = "Loading song details...")
-    } else {
-        currentDisplayedSong?.let { song ->
-            PlaySong(
-                song = song,
-                onBack = onBack,
-                onSeek = { newPosition ->
-                    currentPosition = newPosition
-                    val intent = Intent(context, MusicService::class.java).apply {
-                        action = "SEEK"
-                        putExtra("POSITION", newPosition)
-                    }
-                    context.startService(intent)
-                },
-                musicPlayerViewModel = musicPlayerViewModel
-            )
-        }
+    currentDisplayedSong?.let { song ->
+        PlaySong(
+            song = song,
+            onBack = onBack,
+            onSeek = { newPosition ->
+                currentPosition = newPosition
+                val intent = Intent(context, MusicService::class.java).apply {
+                    action = "SEEK"
+                    putExtra("POSITION", newPosition)
+                }
+                context.startService(intent)
+            },
+            musicPlayerViewModel = musicPlayerViewModel
+        )
     }
 }
 

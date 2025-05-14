@@ -49,9 +49,11 @@ sealed class Screen(val route: String) {
         fun createRoute(email: String, sessionId: String, otpDueDate: String) =
             "otp/$email/$sessionId/$otpDueDate"
     }
+
     object ResetPassword : Screen("reset_password/{sessionId}") {
         fun createRoute(sessionId: String) = "reset_password/$sessionId"
     }
+
     object Home : Screen("home")
     object Search : Screen("search")
     object Library : Screen("library")
@@ -131,43 +133,41 @@ fun AppNavigation(
             bottomBar = {
                 Column {
                     if (isMiniPlayerVisible) {
-                        Box {
-                            currentSong?.let {
-                                MiniPlayerScreen(
-                                    song = it,
-                                    isPlaying = isPlaying,
-                                    onPlayPauseClick = {
-                                        if (isPlaying) {
-                                            // Pause music
-                                            val intent =
-                                                Intent(context, MusicService::class.java).apply {
-                                                    action = "PAUSE"
-                                                }
-                                            context.startService(intent)
-                                            miniPlayerViewModel.updatePlaybackState(false)
-                                        } else {
-                                            // Resume music
-                                            val intent =
-                                                Intent(context, MusicService::class.java).apply {
-                                                    action = "RESUME"
-                                                    putExtra("SEEK_POSITION", 0L)
-                                                }
-                                            context.startService(intent)
-                                            miniPlayerViewModel.updatePlaybackState(true)
-                                        }
-                                    },
-                                    musicPlayerViewModel = musicPlayerViewModel,
-                                    onMiniPlayerClick = { miniPlayerViewModel.openDetails(context) },
-                                    onCloseClick = {
+                        currentSong?.let {
+                            MiniPlayerScreen(
+                                song = it,
+                                isPlaying = isPlaying,
+                                onPlayPauseClick = {
+                                    if (isPlaying) {
+                                        // Pause music
                                         val intent =
                                             Intent(context, MusicService::class.java).apply {
-                                                action = "CLOSE"
+                                                action = "PAUSE"
                                             }
                                         context.startService(intent)
-                                    },
-                                    miniPlayerViewModel = miniPlayerViewModel
-                                )
-                            }
+                                        miniPlayerViewModel.updatePlaybackState(false)
+                                    } else {
+                                        // Resume music
+                                        val intent =
+                                            Intent(context, MusicService::class.java).apply {
+                                                action = "RESUME"
+                                                putExtra("SEEK_POSITION", 0L)
+                                            }
+                                        context.startService(intent)
+                                        miniPlayerViewModel.updatePlaybackState(true)
+                                    }
+                                },
+                                musicPlayerViewModel = musicPlayerViewModel,
+                                onMiniPlayerClick = { miniPlayerViewModel.openDetails(context) },
+                                onCloseClick = {
+                                    val intent =
+                                        Intent(context, MusicService::class.java).apply {
+                                            action = "CLOSE"
+                                        }
+                                    context.startService(intent)
+                                },
+                                miniPlayerViewModel = miniPlayerViewModel
+                            )
                         }
                     }
                     BottomNavigationBar(navController = navController)
