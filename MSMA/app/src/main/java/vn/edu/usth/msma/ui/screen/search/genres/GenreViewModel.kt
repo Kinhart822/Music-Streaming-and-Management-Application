@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.data.dto.response.management.SongResponse
 import vn.edu.usth.msma.network.ApiService
@@ -60,14 +61,14 @@ class GenreViewModel @Inject constructor(
                 if (response.isSuccessful && response.body() != null) {
                     val songs = response.body()!!
                     songRepository.updateSongResponseList(songs)
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             songs = songs,
                             isLoadingSongs = false
                         )
                     }
                 } else {
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             error = "Failed to load songs",
                             isLoadingSongs = false
@@ -75,7 +76,7 @@ class GenreViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _state.update { 
+                _state.update {
                     it.copy(
                         error = e.message ?: "An error occurred",
                         isLoadingSongs = false

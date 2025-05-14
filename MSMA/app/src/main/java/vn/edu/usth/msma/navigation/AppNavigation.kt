@@ -16,8 +16,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import vn.edu.usth.msma.data.PreferencesManager
+import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.screen.auth.forgot.ForgotPasswordScreen
@@ -33,12 +35,18 @@ import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModel
 import vn.edu.usth.msma.ui.screen.home.HomeNavigation
 import vn.edu.usth.msma.ui.screen.library.LibraryScreen
 import vn.edu.usth.msma.ui.screen.search.SearchScreen
+import vn.edu.usth.msma.ui.screen.search.SearchViewModel
+import vn.edu.usth.msma.ui.screen.search.genres.GenreScreen
+import vn.edu.usth.msma.ui.screen.search.genres.GenreViewModel
 import vn.edu.usth.msma.ui.screen.settings.SettingScreen
 import vn.edu.usth.msma.ui.screen.settings.SettingViewModel
 import vn.edu.usth.msma.ui.screen.songs.MiniPlayerScreen
 import vn.edu.usth.msma.ui.screen.songs.MiniPlayerViewModel
 import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
 import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
 sealed class Screen(val route: String) {
@@ -58,6 +66,12 @@ sealed class Screen(val route: String) {
     object Search : Screen("search")
     object Library : Screen("library")
     object Settings : Screen("settings")
+    object Genre : Screen("genre/{genreJson}") {
+        fun createRoute(genreJson: String): String {
+            val encodedJson = URLEncoder.encode(genreJson, StandardCharsets.UTF_8.toString())
+            return "genre/$encodedJson"
+        }
+    }
 }
 
 @HiltViewModel
@@ -191,7 +205,8 @@ fun AppNavigation(
                         HomeNavigation()
                     }
                     composable(Screen.Search.route) {
-                        SearchScreen()
+                        val searchViewModel: SearchViewModel = hiltViewModel()
+                        SearchScreen(searchViewModel, navController)
                     }
                     composable(Screen.Library.route) {
                         LibraryScreen()
@@ -202,6 +217,51 @@ fun AppNavigation(
                             context,
                             navController,
                             settingViewModel
+                        )
+                    }
+                    composable(
+                        Screen.Genre.route,
+                        arguments = listOf(
+                            navArgument("genreJson") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val genreJson = backStackEntry.arguments?.getString("genreJson") ?: ""
+                        val genre = try {
+                            val decodedJson =
+                                URLDecoder.decode(genreJson, StandardCharsets.UTF_8.toString())
+                            Gson().fromJson(decodedJson, GenreResponse::class.java)
+                                ?: GenreResponse(
+                                    id = 0,
+                                    name = "Error",
+                                    briefDescription = "",
+                                    fullDescription = "",
+                                    imageUrl = "",
+                                    createdDate = "",
+                                    lastModifiedDate = ""
+                                )
+                        } catch (e: Exception) {
+                            Log.e("GenreScreen", "Failed to decode genreJson: $e")
+                            GenreResponse(
+                                id = 0,
+                                name = "Error",
+                                briefDescription = "",
+                                fullDescription = "",
+                                imageUrl = "",
+                                createdDate = "",
+                                lastModifiedDate = ""
+                            )
+                        }
+
+                        val viewModel: GenreViewModel = hiltViewModel()
+                        LaunchedEffect(genre) {
+                            viewModel.init(genre)
+                        }
+
+                        GenreScreen(
+                            genre = genre,
+                            onBack = { navController.popBackStack() },
+                            viewModel = viewModel,
+                            navController = navController
                         )
                     }
                 }

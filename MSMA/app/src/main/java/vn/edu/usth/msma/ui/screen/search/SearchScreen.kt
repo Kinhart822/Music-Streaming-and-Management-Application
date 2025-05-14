@@ -27,18 +27,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.gson.Gson
 import vn.edu.usth.msma.data.dto.response.management.ContentItem
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
+import vn.edu.usth.msma.navigation.Screen
 import vn.edu.usth.msma.ui.components.LoadingScreen
-import vn.edu.usth.msma.ui.screen.search.genres.GenreActivity
 import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    viewModel: SearchViewModel = hiltViewModel()
+    viewModel: SearchViewModel = hiltViewModel(),
+    navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -125,10 +127,8 @@ fun SearchScreen(
                         GenreCard(
                             genre = genre,
                             onClick = {
-                                val intent = Intent(context, GenreActivity::class.java).apply {
-                                    putExtra("genre", Gson().toJson(genre))
-                                }
-                                context.startActivity(intent)
+                                val genreJson = Gson().toJson(genre)
+                                navController.navigate(Screen.Genre.createRoute(genreJson))
                             }
                         )
                     }
@@ -194,7 +194,6 @@ fun SearchScreen(
             }
         }
     }
-
 }
 
 @Composable

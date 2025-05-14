@@ -53,11 +53,12 @@ fun BottomNavigationBar(
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
     navController.addOnDestinationChangedListener { _, destination, _ ->
-        selectedItemIndex = when (destination.route) {
-            Screen.Home.route -> 0
-            Screen.Search.route -> 1
-            Screen.Library.route -> 2
-            Screen.Settings.route -> 3
+        selectedItemIndex = when {
+            destination.route?.startsWith(Screen.Genre.route) == true -> 1 // Keep Search selected for GenreScreen
+            destination.route == Screen.Home.route -> 0
+            destination.route == Screen.Search.route -> 1
+            destination.route == Screen.Library.route -> 2
+            destination.route == Screen.Settings.route -> 3
             else -> 0
         }
     }

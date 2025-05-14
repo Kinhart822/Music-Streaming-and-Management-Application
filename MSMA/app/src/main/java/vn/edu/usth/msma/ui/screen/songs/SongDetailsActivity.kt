@@ -8,17 +8,12 @@ import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.theme.MSMATheme
@@ -38,6 +34,10 @@ import javax.inject.Inject
 class SongDetailsActivity : ComponentActivity() {
     @Inject
     lateinit var songRepository: SongRepository
+
+    @Inject
+    lateinit var preferencesManager: PreferencesManager
+
     private val musicPlayerViewModel: MusicPlayerViewModel by viewModels()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var musicEventReceiver: BroadcastReceiver? = null
@@ -51,6 +51,8 @@ class SongDetailsActivity : ComponentActivity() {
         val isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
         val isLoopEnabled = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
         val isShuffleEnabled = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+        val currentPosition = intent.getLongExtra("CURRENT_POSITION", 0L)
+        val duration = intent.getLongExtra("DURATION", 0L)
 
         // Handle back button press
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -59,7 +61,7 @@ class SongDetailsActivity : ComponentActivity() {
                 if (song != null) {
                     val intent = Intent(this@SongDetailsActivity, MusicService::class.java).apply {
                         action = "MINIMIZE"
-                        putExtra("IS_PLAYING", isPlaying)
+                        putExtra("IS_PLAYING", musicPlayerViewModel.isPlaying.value)
                         putExtra("SONG_ID", song.id)
                         putExtra("SONG_TITLE", song.title)
                         putExtra(
@@ -67,15 +69,40 @@ class SongDetailsActivity : ComponentActivity() {
                             song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
                         )
                         putExtra("SONG_IMAGE", song.imageUrl)
-                        putExtra("IS_LOOP_ENABLED", isLoopEnabled)
-                        putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
-                        putExtra("IS_FAVORITE", intent.getBooleanExtra("IS_FAVORITE", false))
-                        putExtra("POSITION", intent.getLongExtra("CURRENT_POSITION", 0L))
-                        putExtra("DURATION", intent.getLongExtra("DURATION", 0L))
+                        putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
+                        putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                        putExtra("IS_FAVORITE", musicPlayerViewModel.isFavorite.value)
+                        putExtra("POSITION", musicPlayerViewModel.currentPosition.longValue)
+                        putExtra("DURATION", musicPlayerViewModel.duration.longValue)
                     }
                     startService(intent)
+
+                    // Set mini player visible in preferences
+                    CoroutineScope(Dispatchers.IO).launch {
+                        preferencesManager.setMiniPlayerVisible(true)
+                    }
+
+                    // Broadcast to show mini player
+                    val broadcastIntent = Intent("MUSIC_EVENT").apply {
+                        putExtra("ACTION", "MINIMIZE")
+                        putExtra("SONG_ID", song.id)
+                        putExtra("SONG_TITLE", song.title)
+                        putExtra(
+                            "SONG_ARTIST",
+                            song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
+                        )
+                        putExtra("SONG_IMAGE", song.imageUrl)
+                        putExtra("IS_PLAYING", musicPlayerViewModel.isPlaying.value)
+                        putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
+                        putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                        putExtra("IS_FAVORITE", musicPlayerViewModel.isFavorite.value)
+                        putExtra("POSITION", musicPlayerViewModel.currentPosition.longValue)
+                        putExtra("DURATION", musicPlayerViewModel.duration.longValue)
+                    }
+                    sendBroadcast(broadcastIntent)
                 }
                 finish()
+                overridePendingTransition(0, 0)
             }
         })
 
@@ -115,7 +142,9 @@ class SongDetailsActivity : ComponentActivity() {
                         isLoopEnabled = isLoopEnabled,
                         isShuffleEnabled = isShuffleEnabled,
                         songRepository = songRepository,
-                        context = context
+                        context = context,
+                        initialPosition = currentPosition,
+                        initialDuration = duration
                     )
                 }
             }

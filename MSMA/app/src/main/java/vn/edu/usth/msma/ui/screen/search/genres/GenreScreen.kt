@@ -42,15 +42,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.data.dto.response.management.SongResponse
 import vn.edu.usth.msma.navigation.NavigationViewModel
-import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.components.LoadingScreen
-import vn.edu.usth.msma.ui.screen.songs.MiniPlayerScreen
 import vn.edu.usth.msma.ui.screen.songs.MiniPlayerViewModel
-import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
 import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,19 +56,16 @@ import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
 fun GenreScreen(
     genre: GenreResponse,
     onBack: () -> Unit,
-    viewModel: GenreViewModel = hiltViewModel()
+    viewModel: GenreViewModel = hiltViewModel(),
+    navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
-    val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
     val navigationViewModel: NavigationViewModel = hiltViewModel()
     val isMiniPlayerVisible by navigationViewModel.preferencesManager.isMiniPlayerVisibleFlow.collectAsState(
         initial = false
     )
-
-    val currentSong by miniPlayerViewModel.currentSong.collectAsState()
-    val isPlaying by miniPlayerViewModel.isPlaying.collectAsState()
 
     // Show error toast
     LaunchedEffect(state.error) {
@@ -91,175 +86,114 @@ fun GenreScreen(
         miniPlayerViewModel.refreshCurrentSongData(context)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(state.genre.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(bottom = if (isMiniPlayerVisible) 60.dp else 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Genre image
+        item {
+            AsyncImage(
+                model = state.genre.imageUrl,
+                contentDescription = state.genre.name,
+                modifier = Modifier
+                    .size(200.dp)
+                    .aspectRatio(1f)
+                    .padding(top = 16.dp),
+                contentScale = ContentScale.Crop
             )
-        },
-        bottomBar = {
-            if (isMiniPlayerVisible) {
-                currentSong?.let {
-                    MiniPlayerScreen(
-                        song = it,
-                        isPlaying = isPlaying,
-                        onPlayPauseClick = {
-                            if (isPlaying) {
-                                // Pause music
-                                val intent =
-                                    Intent(context, MusicService::class.java).apply {
-                                        action = "PAUSE"
-                                    }
-                                context.startService(intent)
-                                miniPlayerViewModel.updatePlaybackState(false)
-                            } else {
-                                // Resume music
-                                val intent =
-                                    Intent(context, MusicService::class.java).apply {
-                                        action = "RESUME"
-                                        putExtra("SEEK_POSITION", 0L)
-                                    }
-                                context.startService(intent)
-                                miniPlayerViewModel.updatePlaybackState(true)
-                            }
-                        },
-                        musicPlayerViewModel = musicPlayerViewModel,
-                        onMiniPlayerClick = { miniPlayerViewModel.openDetails(context) },
-                        onCloseClick = {
-                            val intent =
-                                Intent(context, MusicService::class.java).apply {
-                                    action = "CLOSE"
-                                }
-                            context.startService(intent)
-                        },
-                        miniPlayerViewModel = miniPlayerViewModel
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(bottom = if (isMiniPlayerVisible) 60.dp else 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Genre image
-            item {
-                AsyncImage(
-                    model = state.genre.imageUrl,
-                    contentDescription = state.genre.name,
-                    modifier = Modifier
-                        .size(200.dp)
-                        .aspectRatio(1f)
-                        .padding(top = 16.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
-            // Genre name
-            item {
-                Text(
-                    text = state.genre.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+        // Genre name
+        item {
+            Text(
+                text = state.genre.name,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            // Brief description
+        // Brief description
+        item {
+            Text(
+                text = state.genre.briefDescription,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
+        // Full description (toggleable)
+        if (state.isFullDescriptionVisible) {
             item {
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = state.genre.briefDescription,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = state.genre.fullDescription,
+                    style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
             }
+        }
 
-            // Full description (toggleable)
-            if (state.isFullDescriptionVisible) {
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = state.genre.fullDescription,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-
-            // Show More / Show Less button
-            item {
-                TextButton(
-                    onClick = { viewModel.toggleFullDescription() }
-                ) {
-                    Text(
-                        text = if (state.isFullDescriptionVisible) "Show Less" else "Show More",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            // Songs header
-            item {
+        // Show More / Show Less button
+        item {
+            TextButton(
+                onClick = { viewModel.toggleFullDescription() }
+            ) {
                 Text(
-                    text = "Songs in ${state.genre.name}",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                    text = if (state.isFullDescriptionVisible) "Show Less" else "Show More",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
+        }
 
-            // Loading indicator for songs
-            if (state.isLoadingSongs) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LoadingScreen(message = "Loading songs...")
-                    }
+        // Songs header
+        item {
+            Text(
+                text = "Songs in ${state.genre.name}",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+            )
+        }
+
+        // Loading indicator for songs
+        if (state.isLoadingSongs) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingScreen(message = "Loading songs...")
                 }
-            } else if (state.songs.isNotEmpty()) {
-                // Songs list
-                items(state.songs) { song ->
-                    SongItem(
-                        song = song,
-                        onSongClick = {
-                            val intent = Intent(context, SongDetailsActivity::class.java).apply {
-                                putExtra("SONG_ID", song.id)
-                            }
-                            context.startActivity(intent)
+            }
+        } else if (state.songs.isNotEmpty()) {
+            // Songs list
+            items(state.songs) { song ->
+                SongItem(
+                    song = song,
+                    onSongClick = {
+                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
+                            putExtra("SONG_ID", song.id)
                         }
-                    )
-                }
-            } else {
-                item {
-                    Text(
-                        text = "No songs available",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+                        context.startActivity(intent)
+                    }
+                )
+            }
+        } else {
+            item {
+                Text(
+                    text = "No songs available",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }

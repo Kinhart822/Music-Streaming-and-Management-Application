@@ -62,11 +62,6 @@
             android:label="@string/title_activity_view_history_listen"
             android:theme="@style/Theme.MSMA" />
         <activity
-            android:name=".ui.screen.search.genres.GenreActivity"
-            android:exported="false"
-            android:label="@string/title_activity_genre"
-            android:theme="@style/Theme.MSMA" />
-        <activity
             android:name=".ui.screen.songs.SongDetailsActivity"
             android:exported="false"
             android:label="@string/title_activity_song_details"

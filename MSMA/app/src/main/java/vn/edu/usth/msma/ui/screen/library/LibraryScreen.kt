@@ -78,10 +78,6 @@ fun LibraryScreen(
                         try {
                             val intent = Intent(context, SongDetailsActivity::class.java).apply {
                                 putExtra("SONG_ID", song.id)
-                                putExtra("FROM_MINI_PLAYER", false)
-                                putExtra("IS_PLAYING", false)
-                                putExtra("IS_LOOP_ENABLED", false)
-                                putExtra("IS_SHUFFLE_ENABLED", false)
                             }
                             // Send broadcast to update MiniPlayer
                             val broadcastIntent = Intent("MUSIC_EVENT").apply {
@@ -90,9 +86,6 @@ fun LibraryScreen(
                                 putExtra("SONG_TITLE", song.title)
                                 putExtra("SONG_ARTIST", song.artistNameList?.joinToString(", ") ?: "Unknown Artist")
                                 putExtra("SONG_IMAGE", song.imageUrl)
-                                putExtra("IS_PLAYING", false)
-                                putExtra("IS_LOOP_ENABLED", false)
-                                putExtra("IS_SHUFFLE_ENABLED", false)
                             }
                             context.sendBroadcast(broadcastIntent)
                             context.startActivity(intent)

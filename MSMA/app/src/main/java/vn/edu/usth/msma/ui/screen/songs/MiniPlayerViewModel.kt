@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Handler
 import android.util.Log
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.core.content.ContextCompat
@@ -58,8 +59,12 @@ class MiniPlayerViewModel @Inject constructor(
     }
 
     fun registerReceivers(context: Context) {
-        registerMusicEventReceiver(context)
-        registerPositionUpdateReceiver(context)
+        if (musicEventReceiver == null) {
+            registerMusicEventReceiver(context)
+        }
+        if (positionUpdateReceiver == null) {
+            registerPositionUpdateReceiver(context)
+        }
 
         // Subscribe to EventBus events
         viewModelScope.launch {
@@ -155,23 +160,6 @@ class MiniPlayerViewModel @Inject constructor(
                                     currentPosition.longValue = 0L
                                     duration.longValue = intent.getLongExtra("DURATION", 0L)
                                     checkFavoriteStatus(songId)
-
-                                    // Broadcast the current song update to all screens
-                                    val broadcastIntent = Intent("MUSIC_EVENT").apply {
-                                        putExtra("ACTION", "CURRENT_SONG")
-                                        putExtra("SONG_ID", song.id)
-                                        putExtra("SONG_TITLE", song.title)
-                                        putExtra("SONG_ARTIST", song.artistNameList?.joinToString(", ") ?: "Unknown Artist")
-                                        putExtra("SONG_IMAGE", song.imageUrl)
-                                        putExtra("IS_PLAYING", true)
-                                        putExtra("IS_LOOP_ENABLED", _isLoopEnabled.value)
-                                        putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
-                                        putExtra("POSITION", 0L)
-                                        putExtra("DURATION", duration.longValue)
-                                    }
-                                    context.sendBroadcast(broadcastIntent)
-
-                                    refreshCurrentSongData(context)
                                 }
                             }
                         }
@@ -195,19 +183,16 @@ class MiniPlayerViewModel @Inject constructor(
                                     checkFavoriteStatus(songId)
                                 }
                             }
-                            refreshCurrentSongData(context)
                         }
 
                         "CURRENT_SONG" -> {
                             val songId = intent.getLongExtra("SONG_ID", 0L)
-                            val action = intent.getStringExtra("ACTION")
-                            Log.d("MusicPlayerViewModel", "Processing $action for songId: $songId")
                             if (songId != 0L) {
                                 val song = songRepository.getSongById(songId)
                                 if (song == null) {
-                                    Log.e("MusicPlayerViewModel", "Failed to find song with ID $songId")
+                                    Log.e("MiniPlayerViewModel", "Failed to find song with ID $songId")
                                 } else {
-                                    Log.d("MusicPlayerViewModel", "Updated current song: ${song.title}")
+                                    Log.d("MiniPlayerViewModel", "Updated current song: ${song.title}")
                                     _currentSong.value = song
                                     checkFavoriteStatus(songId)
                                     _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
@@ -267,13 +252,17 @@ class MiniPlayerViewModel @Inject constructor(
     }
 
     fun unregisterMusicEventReceiver(context: Context) {
-        musicEventReceiver?.let {
-            context.unregisterReceiver(it)
-            musicEventReceiver = null
-        }
-        positionUpdateReceiver?.let {
-            context.unregisterReceiver(it)
-            positionUpdateReceiver = null
+        try {
+            musicEventReceiver?.let {
+                context.unregisterReceiver(it)
+                musicEventReceiver = null
+            }
+            positionUpdateReceiver?.let {
+                context.unregisterReceiver(it)
+                positionUpdateReceiver = null
+            }
+        } catch (e: Exception) {
+            Log.e("MiniPlayerViewModel", "Error unregistering receivers", e)
         }
     }
 
@@ -311,24 +300,27 @@ class MiniPlayerViewModel @Inject constructor(
             Log.d("MiniPlayerViewModel", "Sending EXPAND broadcast to MusicService")
             context.startService(intent)
 
-            val activityIntent = Intent(context, SongDetailsActivity::class.java).apply {
-                putExtra("SONG_ID", song.id)
-                putExtra("FROM_MINI_PLAYER", true)
-                putExtra("IS_PLAYING", _isPlaying.value)
-                putExtra("IS_LOOP_ENABLED", _isLoopEnabled.value)
-                putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
-                putExtra("IS_FAVORITE", _isFavorite.value)
-                putExtra("CURRENT_POSITION", currentPosition.longValue)
-                putExtra("DURATION", duration.longValue)
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-            Log.d("MiniPlayerViewModel", "Starting SongDetailsActivity")
-            try {
-                context.startActivity(activityIntent)
-                Log.d("MiniPlayerViewModel", "Successfully started SongDetailsActivity")
-            } catch (e: Exception) {
-                Log.e("MiniPlayerViewModel", "Error starting SongDetailsActivity", e)
-            }
+            // Add a small delay to ensure the service has processed the EXPAND action
+            Handler(context.mainLooper).postDelayed({
+                val activityIntent = Intent(context, SongDetailsActivity::class.java).apply {
+                    putExtra("SONG_ID", song.id)
+                    putExtra("FROM_MINI_PLAYER", true)
+                    putExtra("IS_PLAYING", _isPlaying.value)
+                    putExtra("IS_LOOP_ENABLED", _isLoopEnabled.value)
+                    putExtra("IS_SHUFFLE_ENABLED", _isShuffleEnabled.value)
+                    putExtra("IS_FAVORITE", _isFavorite.value)
+                    putExtra("CURRENT_POSITION", currentPosition.longValue)
+                    putExtra("DURATION", duration.longValue)
+                    addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                Log.d("MiniPlayerViewModel", "Starting SongDetailsActivity")
+                try {
+                    context.startActivity(activityIntent)
+                    Log.d("MiniPlayerViewModel", "Successfully started SongDetailsActivity")
+                } catch (e: Exception) {
+                    Log.e("MiniPlayerViewModel", "Error starting SongDetailsActivity", e)
+                }
+            }, 100) // 100ms delay
         } ?: run {
             Log.e("MiniPlayerViewModel", "Cannot open details: currentSong is null")
         }

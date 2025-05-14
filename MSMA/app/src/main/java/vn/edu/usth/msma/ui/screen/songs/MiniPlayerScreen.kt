@@ -103,23 +103,7 @@ fun MiniPlayerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        val intent = Intent(context, MusicService::class.java).apply {
-                            action = "EXPAND"
-                            putExtra("IS_PLAYING", isPlaying)
-                            putExtra("SONG_ID", song.id)
-                            putExtra("SONG_TITLE", song.title)
-                            putExtra(
-                                "SONG_ARTIST",
-                                song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
-                            )
-                            putExtra("SONG_IMAGE", song.imageUrl)
-                            putExtra("IS_LOOP_ENABLED", isLoopEnabled)
-                            putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
-                            putExtra("IS_FAVORITE", isFavorite)
-                            putExtra("POSITION", currentPosition)
-                            putExtra("DURATION", duration)
-                        }
-                        context.startService(intent)
+                        miniPlayerViewModel.openDetails(context)
                         onMiniPlayerClick()
                     }
                     .padding(8.dp),

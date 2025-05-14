@@ -117,7 +117,6 @@ class MusicService : Service() {
                 val songPath = intent.getStringExtra("SONG_PATH")
                 songPath?.let { playSong(it) }
             }
-
             "PAUSE", ACTION_PAUSE -> pauseSong()
             "RESUME", ACTION_PLAY -> resumeSong()
             "SEEK", ACTION_SEEK -> {
@@ -126,7 +125,6 @@ class MusicService : Service() {
                 currentPosition = position
                 updateNotification()
             }
-
             "NEXT", ACTION_NEXT -> playNextSong()
             "PREVIOUS", ACTION_PREVIOUS -> playPreviousSong()
             "CLOSE", ACTION_CLOSE -> closeService()
@@ -138,7 +136,6 @@ class MusicService : Service() {
                     EventBus.publish(SongLoopUpdateEvent)
                 }
             }
-
             "LOOP_OFF" -> {
                 isLoopEnabled = false
                 exoPlayer?.repeatMode = Player.REPEAT_MODE_OFF
@@ -147,7 +144,6 @@ class MusicService : Service() {
                     EventBus.publish(SongUnLoopUpdateEvent)
                 }
             }
-
             "SHUFFLE_ON" -> {
                 isShuffleEnabled = true
                 broadcastEvent("SHUFFLE_ON")
@@ -155,7 +151,6 @@ class MusicService : Service() {
                     EventBus.publish(SongShuffleUpdateEvent)
                 }
             }
-
             "SHUFFLE_OFF" -> {
                 isShuffleEnabled = false
                 broadcastEvent("SHUFFLE_OFF")
@@ -163,17 +158,36 @@ class MusicService : Service() {
                     EventBus.publish(SongUnShuffleUpdateEvent)
                 }
             }
-
             "EXPAND", ACTION_EXPAND -> {
-                isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
-                isLoopEnabled = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
-                isShuffleEnabled = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
-                currentSongId = intent.getLongExtra("SONG_ID", 0L)
-                currentSongTitle = intent.getStringExtra("SONG_TITLE")
-                currentSongArtist = intent.getStringExtra("SONG_ARTIST")
-                currentSongImage = intent.getStringExtra("SONG_IMAGE")
+                // Sync state without resetting playback
+                isPlaying = intent.getBooleanExtra("IS_PLAYING", isPlaying)
+                isLoopEnabled = intent.getBooleanExtra("IS_LOOP_ENABLED", isLoopEnabled)
+                isShuffleEnabled = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
+                currentSongId = intent.getLongExtra("SONG_ID", currentSongId ?: 0L)
+                currentSongTitle = intent.getStringExtra("SONG_TITLE") ?: currentSongTitle
+                currentSongArtist = intent.getStringExtra("SONG_ARTIST") ?: currentSongArtist
+                currentSongImage = intent.getStringExtra("SONG_IMAGE") ?: currentSongImage
+                currentPosition = intent.getLongExtra("POSITION", currentPosition)
+                duration = intent.getLongExtra("DURATION", duration)
+
+                // Sync player state
+                exoPlayer?.let { player ->
+                    if (isPlaying && !player.isPlaying) {
+                        player.playWhenReady = true
+                    } else if (!isPlaying && player.isPlaying) {
+                        player.playWhenReady = false
+                    }
+                    player.repeatMode = if (isLoopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+                }
 
                 CoroutineScope(Dispatchers.IO).launch {
+                    val isFavorite = try {
+                        val likedSongs = apiService.getSongApi().getLikedSongs()
+                        likedSongs.isSuccessful && likedSongs.body()?.any { it.id == currentSongId } == true
+                    } catch (e: Exception) {
+                        false
+                    }
+
                     val broadcastIntent = Intent("MUSIC_EVENT").apply {
                         putExtra("ACTION", "EXPAND")
                         putExtra("SONG_ID", currentSongId)
@@ -181,27 +195,48 @@ class MusicService : Service() {
                         putExtra("SONG_ARTIST", currentSongArtist)
                         putExtra("SONG_IMAGE", currentSongImage)
                         putExtra("IS_PLAYING", isPlaying)
-                        putExtra("IS_FAVORITE", intent.getBooleanExtra("IS_FAVORITE", false))
+                        putExtra("IS_FAVORITE", isFavorite)
                         putExtra("IS_LOOP_ENABLED", isLoopEnabled)
                         putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
                         putExtra("POSITION", currentPosition)
                         putExtra("DURATION", duration)
                     }
                     sendBroadcast(broadcastIntent)
+                    updateNotification()
                 }
             }
-
             "MINIMIZE", ACTION_MINIMIZE -> {
-                isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
-                isLoopEnabled = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
-                isShuffleEnabled = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
-                currentSongId = intent.getLongExtra("SONG_ID", 0L)
-                currentSongTitle = intent.getStringExtra("SONG_TITLE")
-                currentSongArtist = intent.getStringExtra("SONG_ARTIST")
-                currentSongImage = intent.getStringExtra("SONG_IMAGE")
+                // Sync state without resetting playback
+                isPlaying = intent.getBooleanExtra("IS_PLAYING", isPlaying)
+                isLoopEnabled = intent.getBooleanExtra("IS_LOOP_ENABLED", isLoopEnabled)
+                isShuffleEnabled = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
+                currentSongId = intent.getLongExtra("SONG_ID", currentSongId ?: 0L)
+                currentSongTitle = intent.getStringExtra("SONG_TITLE") ?: currentSongTitle
+                currentSongArtist = intent.getStringExtra("SONG_ARTIST") ?: currentSongArtist
+                currentSongImage = intent.getStringExtra("SONG_IMAGE") ?: currentSongImage
+                currentPosition = intent.getLongExtra("POSITION", currentPosition)
+                duration = intent.getLongExtra("DURATION", duration)
+
+                // Sync player state
+                exoPlayer?.let { player ->
+                    if (isPlaying && !player.isPlaying) {
+                        player.playWhenReady = true
+                    } else if (!isPlaying && player.isPlaying) {
+                        player.playWhenReady = false
+                    }
+                    player.repeatMode = if (isLoopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+                }
 
                 CoroutineScope(Dispatchers.IO).launch {
                     preferencesManager.setMiniPlayerVisible(true)
+                    
+                    val isFavorite = try {
+                        val likedSongs = apiService.getSongApi().getLikedSongs()
+                        likedSongs.isSuccessful && likedSongs.body()?.any { it.id == currentSongId } == true
+                    } catch (e: Exception) {
+                        false
+                    }
+
                     val broadcastIntent = Intent("MUSIC_EVENT").apply {
                         putExtra("ACTION", "MINIMIZE")
                         putExtra("SONG_ID", currentSongId)
@@ -209,16 +244,16 @@ class MusicService : Service() {
                         putExtra("SONG_ARTIST", currentSongArtist)
                         putExtra("SONG_IMAGE", currentSongImage)
                         putExtra("IS_PLAYING", isPlaying)
-                        putExtra("IS_FAVORITE", intent.getBooleanExtra("IS_FAVORITE", false))
+                        putExtra("IS_FAVORITE", isFavorite)
                         putExtra("IS_LOOP_ENABLED", isLoopEnabled)
                         putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
                         putExtra("POSITION", currentPosition)
                         putExtra("DURATION", duration)
                     }
                     sendBroadcast(broadcastIntent)
+                    updateNotification()
                 }
             }
-
             "DOWNLOAD_SONG" -> {
                 val songId = intent.getLongExtra("SONG_ID", 0L)
                 CoroutineScope(Dispatchers.IO).launch {
@@ -239,7 +274,6 @@ class MusicService : Service() {
                     }
                 }
             }
-
             "ADD_TO_FAVORITES" -> {
                 val songId = intent.getLongExtra("SONG_ID", 0L)
                 if (songId != 0L) {
@@ -258,7 +292,6 @@ class MusicService : Service() {
                     }
                 }
             }
-
             "REMOVE_FROM_FAVORITES" -> {
                 val songId = intent.getLongExtra("SONG_ID", 0L)
                 if (songId != 0L) {
@@ -277,7 +310,6 @@ class MusicService : Service() {
                     }
                 }
             }
-
             "GET_CURRENT_SONG" -> {
                 if (currentSongId != null) {
                     CoroutineScope(Dispatchers.IO).launch {
@@ -320,6 +352,7 @@ class MusicService : Service() {
                     Log.d("MusicService", "Playing random song due to shuffle being enabled")
                     songRepository.playRandomSong()
                 }
+
                 isLoopEnabled -> currentSongId?.let { songRepository.getSongById(it) }
                 else -> songRepository.getNextSong(currentSongId)
             }
@@ -362,6 +395,7 @@ class MusicService : Service() {
                     Log.d("MusicService", "Playing random song due to shuffle being enabled")
                     songRepository.playRandomSong()
                 }
+
                 else -> songRepository.getPreviousSong(currentSongId)
             }
             previousSong?.let {
@@ -410,7 +444,21 @@ class MusicService : Service() {
     }
 
     private fun playSong(path: String) {
-        exoPlayer?.release()
+        // Check if the same song is already playing
+        val currentMediaItem = exoPlayer?.currentMediaItem
+        if (currentMediaItem != null && currentMediaItem.mediaId == path && exoPlayer?.isPlaying == true) {
+            // Song is already playing, just update UI and broadcast
+            isPlaying = true
+            updateNotification()
+            broadcastEvent("LOADED")
+            CoroutineScope(Dispatchers.IO).launch {
+                EventBus.publish(SongPlayingUpdateEvent)
+            }
+            return
+        }
+
+        // Release existing player if different song or not playing
+        exoPlayer ?. release ()
         broadcastEvent("LOADING")
         exoPlayer = ExoPlayer.Builder(this).build().apply {
             val mediaItem = MediaItem.fromUri(path)
