@@ -26,7 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,11 +50,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -71,10 +73,6 @@ import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.components.LoadingScreen
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 
 @Composable
@@ -150,7 +148,7 @@ fun SongDetailsScreen(
                     musicPlayerViewModel.playSong(context, song)
                     miniPlayerViewModel.updatePlaybackState(true)
                     musicPlayerViewModel.updatePlaybackState(true)
-                } else if (!isPlayingInMiniPlayerViewModel) {
+                } else if (isPlayingInMiniPlayerViewModel) {
                     musicPlayerViewModel.resumeSong(context)
                     miniPlayerViewModel.updatePlaybackState(true)
                     musicPlayerViewModel.updatePlaybackState(true)
@@ -335,8 +333,14 @@ fun SongDetailsScreen(
                                         song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
                                     )
                                     putExtra("SONG_IMAGE", song.imageUrl)
-                                    putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
-                                    putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                                    putExtra(
+                                        "IS_LOOP_ENABLED",
+                                        musicPlayerViewModel.isLoopEnabled.value
+                                    )
+                                    putExtra(
+                                        "IS_SHUFFLE_ENABLED",
+                                        musicPlayerViewModel.isShuffleEnabled.value
+                                    )
                                     putExtra("CURRENT_POSITION", currentPosition)
                                     putExtra("DURATION", duration)
                                 }
@@ -415,8 +419,14 @@ fun PlaySong(
                                     song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
                                 )
                                 putExtra("SONG_IMAGE", song.imageUrl)
-                                putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
-                                putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                                putExtra(
+                                    "IS_LOOP_ENABLED",
+                                    musicPlayerViewModel.isLoopEnabled.value
+                                )
+                                putExtra(
+                                    "IS_SHUFFLE_ENABLED",
+                                    musicPlayerViewModel.isShuffleEnabled.value
+                                )
                                 putExtra("IS_FAVORITE", isFavorite)
                                 putExtra("CURRENT_POSITION", currentPosition)
                                 putExtra("DURATION", duration)

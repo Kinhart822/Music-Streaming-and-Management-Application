@@ -1,5 +1,8 @@
 package vn.edu.usth.msma
 
+import android.annotation.SuppressLint
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -43,6 +46,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(tag, "onCreate called")
+
+        // Check if there's a running music service and clear mini player if not
+        lifecycleScope.launch {
+            val isMiniPlayerVisible = preferencesManager.isMiniPlayerVisibleFlow.first()
+            if (isMiniPlayerVisible) {
+                // Check if MusicService is actually running
+                val isServiceRunning = isServiceRunning(MusicService::class.java)
+                if (!isServiceRunning) {
+                    // Clear miniplayer state if service is not running
+                    preferencesManager.setMiniPlayerVisible(false)
+                }
+            }
+        }
 
         setContent {
             MSMATheme {
@@ -96,6 +112,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("ServiceCast")
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        lifecycleScope.launch {
+            if (preferencesManager.isMiniPlayerVisibleFlow.first()) {
+                val intent = Intent(this@MainActivity, MusicService::class.java).apply {
+                    action = "CLOSE"
+                }
+                startService(intent)
+                // Clear miniplayer state when app is destroyed
+                preferencesManager.setMiniPlayerVisible(false)
+            }
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         lifecycleScope.launch {
@@ -104,6 +145,8 @@ class MainActivity : ComponentActivity() {
                     action = "CLOSE"
                 }
                 startService(intent)
+                // Clear miniplayer state when app is stopped
+                preferencesManager.setMiniPlayerVisible(false)
             }
         }
     }

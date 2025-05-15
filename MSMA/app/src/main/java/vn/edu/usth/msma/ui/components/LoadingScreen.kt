@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import vn.edu.usth.msma.R
@@ -25,7 +26,10 @@ fun LoadingScreen(
     animationRes: Int = R.raw.home_loading
 ) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(animationRes))
-    val progress by animateLottieCompositionAsState(composition)
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
 
     Column(
         modifier = Modifier
@@ -46,4 +50,4 @@ fun LoadingScreen(
             color = MaterialTheme.colorScheme.onBackground
         )
     }
-} 
+}

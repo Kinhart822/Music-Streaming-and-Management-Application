@@ -289,7 +289,7 @@ fun AppNavigation(
                             SongDetailsScreen(
                                 songId = songId,
                                 onBack = { navController.popBackStack() },
-                                fromMiniPlayer = true,
+                                fromMiniPlayer = currentSong?.id == songId,
                                 isPlaying = isPlaying,
                                 isLoopEnabled = isLoopEnabled,
                                 isShuffleEnabled = isShuffleEnabled,
