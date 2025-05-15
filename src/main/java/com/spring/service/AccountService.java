@@ -8,19 +8,20 @@ import com.spring.dto.response.UserPresentation;
 import com.spring.entities.Notification;
 
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
 public interface AccountService {
+    ApiResponse createUser(CreateUser request);
+
     ApiResponse createAdmin(CreateAdmin request);
 
     ApiResponse createArtist(CreateArtist request);
 
     ApiResponse signUpArtist(CreateArtist request);
 
-    ApiResponse createArtistFromList(CreateArtistFromList request);
-
-    Map<String, Instant> sendOtpToEmail(SendOtpRequest request);
+    Map<String, ZonedDateTime> sendOtpToEmail(SendOtpRequest request);
 
     Map<String, Boolean> checkOtp(CheckOtpRequest request);
 
@@ -31,6 +32,8 @@ public interface AccountService {
     Long countUsers();
 
     Long countSongs();
+
+    Long countPendingSongs();
 
     // Account Information
     AdminPresentation getAdmin();
@@ -51,28 +54,22 @@ public interface AccountService {
 
     List<ArtistPresentation> getAllOtherArtist();
 
+    List<ArtistPresentation> getAllActiveArtists();
+
     // Sign Up Steps
     Map<String, Boolean> signUpCheckEmailExistence(String query);
 
-    Map<String, Instant> signUpBegin(SendOtpRequest request);
-
-    Map<String, Boolean> signUpCheckOtp(CheckOtpRequest request);
-
-    ApiResponse signUpFinish(SignUpRequest request);
+    ApiResponse signUpUser(CreateUser request);
 
     // Forgot Password Steps
-    Map<String, Instant> forgotPasswordBegin(SendOtpRequest request);
+    Map<String, ZonedDateTime> forgotPasswordBegin(SendOtpRequest request);
 
     Map<String, Boolean> forgotPasswordCheckOtp(CheckOtpRequest request);
 
     ApiResponse forgotPasswordFinish(ForgotPasswordFinish request);
 
     // Reset Password Steps
-    ApiResponse resetPasswordRequest(ResetPasswordRequest request);
-
-    Map<String, Boolean> resetPasswordCheck(ResetPasswordCheck check);
-
-    ApiResponse resetPasswordFinish(ResetPasswordFinish finish);
+    ApiResponse resetPassword(ChangePasswordRequest request);
 
     // Update Account Step
     ApiResponse updateAccount(UpdateAccountRequest request);
@@ -81,6 +78,8 @@ public interface AccountService {
 
     // Delete Account Step
     ApiResponse deleteAccount(Long userId);
+
+    ApiResponse adminDeleteAccount(Long userId);
 
     // Process Delete Request For Artist and Admin cases
     List<AdminPresentation> getAllAdminByLockedStatus();

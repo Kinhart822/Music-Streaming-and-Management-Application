@@ -38,4 +38,18 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
             @Param("search") String search,
             Pageable pageable
     );
+
+    @Query(value = """
+                SELECT a.*, u.* 
+                FROM artists a
+                JOIN users u ON a.id = u.id
+                WHERE (:title IS NULL OR LOWER(a.artist_name) LIKE %:title%)
+                ORDER BY u.created_date DESC
+                LIMIT :limit OFFSET :offset
+            """, nativeQuery = true)
+    List<Artist> getAllArtistsByTitle(
+            @Param("title") String title,
+            @Param("limit") Integer limit,
+            @Param("offset") Integer offset
+    );
 }

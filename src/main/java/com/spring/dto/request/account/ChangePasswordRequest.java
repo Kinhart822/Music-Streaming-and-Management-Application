@@ -6,12 +6,11 @@ import lombok.Data;
 
 @Data
 public class ChangePasswordRequest {
-    private String sessionId;
+    @NotBlank
+    @Size(min = 6, message = "Password must be at least 6 characters long")
+    private String newPassword;
 
     @NotBlank
     @Size(min = 6, message = "Password must be at least 6 characters long")
-    private String password;
-
-    @NotBlank
     private String confirmPassword;
 }

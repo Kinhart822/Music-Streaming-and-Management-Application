@@ -13,6 +13,6 @@ public class AlbumRequest {
 
     private String description;
     private List<Long> songIds;
-    private List<Long> additionalArtistIds;
+    private List<Long> artistIds;
     private MultipartFile image;
 }

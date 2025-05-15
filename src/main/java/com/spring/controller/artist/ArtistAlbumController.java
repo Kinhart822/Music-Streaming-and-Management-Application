@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/artist/album")
 @RequiredArgsConstructor
-public class AlbumController {
+public class ArtistAlbumController {
     private final AlbumService albumService;
 
     @PostMapping("/create")

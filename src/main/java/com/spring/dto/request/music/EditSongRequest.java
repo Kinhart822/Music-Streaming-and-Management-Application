@@ -8,11 +8,11 @@ import java.util.List;
 @Data
 public class EditSongRequest {
     private String title;
+    private List<Long> genreIds;
     private String lyrics;
+    private String description;
+    private List<Long> artistIds;
     private MultipartFile file;
     private MultipartFile image;
     private Boolean downloadPermission;
-    private String description;
-    private List<Long> genreId;
-    private List<Long> additionalArtistIds;
 }

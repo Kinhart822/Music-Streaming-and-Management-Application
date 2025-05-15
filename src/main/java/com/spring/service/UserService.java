@@ -12,11 +12,5 @@ public interface UserService {
     UserDetails loadUserByUsername(String username);
 
     User findByEmail(String email);
-
-    Optional<User> resetPasswordRequest(String email);
-
-    Optional<User> resetPasswordCheck(String resetKey);
-
-    Optional<User> resetPasswordFinish(String resetKey, String encodedPassword);
 }
 

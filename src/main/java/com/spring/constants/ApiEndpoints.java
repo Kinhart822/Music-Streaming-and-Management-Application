@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum ApiEndpoints {
     PERMITTED(
+            "/api/v1/account/signUpUser",
             "/api/v1/auth/sign-in",
             "/api/v1/auth/refresh",
             "/api/v1/account/user/sign-up/**",

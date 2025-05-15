@@ -2,6 +2,7 @@ package com.spring.service.impl;
 
 import com.spring.constants.ApiResponseCode;
 import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.HistoryListenResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.HistoryListenRepository;
@@ -14,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +61,23 @@ public class UserSongCountServiceImpl implements UserSongCountService {
         historyListenRepository.save(historyListen);
 
         return ApiResponse.ok("Listen count incremented successfully");
+    }
+
+    @Override
+    public List<HistoryListenResponse> getAllHistoryListenByCurrentUser() {
+        Long currentUserId = jwtHelper.getIdUserRequesting();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        return historyListenRepository.findAll().stream()
+                .filter(hs -> hs.getUser() != null && hs.getUser().getId().equals(currentUserId))
+                .map(hs -> {
+                    String formattedDate = hs.getDateTime().format(formatter);
+                    String message = "🎧 Played \"" + hs.getSong().getTitle() + "\" on " + formattedDate;
+                    return HistoryListenResponse.builder()
+                            .imageUrl(hs.getSong().getImageUrl())
+                            .message(message)
+                            .build();
+                })
+                .toList();
     }
 }

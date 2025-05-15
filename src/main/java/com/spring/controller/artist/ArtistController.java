@@ -20,9 +20,9 @@ public class ArtistController {
     private final AccountService accountService;
     private final GenreService genreService;
 
-    @GetMapping("/song/allSong")
+    @GetMapping("/song/allAcceptedSong")
     public ResponseEntity<List<SongResponse>> getSongsByArtist() {
-        List<SongResponse> songs = songService.getSongsByArtistId();
+        List<SongResponse> songs = songService.getAcceptedSongsByArtistId();
         return ResponseEntity.ok(songs);
     }
 
@@ -30,15 +30,6 @@ public class ArtistController {
     public ResponseEntity<List<GenreResponse>> getAllGenres() {
         List<GenreResponse> genres = genreService.getAllGenres();
         return ResponseEntity.ok(genres);
-    }
-
-    // Lấy bài hát theo status (ví dụ: ACCEPTED, PENDING)
-    @GetMapping("/song/allSongByStatus")
-    public ResponseEntity<List<SongResponse>> getSongsByStatus(
-            @RequestParam String status
-    ) {
-        List<SongResponse> songs = songService.getSongsByStatusAndArtistId(status);
-        return ResponseEntity.ok(songs);
     }
 
     @GetMapping("/song/genre/{genreId}")
@@ -78,12 +69,12 @@ public class ArtistController {
 
     @GetMapping("/totalPlaylists")
     public ResponseEntity<Long> getTotalPlaylistsByArtist() {
-        return ResponseEntity.ok(playlistService.totalArtistPlaylist());
+        return ResponseEntity.ok(playlistService.totalArtistPlaylists());
     }
 
     @GetMapping("/totalAlbums")
     public ResponseEntity<Long> getTotalAlbumsByArtist() {
-        return ResponseEntity.ok(albumService.totalAlbum());
+        return ResponseEntity.ok(albumService.totalAlbumsByArtist());
     }
 
     @GetMapping("/totalFollowers")

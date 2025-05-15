@@ -52,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = (User) userDetails;
         Map<String, String> response = new HashMap<>();
+        response.put("email", user.getEmail().toString());
         response.put(USER_TYPE, user.getUserType().toString());
         response.put(ACCESS_TOKEN_KEY, jwtUtil.generateAccessToken(userDetails));
 

@@ -8,7 +8,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -50,11 +49,11 @@ public class Album {
     @Enumerated(EnumType.STRING)
     private PlaylistAndAlbumStatus playlistAndAlbumStatus;
 
-    @OneToMany(mappedBy = "artistAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArtistAlbum> artistAlbums = new ArrayList<>();
-
     @OneToMany(mappedBy = "albumSongId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AlbumSong> albumSongs = new ArrayList<>();
+
+    @OneToMany(mappedBy = "artistAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistAlbum> artistAlbums = new ArrayList<>();
 
     @OneToMany(mappedBy = "userAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserAlbum> userAlbums;

@@ -2,7 +2,10 @@ package com.spring.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -28,6 +31,20 @@ public class Genre {
 
     @Column(name = "full_description", columnDefinition = "text")
     private String fullDescription;
+
+    @CreatedDate
+    @Column(updatable = false)
+    private Instant createdDate;
+
+    @LastModifiedDate
+    @Column
+    private Instant lastModifiedDate;
+
+    @Column
+    private Long createdBy;
+
+    @Column
+    private Long lastModifiedBy;
 
     @OneToMany(mappedBy = "genreSongId.genre", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GenreSong> genreSongs;

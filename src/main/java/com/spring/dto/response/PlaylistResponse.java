@@ -14,10 +14,10 @@ import java.util.List;
 public class PlaylistResponse {
     private Long id;
     private String playlistName;
-    private Float playTimelength;
+    private Float playTimeLength;
     private String releaseDate;
     private List<String> songNameList;
-    private List<String> additionalArtistNameList;
+    private List<String> artistNameList;
     private String imageUrl;
     private String description;
     private String status;

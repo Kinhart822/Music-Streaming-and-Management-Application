@@ -51,4 +51,36 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Pageable pageable
     );
 
+    @Query("""
+                SELECT u FROM User u
+                WHERE (
+                    LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                    LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                    LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+                )
+            """)
+    Page<User> searchByKeyword(@Param("search") String search, Pageable pageable);
+
+    @Query("""
+    SELECT u FROM User u
+    WHERE u.userType = :userType
+    AND (
+        LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+        LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+        LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+    )
+""")
+    Page<User> searchByUserTypeAndKeyword(@Param("userType") UserType userType, @Param("search") String search, Pageable pageable);
+
+    @Query("""
+    SELECT u FROM User u
+    WHERE u.status = :status
+    AND (
+        LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+        LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+        LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+    )
+""")
+    Page<User> searchByStatusAndKeyword(@Param("status") Integer status, @Param("search") String search, Pageable pageable);
+
 }

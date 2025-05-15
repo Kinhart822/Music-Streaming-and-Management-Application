@@ -3,7 +3,7 @@ package com.spring.dto.request;
 import lombok.Data;
 
 @Data
-public class PaginationGenreRequest {
+public class PaginationAlbumRequest {
     private int page = 1;
     private int size = 10;
     private String orderBy = "releaseDate";  // releaseDate | title

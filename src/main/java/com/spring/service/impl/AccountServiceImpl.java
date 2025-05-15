@@ -14,9 +14,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
+
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -38,7 +37,34 @@ public class AccountServiceImpl implements AccountService {
     private final NotificationRepository notificationRepository;
     private final CloudinaryService cloudinaryService;
 
-    // For both Artist and Admin
+    // For User, Artist and Admin
+    @Override
+    public ApiResponse createUser(CreateUser request) {
+        String email = request.getEmail();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new BusinessException(ApiResponseCode.USERNAME_EXISTED);
+        }
+
+        Long creatorId = jwtHelper.getIdUserRequesting();
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
+        User user = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .userType(UserType.ADMIN)
+                .status(CommonStatus.ACTIVE.getStatus())
+                .createdBy(creatorId)
+                .lastModifiedBy(creatorId)
+                .createdDate(now)
+                .lastModifiedDate(now)
+                .build();
+
+        userRepository.save(user);
+
+        return ApiResponse.ok();
+    }
+
     @Override
     public ApiResponse createAdmin(CreateAdmin request) {
         String email = request.getEmail();
@@ -47,7 +73,8 @@ public class AccountServiceImpl implements AccountService {
         }
 
         Long creatorId = jwtHelper.getIdUserRequesting();
-        Instant now = Instant.now();
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
 
         User admin = User.builder()
                 .email(email)
@@ -73,7 +100,8 @@ public class AccountServiceImpl implements AccountService {
         }
 
         Long creatorId = jwtHelper.getIdUserRequesting();
-        Instant now = Instant.now();
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
 
         Artist artist = new Artist();
         artist.setEmail(email);
@@ -99,7 +127,8 @@ public class AccountServiceImpl implements AccountService {
             throw new BusinessException(ApiResponseCode.USERNAME_EXISTED);
         }
 
-        Instant now = Instant.now();
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
 
         Artist artist = new Artist();
         artist.setEmail(email);
@@ -122,65 +151,22 @@ public class AccountServiceImpl implements AccountService {
         return ApiResponse.ok();
     }
 
-    @Override
-    public ApiResponse createArtistFromList(CreateArtistFromList request) {
-        List<CreateArtist> artistRequests = request.getArtistList();
-
-        if (artistRequests == null || artistRequests.isEmpty()) {
-            throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
-        }
-
-        Long creatorId = jwtHelper.getIdUserRequesting();
-        Instant now = Instant.now();
-
-        List<Artist> artistsInfoToSave = new ArrayList<>();
-        int skipped = 0;
-
-        for (CreateArtist artistRequest : artistRequests) {
-            String email = artistRequest.getEmail();
-            if (userRepository.existsByEmailIgnoreCase(email)) {
-                skipped++;
-                continue;
-            }
-
-            // Tạo Artist (kế thừa từ User)
-            Artist artist = new Artist();
-            artist.setEmail(email);
-            artist.setPassword(passwordEncoder.encode(artistRequest.getPassword()));
-            artist.setUserType(UserType.ARTIST);
-            artist.setStatus(CommonStatus.ACTIVE.getStatus());
-            artist.setCreatedDate(now);
-            artist.setLastModifiedDate(now);
-            artist.setDescription(null);
-            artist.setImageUrl(null);
-            artist.setCountListen(0L);
-            artist.setCreatedBy(creatorId);
-            artist.setLastModifiedBy(creatorId);
-            artistRepository.save(artist);
-
-            artistsInfoToSave.add(artist);
-        }
-
-        return ApiResponse.ok(
-                "Bulk Artist Creation Result",
-                "Created " + artistsInfoToSave.size() + " artist(s), skipped " + skipped + " duplicate(s)!"
-        );
-    }
-
     // User
     @Override
-    public Map<String, Instant> sendOtpToEmail(SendOtpRequest request) {
+    public Map<String, ZonedDateTime> sendOtpToEmail(SendOtpRequest request) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(300);
+
         String email = request.getEmail();
         String sessionId = request.getSessionId();
         sessionOtpMap.computeIfAbsent(sessionId, o -> Otp.builder()
                 .email(email)
                 .otp(numericGenerator.generate(6))
-                .dueDate(Instant.now().plusSeconds(60))
+                .dueDate(dueDateInVietnam)
                 .build());
         Otp otp = sessionOtpMap.get(sessionId);
         emailService.sendEmailVerificationOtp(otp);
-        Map<String, Instant> response = new HashMap<>();
-        response.put(OTP_DUE_DATE_KEY, otp.getDueDate());
+        Map<String, ZonedDateTime> response = new HashMap<>();
+        response.put(OTP_DUE_DATE_KEY, dueDateInVietnam);
         return response;
     }
 
@@ -220,12 +206,25 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public Long countPendingSongs() {
+        return songRepository.countAllPendingSongs();
+    }
+
+    @Override
     public AdminPresentation getAdmin() {
         User admin = userRepository.findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         String formattedDateOfBirth = admin.getBirthDay() != null ?
                 admin.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedCreatedDate = admin.getCreatedDate() != null
+                ? formatter.format(admin.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+        String formattedLastModifiedDate = admin.getLastModifiedDate() != null
+                ? formatter.format(admin.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
 
         return AdminPresentation.builder()
                 .id(admin.getId())
@@ -239,8 +238,8 @@ public class AccountServiceImpl implements AccountService {
                 .status(admin.getStatus())
                 .createdBy(admin.getCreatedBy())
                 .lastModifiedBy(admin.getLastModifiedBy())
-                .createdDate(admin.getCreatedDate())
-                .lastModifiedDate(admin.getLastModifiedDate())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
                 .build();
     }
 
@@ -252,6 +251,14 @@ public class AccountServiceImpl implements AccountService {
         String formattedDateOfBirth = user.getBirthDay() != null ?
                 user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedCreatedDate = user.getCreatedDate() != null
+                ? formatter.format(user.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+        String formattedLastModifiedDate = user.getLastModifiedDate() != null
+                ? formatter.format(user.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
         return UserPresentation.builder()
                 .id(user.getId())
                 .avatar(user.getAvatar() != null ? user.getAvatar() : "")
@@ -264,8 +271,8 @@ public class AccountServiceImpl implements AccountService {
                 .status(user.getStatus())
                 .createdBy(user.getCreatedBy())
                 .lastModifiedBy(user.getLastModifiedBy())
-                .createdDate(user.getCreatedDate())
-                .lastModifiedDate(user.getLastModifiedDate())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
                 .build();
     }
 
@@ -277,6 +284,14 @@ public class AccountServiceImpl implements AccountService {
         String formattedDateOfBirth = user.getBirthDay() != null ?
                 user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedCreatedDate = user.getCreatedDate() != null
+                ? formatter.format(user.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+        String formattedLastModifiedDate = user.getLastModifiedDate() != null
+                ? formatter.format(user.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
         return UserPresentation.builder()
                 .id(user.getId())
                 .avatar(user.getAvatar() != null ? user.getAvatar() : "")
@@ -289,8 +304,8 @@ public class AccountServiceImpl implements AccountService {
                 .status(user.getStatus())
                 .createdBy(user.getCreatedBy())
                 .lastModifiedBy(user.getLastModifiedBy())
-                .createdDate(user.getCreatedDate())
-                .lastModifiedDate(user.getLastModifiedDate())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
                 .build();
     }
 
@@ -304,6 +319,14 @@ public class AccountServiceImpl implements AccountService {
 
         String formattedDateOfBirth = artist.getBirthDay() != null ?
                 artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedCreatedDate = artist.getCreatedDate() != null
+                ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+        String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
 
         return ArtistPresentation.builder()
                 .id(artist.getId())
@@ -321,8 +344,8 @@ public class AccountServiceImpl implements AccountService {
                 .status(artist.getStatus())
                 .createdBy(artist.getCreatedBy())
                 .lastModifiedBy(artist.getLastModifiedBy())
-                .createdDate(artist.getCreatedDate())
-                .lastModifiedDate(artist.getLastModifiedDate())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
                 .build();
     }
 
@@ -336,6 +359,14 @@ public class AccountServiceImpl implements AccountService {
 
         String formattedDateOfBirth = artist.getBirthDay() != null ?
                 artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedCreatedDate = artist.getCreatedDate() != null
+                ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+        String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
 
         return ArtistPresentation.builder()
                 .id(artist.getId())
@@ -353,8 +384,8 @@ public class AccountServiceImpl implements AccountService {
                 .status(artist.getStatus())
                 .createdBy(artist.getCreatedBy())
                 .lastModifiedBy(artist.getLastModifiedBy())
-                .createdDate(artist.getCreatedDate())
-                .lastModifiedDate(artist.getLastModifiedDate())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
                 .build();
     }
 
@@ -365,6 +396,14 @@ public class AccountServiceImpl implements AccountService {
         return admins.stream().map(admin -> {
             String formattedDate = admin.getBirthDay() != null
                     ? admin.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedCreatedDate = admin.getCreatedDate() != null
+                    ? formatter.format(admin.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+            String formattedLastModifiedDate = admin.getLastModifiedDate() != null
+                    ? formatter.format(admin.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
 
             return AdminPresentation.builder()
                     .id(admin.getId())
@@ -378,8 +417,8 @@ public class AccountServiceImpl implements AccountService {
                     .status(admin.getStatus())
                     .createdBy(admin.getCreatedBy())
                     .lastModifiedBy(admin.getLastModifiedBy())
-                    .createdDate(admin.getCreatedDate())
-                    .lastModifiedDate(admin.getLastModifiedDate())
+                    .createdDate(formattedCreatedDate)
+                    .lastModifiedDate(formattedLastModifiedDate)
                     .build();
         }).toList();
     }
@@ -391,6 +430,14 @@ public class AccountServiceImpl implements AccountService {
         return users.stream().map(user -> {
             String formattedDate = user.getBirthDay() != null
                     ? user.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedCreatedDate = user.getCreatedDate() != null
+                    ? formatter.format(user.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+            String formattedLastModifiedDate = user.getLastModifiedDate() != null
+                    ? formatter.format(user.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
 
             return UserPresentation.builder()
                     .id(user.getId())
@@ -404,8 +451,8 @@ public class AccountServiceImpl implements AccountService {
                     .status(user.getStatus())
                     .createdBy(user.getCreatedBy())
                     .lastModifiedBy(user.getLastModifiedBy())
-                    .createdDate(user.getCreatedDate())
-                    .lastModifiedDate(user.getLastModifiedDate())
+                    .createdDate(formattedCreatedDate)
+                    .lastModifiedDate(formattedLastModifiedDate)
                     .build();
         }).toList();
     }
@@ -418,6 +465,14 @@ public class AccountServiceImpl implements AccountService {
             String formattedDate = artist.getBirthDay() != null
                     ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
 
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedCreatedDate = artist.getCreatedDate() != null
+                    ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+            String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                    ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+
             return ArtistPresentation.builder()
                     .id(artist.getId())
                     .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
@@ -431,8 +486,8 @@ public class AccountServiceImpl implements AccountService {
                     .status(artist.getStatus())
                     .createdBy(artist.getCreatedBy())
                     .lastModifiedBy(artist.getLastModifiedBy())
-                    .createdDate(artist.getCreatedDate())
-                    .lastModifiedDate(artist.getLastModifiedDate())
+                    .createdDate(formattedCreatedDate)
+                    .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
                     .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
@@ -445,11 +500,20 @@ public class AccountServiceImpl implements AccountService {
         Long id = jwtHelper.getIdUserRequesting();
         List<Artist> artists = artistRepository.findAll().stream()
                 .filter(a -> !a.getId().equals(id))
+                .filter(a -> !a.getStatus().equals(CommonStatus.INACTIVE.getStatus()))
                 .toList();
 
         return artists.stream().map(artist -> {
             String formattedDate = artist.getBirthDay() != null
                     ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedCreatedDate = artist.getCreatedDate() != null
+                    ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+            String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                    ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
 
             return ArtistPresentation.builder()
                     .id(artist.getId())
@@ -464,8 +528,49 @@ public class AccountServiceImpl implements AccountService {
                     .status(artist.getStatus())
                     .createdBy(artist.getCreatedBy())
                     .lastModifiedBy(artist.getLastModifiedBy())
-                    .createdDate(artist.getCreatedDate())
-                    .lastModifiedDate(artist.getLastModifiedDate())
+                    .createdDate(formattedCreatedDate)
+                    .lastModifiedDate(formattedLastModifiedDate)
+                    .description(artist.getDescription() != null ? artist.getDescription() : "")
+                    .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
+                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .build();
+        }).toList();
+    }
+
+    @Override
+    public List<ArtistPresentation> getAllActiveArtists() {
+        Long id = jwtHelper.getIdUserRequesting();
+        List<Artist> artists = artistRepository.findAll().stream()
+                .filter(a -> !(a.getId().equals(id) && a.getStatus().equals(CommonStatus.INACTIVE.getStatus())))
+                .toList();
+
+        return artists.stream().map(artist -> {
+            String formattedDate = artist.getBirthDay() != null
+                    ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedCreatedDate = artist.getCreatedDate() != null
+                    ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+            String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                    ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+
+            return ArtistPresentation.builder()
+                    .id(artist.getId())
+                    .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
+                    .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
+                    .lastName(artist.getLastName() != null ? artist.getLastName() : "")
+                    .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
+                    .email(artist.getEmail())
+                    .gender(artist.getGender() != null ? artist.getGender().toString() : "")
+                    .birthDay(formattedDate)
+                    .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
+                    .status(artist.getStatus())
+                    .createdBy(artist.getCreatedBy())
+                    .lastModifiedBy(artist.getLastModifiedBy())
+                    .createdDate(formattedCreatedDate)
+                    .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
                     .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
@@ -482,45 +587,30 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Map<String, Instant> signUpBegin(SendOtpRequest request) {
-        return sendOtpToEmail(request);
-    }
+    public ApiResponse signUpUser(CreateUser request) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
 
-    @Override
-    public Map<String, Boolean> signUpCheckOtp(CheckOtpRequest request) {
-        return checkOtp(request);
-    }
-
-    @Override
-    public ApiResponse signUpFinish(SignUpRequest request) {
-        String sessionId = request.getSessionId();
-        if (!sessionOtpMap.containsKey(sessionId)) {
-            throw new BusinessException(ApiResponseCode.SESSION_ID_NOT_FOUND);
-        }
-        Instant now = Instant.now();
         User user = User.builder()
-                .email(sessionOtpMap.get(sessionId).getEmail())
+                .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .userType(UserType.USER)
                 .status(CommonStatus.ACTIVE.getStatus())
                 .createdDate(now)
                 .lastModifiedDate(now)
                 .build();
-
         user = userRepository.save(user);
 
         user.setCreatedBy(user.getId());
         user.setLastModifiedBy(user.getId());
-
         userRepository.save(user);
 
-        sessionOtpMap.remove(sessionId);
         return ApiResponse.ok();
     }
 
     // Forgot Password Request
     @Override
-    public Map<String, Instant> forgotPasswordBegin(SendOtpRequest request) {
+    public Map<String, ZonedDateTime> forgotPasswordBegin(SendOtpRequest request) {
         return sendOtpToEmail(request);
     }
 
@@ -531,6 +621,9 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ApiResponse forgotPasswordFinish(ForgotPasswordFinish request) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         String sessionId = request.getSessionId();
         if (!sessionOtpMap.containsKey(sessionId)) {
             throw new BusinessException(ApiResponseCode.SESSION_ID_NOT_FOUND);
@@ -540,7 +633,7 @@ public class AccountServiceImpl implements AccountService {
                         .loadUserByUsername(sessionOtpMap.get(sessionId).getEmail()))
                         .toBuilder()
                         .password(passwordEncoder.encode(request.getPassword()))
-                        .lastModifiedDate(Instant.now())
+                        .lastModifiedDate(now)
                         .build());
         sessionOtpMap.remove(sessionId);
         return ApiResponse.ok();
@@ -548,38 +641,30 @@ public class AccountServiceImpl implements AccountService {
 
     // Reset Password Request
     @Override
-    public ApiResponse resetPasswordRequest(ResetPasswordRequest request) {
-        Optional<User> user = userService.resetPasswordRequest(request.getEmail());
-        if (user.isEmpty()) {
-            throw new BusinessException(ApiResponseCode.USERNAME_NOT_EXISTED_OR_DEACTIVATED);
+    public ApiResponse resetPassword(ChangePasswordRequest request) {
+        User user = userRepository.findById(jwtHelper.getIdUserRequesting())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user"));
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("New password cannot be the same as the old password");
         }
-        userRepository.save(user.get());
-        emailService.sendResetPasswordMail(user.get());
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
         return ApiResponse.ok();
     }
 
-    @Override
-    public Map<String, Boolean> resetPasswordCheck(ResetPasswordCheck check) {
-        String resetKey = check.getResetKey();
-
-        Optional<User> user = userService.resetPasswordCheck(resetKey);
-        Map<String, Boolean> response = new HashMap<>();
-        response.put(VALID_KEY, user.isPresent());
-        return response;
-    }
-
-    @Override
-    public ApiResponse resetPasswordFinish(ResetPasswordFinish finish) {
-        Optional<User> user = userService.resetPasswordFinish(finish.getResetKey(), passwordEncoder.encode(finish.getNewPassword()));
-        if (user.isEmpty()) {
-            throw new BusinessException(ApiResponseCode.INVALID_RESET_KEY);
-        }
-        return ApiResponse.ok();
-    }
-
+    // Update Account Request
     @Override
     public ApiResponse updateAccount(UpdateAccountRequest request) {
         Long id = jwtHelper.getIdUserRequesting();
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
 
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
@@ -612,7 +697,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         user.setLastModifiedBy(id);
-        user.setLastModifiedDate(Instant.now());
+        user.setLastModifiedDate(now);
         userRepository.save(user);
 
         return ApiResponse.ok();
@@ -620,6 +705,9 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ApiResponse updateArtistAccount(UpdateAccountRequest request) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         Long id = jwtHelper.getIdUserRequesting();
         Artist user = artistRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
@@ -661,7 +749,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         user.setLastModifiedBy(id);
-        user.setLastModifiedDate(Instant.now());
+        user.setLastModifiedDate(now);
         artistRepository.save(user);
 
         return ApiResponse.ok();
@@ -694,35 +782,56 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private void handleUserDeletion(User user) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         user.setStatus(CommonStatus.DELETED.getStatus());
         user.setLastModifiedBy(user.getId());
-        user.setLastModifiedDate(Instant.now());
+        user.setLastModifiedDate(now);
         userRepository.save(user); // Chỉ cập nhật trạng thái
     }
 
-    @Scheduled(fixedRate = 60000) // Chạy mỗi 1 phút
-    public void deleteUsersMarkedAsDeleted() {
-        Instant tenMinutesAgo = Instant.now().minus(Duration.ofMinutes(10));
-        List<User> usersToDelete = userRepository.findAllByStatusAndLastModifiedDateBefore(
-                CommonStatus.DELETED.getStatus(), tenMinutesAgo
-        );
-
-        // Hibernate tự xóa cả liên quan nếu cascade đúng
-        userRepository.deleteAll(usersToDelete);
-    }
-
     private void handleArtistDeletion(User user) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         user.setStatus(CommonStatus.INACTIVE.getStatus());
         user.setLastModifiedBy(user.getId());
-        user.setLastModifiedDate(Instant.now());
+        user.setLastModifiedDate(now);
         userRepository.save(user);
     }
 
     private void handleAdminDeactivation(User user) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         user.setStatus(CommonStatus.LOCKED.getStatus());
         user.setLastModifiedBy(user.getId());
-        user.setLastModifiedDate(Instant.now());
+        user.setLastModifiedDate(now);
         userRepository.save(user);
+    }
+
+    @Scheduled(fixedRate = 5000)
+    public void deleteUsersMarkedAsDeleted() {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
+        Instant tenMinutesAgo = now.minus(Duration.ofMinutes(10));
+        List<User> usersToDelete = userRepository.findAllByStatusAndLastModifiedDateBefore(
+                CommonStatus.DELETED.getStatus(), tenMinutesAgo
+        );
+
+        userRepository.deleteAll(usersToDelete);
+    }
+
+    @Override
+    public ApiResponse adminDeleteAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        userRepository.delete(user);
+
+        return ApiResponse.ok();
     }
 
     @Override
@@ -736,6 +845,14 @@ public class AccountServiceImpl implements AccountService {
                     String formattedDate = admin.getBirthDay() != null
                             ? admin.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
 
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                    String formattedCreatedDate = admin.getCreatedDate() != null
+                            ? formatter.format(admin.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                            : null;
+                    String formattedLastModifiedDate = admin.getLastModifiedDate() != null
+                            ? formatter.format(admin.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                            : null;
+
                     return AdminPresentation.builder()
                             .id(admin.getId())
                             .avatar(admin.getAvatar() != null ? admin.getAvatar() : "")
@@ -748,8 +865,8 @@ public class AccountServiceImpl implements AccountService {
                             .status(admin.getStatus())
                             .createdBy(admin.getCreatedBy())
                             .lastModifiedBy(admin.getLastModifiedBy())
-                            .createdDate(admin.getCreatedDate())
-                            .lastModifiedDate(admin.getLastModifiedDate())
+                            .createdDate(formattedCreatedDate)
+                            .lastModifiedDate(formattedLastModifiedDate)
                             .build();
                 }).toList();
     }
@@ -762,6 +879,14 @@ public class AccountServiceImpl implements AccountService {
         return inactiveArtists.stream().map(artist -> {
             String formattedDate = artist.getBirthDay() != null
                     ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedCreatedDate = artist.getCreatedDate() != null
+                    ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
+            String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                    ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    : null;
 
             return ArtistPresentation.builder()
                     .id(artist.getId())
@@ -776,8 +901,8 @@ public class AccountServiceImpl implements AccountService {
                     .status(artist.getStatus())
                     .createdBy(artist.getCreatedBy())
                     .lastModifiedBy(artist.getLastModifiedBy())
-                    .createdDate(artist.getCreatedDate())
-                    .lastModifiedDate(artist.getLastModifiedDate())
+                    .createdDate(formattedCreatedDate)
+                    .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
                     .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
@@ -787,6 +912,9 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ApiResponse processingDeleteRequest(Long userId, String manageFunction) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         Long userModifyId = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
@@ -797,29 +925,38 @@ public class AccountServiceImpl implements AccountService {
 
         int currentStatus = user.getStatus();
         boolean isArtist = user.getUserType() == UserType.ARTIST;
-        boolean validToDelete = (isArtist && currentStatus == CommonStatus.INACTIVE.getStatus()) ||
+        boolean validToProcess = (isArtist && currentStatus == CommonStatus.INACTIVE.getStatus()) ||
                 (!isArtist && currentStatus == CommonStatus.LOCKED.getStatus());
 
-        if (!validToDelete) {
+        if (!validToProcess) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
         }
 
-        if (manageFunction.equalsIgnoreCase(ManageProcess.DELETED.name())) {
-            user.setLastModifiedBy(userModifyId);
-            user.setLastModifiedDate(Instant.now());
-            user.setStatus(CommonStatus.DELETED.getStatus());
-        } else {
-            user.setLastModifiedBy(userModifyId);
-            user.setLastModifiedDate(Instant.now());
-            user.setStatus(CommonStatus.ACTIVE.getStatus());
+        ManageProcess process;
+        try {
+            process = ManageProcess.valueOf(manageFunction.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ApiResponseCode.INVALID_TYPE);
         }
 
-        user.setLastModifiedDate(Instant.now());
+        if (process == ManageProcess.ACCEPTED) {
+            // Nếu ACCEPTED thì xoá (set status = DELETED)
+            user.setStatus(CommonStatus.DELETED.getStatus());
+        } else if (process == ManageProcess.REVOKED) {
+            // Nếu REVOKED thì kích hoạt lại (set status = ACTIVE)
+            user.setStatus(CommonStatus.ACTIVE.getStatus());
+        } else {
+            throw new BusinessException(ApiResponseCode.INVALID_TYPE);
+        }
+
+        user.setLastModifiedBy(userModifyId);
+        user.setLastModifiedDate(now);
         userRepository.save(user);
 
-        String message = (user.getStatus() == CommonStatus.DELETED.getStatus())
+        String message = (process == ManageProcess.ACCEPTED)
                 ? "Account deleted successfully!"
                 : "Account revoked successfully!";
+
         return ApiResponse.ok(message);
     }
 }

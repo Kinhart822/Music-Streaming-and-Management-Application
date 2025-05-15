@@ -28,12 +28,12 @@ public class Artist extends User{
     @OneToMany(mappedBy = "artistSongId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistSong> artistSongs;
 
+    @OneToMany(mappedBy = "artistPlaylistId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistPlaylist> artistPlaylists;
+
     @OneToMany(mappedBy = "artistAlbumId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistAlbum> artistAlbums;
 
     @OneToMany(mappedBy = "artistUserFollowId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistUserFollow> artistUserFollows;
-
-    @OneToMany(mappedBy = "artistPlaylistId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArtistPlaylist> artistPlaylists = new ArrayList<>();
 }

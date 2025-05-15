@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/genre")
 @RequiredArgsConstructor
-public class GenreController {
+public class AdminGenreController {
     private final GenreService genreService;
 
     @PostMapping("/create")

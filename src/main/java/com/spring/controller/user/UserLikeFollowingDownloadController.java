@@ -32,7 +32,7 @@ public class UserLikeFollowingDownloadController {
         return ResponseEntity.ok(likeFollowingDownloadService.getCurrentUserFollowedArtists());
     }
 
-    // TODO: Like Song
+    // TODO: Favourite Songs
     @PostMapping("/likeSong/{songId}")
     public ResponseEntity<ApiResponse> userLikeSong(@PathVariable Long songId) {
         return ResponseEntity.ok(likeFollowingDownloadService.userLikeSong(songId));
@@ -41,6 +41,11 @@ public class UserLikeFollowingDownloadController {
     @DeleteMapping("/unlikeSong/{songId}")
     public ResponseEntity<ApiResponse> userUnlikeSong(@PathVariable Long songId) {
         return ResponseEntity.ok(likeFollowingDownloadService.userUnlikeSong(songId));
+    }
+
+    @GetMapping("/liked-check/{songId}")
+    public ResponseEntity<Boolean> checkLiked(@PathVariable Long songId) {
+        return ResponseEntity.ok(likeFollowingDownloadService.isFavoriteSong(songId));
     }
 
     @GetMapping("/liked-songs")

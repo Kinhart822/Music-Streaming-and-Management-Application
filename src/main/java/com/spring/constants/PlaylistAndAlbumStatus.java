@@ -4,6 +4,5 @@ public enum PlaylistAndAlbumStatus {
     DECLINED,
     DRAFT,
     PENDING,
-    EDITED,
     ACCEPTED
 }

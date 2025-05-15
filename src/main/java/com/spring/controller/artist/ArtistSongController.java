@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/artist/song")
 @RequiredArgsConstructor
-public class SongController {
+public class ArtistSongController {
     private final SongService songService;
 
     @PostMapping("/createDraft")

@@ -3,10 +3,10 @@ package com.spring.dto.request;
 import lombok.Data;
 
 @Data
-public class PaginationPlaylistAlbumRequest {
+public class PaginationPlaylistRequest {
     private int page = 1;
     private int size = 10;
-    private String orderBy = "releaseDate";  // releaseDate
+    private String orderBy = "releaseDate";  // releaseDate | title
     private String order = "asc";            // asc | desc
     private String search = "";
 

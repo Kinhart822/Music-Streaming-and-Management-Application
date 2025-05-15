@@ -13,4 +13,6 @@ public class GenreResponse {
     private String imageUrl;
     private String briefDescription;
     private String fullDescription;
+    private String createdDate;
+    private String lastModifiedDate;
 }

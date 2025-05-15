@@ -13,10 +13,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -27,13 +30,30 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
     private final ArtistUserFollowRepository artistUserFollowRepository;
     private final SongRepository songRepository;
     private final UserSongLikeRepository userSongLikeRepository;
+    private final UserSongCountRepository userSongCountRepository;
     private final JwtHelper jwtHelper;
     private final UserSongDownloadRepository userSongDownloadRepository;
 
     private SongResponse convertToSongResponse(Song song) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
         String formattedDate = song.getReleaseDate() != null
-                ? new SimpleDateFormat("dd/MM/yyyy").format(song.getReleaseDate())
+                ? formatter.format(song.getReleaseDate())
                 : null;
+
+        List<String> genreNames = song.getGenreSongs() != null
+                ? song.getGenreSongs().stream()
+                .map(gs -> gs.getGenreSongId().getGenre().getGenresName())
+                .filter(Objects::nonNull)
+                .toList()
+                : new ArrayList<>();
+
+        List<String> artistNameList = song.getArtistSongs() != null
+                ? song.getArtistSongs().stream()
+                .map(as -> as.getArtistSongId().getArtist().getArtistName())
+                .toList()
+                : new ArrayList<>();
 
         return SongResponse.builder()
                 .id(song.getId())
@@ -42,19 +62,24 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                 .lyrics(song.getLyrics() != null ? song.getLyrics() : "")
                 .duration(song.getDuration() != null ? song.getDuration() : "")
                 .imageUrl(song.getImageUrl() != null ? song.getImageUrl() : "")
-                .artSmallUrl(song.getArtSmallUrl() != null ? song.getArtSmallUrl() : "")
-                .artMediumUrl(song.getArtMediumUrl() != null ? song.getArtMediumUrl() : "")
-                .artBigUrl(song.getArtBigUrl() != null ? song.getArtBigUrl() : "")
                 .downloadPermission(song.getDownloadPermission() != null ? song.getDownloadPermission() : false)
                 .description(song.getDescription() != null ? song.getDescription() : "")
                 .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
-                .trackUrl(song.getTrackUrl() != null ? song.getTrackUrl() : "")
                 .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
+                .genreNameList(genreNames)
+                .artistNameList(artistNameList)
+                .numberOfListeners(userSongCountRepository.countDistinctUsersBySongId(song.getId()))
+                .countListen(userSongCountRepository.getTotalCountListenBySongId(song.getId()))
+                .numberOfDownload(userSongDownloadRepository.countDistinctUsersBySongId(song.getId()))
+                .numberOfUserLike(userSongLikeRepository.countDistinctUsersBySongId(song.getId()))
                 .build();
     }
 
     @Override
     public ApiResponse userFollowingArtist(Long artistId) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+        
         Long userId = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
@@ -68,7 +93,7 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
 
         ArtistUserFollow saved = ArtistUserFollow.builder()
                 .artistUserFollowId(id)
-                .followedAt(Instant.now())
+                .followedAt(now)
                 .build();
         artistUserFollowRepository.save(saved);
 
@@ -111,6 +136,14 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                             ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                             : null;
 
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                    String formattedCreatedDate = artist.getCreatedDate() != null
+                            ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                            : null;
+                    String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                            ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                            : null;
+
                     return ArtistPresentation.builder()
                             .id(artist.getId())
                             .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
@@ -124,8 +157,8 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                             .status(artist.getStatus())
                             .createdBy(artist.getCreatedBy())
                             .lastModifiedBy(artist.getLastModifiedBy())
-                            .createdDate(artist.getCreatedDate())
-                            .lastModifiedDate(artist.getLastModifiedDate())
+                            .createdDate(formattedCreatedDate)
+                            .lastModifiedDate(formattedLastModifiedDate)
                             .description(artist.getDescription() != null ? artist.getDescription() : "")
                             .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
                             .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
@@ -136,6 +169,9 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
 
     @Override
     public ApiResponse userLikeSong(Long songId) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+        
         Long userId = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
@@ -149,7 +185,7 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
 
         UserSongLike userSongLike = UserSongLike.builder()
                 .userSongLikeId(likeId)
-                .likedAt(Instant.now())
+                .likedAt(now)
                 .build();
         userSongLikeRepository.save(userSongLike);
 
@@ -174,6 +210,12 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
     }
 
     @Override
+    public Boolean isFavoriteSong(Long songId) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        return userSongLikeRepository.existsByUserIdAndSongId(userId, songId);
+    }
+
+    @Override
     public List<SongResponse> getCurrentUserLikedSongs() {
         Long userId = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(userId)
@@ -191,6 +233,9 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
 
     @Override
     public ApiResponse userDownloadSong(Long songId) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         Long userId = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
@@ -204,15 +249,13 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
 
         UserSongDownload userSongDownload = UserSongDownload.builder()
                 .userSongDownloadId(downloadId)
-                .downloadedAt(Instant.now())
+                .downloadedAt(now)
                 .build();
         userSongDownloadRepository.save(userSongDownload);
 
         String downloadUrl;
         if (song.getMp3Url() != null && !song.getMp3Url().isBlank()) {
             downloadUrl = song.getMp3Url();
-        } else if (song.getTrackUrl() != null && !song.getTrackUrl().isBlank()) {
-            downloadUrl = song.getTrackUrl();
         } else {
             throw new BusinessException(ApiResponseCode.BAD_REQUEST);
         }
@@ -250,8 +293,6 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                     Song song = usd.getUserSongDownloadId().getSong();
                     if (song.getMp3Url() != null && !song.getMp3Url().isBlank()) {
                         return song.getMp3Url();
-                    } else if (song.getTrackUrl() != null && !song.getTrackUrl().isBlank()) {
-                        return song.getTrackUrl();
                     } else {
                         return "";
                     }

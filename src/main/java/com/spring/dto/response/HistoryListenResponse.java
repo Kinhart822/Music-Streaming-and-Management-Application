@@ -5,15 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
-
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Otp {
-    private String email;
-    private String otp;
-    private ZonedDateTime dueDate;
+public class HistoryListenResponse {
+    private String imageUrl;
+    private String message;
 }

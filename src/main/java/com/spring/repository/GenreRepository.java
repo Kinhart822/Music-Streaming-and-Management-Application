@@ -20,5 +20,4 @@ public interface GenreRepository extends JpaRepository<Genre, Long> {
 
     @Query("SELECT g FROM Genre g WHERE LOWER(g.genresName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Genre> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
-
 }

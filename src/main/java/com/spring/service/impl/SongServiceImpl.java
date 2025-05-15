@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SongServiceImpl implements SongService {
     private final SongRepository songRepository;
+    private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
     private final ArtistSongRepository artistSongRepository;
     private final GenreRepository genreRepository;
@@ -110,6 +112,10 @@ public class SongServiceImpl implements SongService {
     }
 
     private SongResponse convertToSongResponse(Song song) {
+        Long id = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
                 .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
 
@@ -124,34 +130,60 @@ public class SongServiceImpl implements SongService {
                 .toList()
                 : new ArrayList<>();
 
-        List<String> additionalArtistNameList = song.getArtistSongs() != null
-                ? song.getArtistSongs().stream()
-                .map(as -> as.getArtistSongId().getArtist().getArtistName())
-                .toList()
-                : new ArrayList<>();
+        if (user.getUserType() == UserType.ARTIST) {
+            List<String> additionalArtistNameList = Optional.ofNullable(
+                            artistSongRepository.findByArtistSongId_Song_Id(song.getId()))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ap -> !ap.getArtistSongId().getArtist().getId().equals(id))
+                    .map(ap -> ap.getArtistSongId().getArtist().getArtistName())
+                    .toList();
 
-        return SongResponse.builder()
-                .id(song.getId())
-                .title(song.getTitle() != null ? song.getTitle() : "")
-                .releaseDate(formattedDate)
-                .lyrics(song.getLyrics() != null ? song.getLyrics() : "")
-                .duration(song.getDuration() != null ? song.getDuration() : "")
-                .imageUrl(song.getImageUrl() != null ? song.getImageUrl() : "")
-                .artSmallUrl(song.getArtSmallUrl() != null ? song.getArtSmallUrl() : "")
-                .artMediumUrl(song.getArtMediumUrl() != null ? song.getArtMediumUrl() : "")
-                .artBigUrl(song.getArtBigUrl() != null ? song.getArtBigUrl() : "")
-                .downloadPermission(song.getDownloadPermission() != null ? song.getDownloadPermission() : false)
-                .description(song.getDescription() != null ? song.getDescription() : "")
-                .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
-                .trackUrl(song.getTrackUrl() != null ? song.getTrackUrl() : "")
-                .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
-                .genreNameList(genreNames)
-                .additionalArtistNameList(additionalArtistNameList)
-                .numberOfListeners(userSongCountRepository.countDistinctUsersBySongId(song.getId()))
-                .countListen(userSongCountRepository.getTotalCountListenBySongId(song.getId()))
-                .numberOfDownload(userSongDownloadRepository.countDistinctUsersBySongId(song.getId()))
-                .numberOfUserLike(userSongLikeRepository.countDistinctUsersBySongId(song.getId()))
-                .build();
+            return SongResponse.builder()
+                    .id(song.getId())
+                    .title(song.getTitle() != null ? song.getTitle() : "")
+                    .releaseDate(formattedDate)
+                    .lyrics(song.getLyrics() != null ? song.getLyrics() : "")
+                    .duration(song.getDuration() != null ? song.getDuration() : "")
+                    .imageUrl(song.getImageUrl() != null ? song.getImageUrl() : "")
+                    .downloadPermission(song.getDownloadPermission() != null ? song.getDownloadPermission() : false)
+                    .description(song.getDescription() != null ? song.getDescription() : "")
+                    .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
+                    .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
+                    .genreNameList(genreNames)
+                    .artistNameList(additionalArtistNameList)
+                    .numberOfListeners(userSongCountRepository.countDistinctUsersBySongId(song.getId()))
+                    .countListen(userSongCountRepository.getTotalCountListenBySongId(song.getId()))
+                    .numberOfDownload(userSongDownloadRepository.countDistinctUsersBySongId(song.getId()))
+                    .numberOfUserLike(userSongLikeRepository.countDistinctUsersBySongId(song.getId()))
+                    .build();
+        } else {
+            List<String> artistNameList = song.getArtistSongs() != null
+                    ? song.getArtistSongs().stream()
+                    .map(as -> as.getArtistSongId().getArtist().getArtistName())
+                    .toList()
+                    : new ArrayList<>();
+
+            return SongResponse.builder()
+                    .id(song.getId())
+                    .title(song.getTitle() != null ? song.getTitle() : "")
+                    .releaseDate(formattedDate)
+                    .lyrics(song.getLyrics() != null ? song.getLyrics() : "")
+                    .duration(song.getDuration() != null ? song.getDuration() : "")
+                    .imageUrl(song.getImageUrl() != null ? song.getImageUrl() : "")
+                    .downloadPermission(song.getDownloadPermission() != null ? song.getDownloadPermission() : false)
+                    .description(song.getDescription() != null ? song.getDescription() : "")
+                    .mp3Url(song.getMp3Url() != null ? song.getMp3Url() : "")
+                    .songStatus(song.getSongStatus() != null ? song.getSongStatus().name() : null)
+                    .genreNameList(genreNames)
+                    .artistNameList(artistNameList)
+                    .numberOfListeners(userSongCountRepository.countDistinctUsersBySongId(song.getId()))
+                    .countListen(userSongCountRepository.getTotalCountListenBySongId(song.getId()))
+                    .numberOfDownload(userSongDownloadRepository.countDistinctUsersBySongId(song.getId()))
+                    .numberOfUserLike(userSongLikeRepository.countDistinctUsersBySongId(song.getId()))
+                    .build();
+        }
     }
 
     private FastApiResponse extractResponseFromJson(String responseBody) {
@@ -208,6 +240,8 @@ public class SongServiceImpl implements SongService {
     // TODO: Main function
     @Override
     public ApiResponse createDraftSong(SongUploadRequest songUploadRequest) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
         Long artistId = jwtHelper.getIdUserRequesting();
 
         // Lấy dữ liệu bổ sung từ request
@@ -222,7 +256,7 @@ public class SongServiceImpl implements SongService {
         // Lưu song
         Song song = Song.builder()
                 .title(title)
-                .releaseDate(Instant.now())
+                .releaseDate(now)
                 .lyrics(lyrics)
                 .duration(enriched.getDuration())
                 .imageUrl(enriched.getImageUrl())
@@ -231,25 +265,35 @@ public class SongServiceImpl implements SongService {
                 .mp3Url(enriched.getMp3Url())
                 .countListener(0L)
                 .songStatus(SongStatus.DRAFT)
-                .createdDate(Instant.now())
-                .lastModifiedDate(Instant.now())
+                .createdDate(now)
+                .lastModifiedDate(now)
                 .build();
         songRepository.save(song);
 
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-        artistSongRepository.save(new ArtistSong(new ArtistSongId(artist, song)));
+        artistSongRepository.save(new ArtistSong(new ArtistSongId(song, artist)));
 
-        for (Long genreId : songUploadRequest.getGenreIds()) {
-            Genre genre = genreRepository.findById(genreId)
-                    .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-            genreSongRepository.save(new GenreSong(new GenreSongId(song, genre)));
+        if (songUploadRequest.getGenreIds() != null && !songUploadRequest.getGenreIds().isEmpty()) {
+            for (Long genreId : songUploadRequest.getGenreIds()) {
+                Genre genre = genreRepository.findById(genreId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                genreSongRepository.save(new GenreSong(new GenreSongId(song, genre)));
+            }
         }
 
-        for (Long additionalArtistId : songUploadRequest.getAdditionalArtistIds()) {
-            Artist additionalArtist = artistRepository.findById(additionalArtistId)
-                    .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-            artistSongRepository.save(new ArtistSong(new ArtistSongId(additionalArtist, song)));
+        if (songUploadRequest.getArtistIds() != null && !songUploadRequest.getArtistIds().isEmpty()) {
+            for (Long additionalArtistId : songUploadRequest.getArtistIds()) {
+                Artist additionalArtist = artistRepository.findById(additionalArtistId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+                if (additionalArtist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                    throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+                }
+
+                artistSongRepository.save(new ArtistSong(new ArtistSongId(song, additionalArtist)));
+            }
         }
 
         return ApiResponse.ok("Creat draft successful!");
@@ -257,15 +301,18 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public ApiResponse uploadSong(Long songId) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-        if (song.getSongStatus() != SongStatus.DRAFT && song.getSongStatus() != SongStatus.EDITED) {
+        if (song.getSongStatus() != SongStatus.DRAFT) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
         }
 
         song.setSongStatus(SongStatus.PROCESSING);
-        song.setLastModifiedDate(Instant.now());
+        song.setLastModifiedDate(now);
         songRepository.save(song);
 
         applicationEventPublisher.publishEvent(new SongUploadedEvent(this, song.getId()));
@@ -276,6 +323,9 @@ public class SongServiceImpl implements SongService {
     @EventListener
     @Async
     public CompletableFuture<ApiResponse> processSong(SongUploadedEvent songUploadedEvent) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         String message;
         Long songId = songUploadedEvent.getSongId();
         Song song = songRepository.findById(songId)
@@ -377,7 +427,7 @@ public class SongServiceImpl implements SongService {
             // 4. Predict genres & save
             fastApiService.handleGenres(song, null, song.getLyrics(), mp3File, requestId);
             song.setSongStatus(SongStatus.PENDING);
-            song.setLastModifiedDate(Instant.now());
+            song.setLastModifiedDate(now);
             songRepository.save(song);
             message = "Song [" + song.getId() + "] processed successfully.";
             log.info("✅ {}", message);
@@ -400,27 +450,39 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public ApiResponse manageUploadSong(Long id, String manageProcess) {
+    public ApiResponse publishSong(Long id) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
         if (song.getSongStatus() != SongStatus.PENDING) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
         } else {
-            if (manageProcess.equalsIgnoreCase(ManageProcess.ACCEPTED.name())) {
-                song.setSongStatus(SongStatus.ACCEPTED);
-                song.setCountListener(0L);
-                song.setLastModifiedDate(Instant.now());
-                songRepository.save(song);
-                return ApiResponse.ok("Song accepted successfully!");
-            } else if (manageProcess.equalsIgnoreCase(ManageProcess.DECLINED.name())) {
-                song.setSongStatus(SongStatus.DECLINED);
-                song.setLastModifiedDate(Instant.now());
-                songRepository.save(song);
-                return ApiResponse.ok("Song declined! Please check your song before uploading again.");
-            } else {
-                throw new BusinessException(ApiResponseCode.INVALID_HTTP_REQUEST);
-            }
+            song.setSongStatus(SongStatus.ACCEPTED);
+            song.setCountListener(0L);
+            song.setLastModifiedDate(now);
+            songRepository.save(song);
+            return ApiResponse.ok("Song accepted!");
+        }
+    }
+
+    @Override
+    public ApiResponse declineSong(Long id) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
+        Song song = songRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        if (song.getSongStatus() != SongStatus.PENDING) {
+            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
+        } else {
+            song.setSongStatus(SongStatus.DECLINED);
+            song.setLastModifiedDate(now);
+            songRepository.save(song);
+            return ApiResponse.ok("Song declined!");
         }
     }
 
@@ -429,6 +491,9 @@ public class SongServiceImpl implements SongService {
         Long artistId = jwtHelper.getIdUserRequesting();
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
 
         if (song.getSongStatus() == SongStatus.PROCESSING) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -450,68 +515,76 @@ public class SongServiceImpl implements SongService {
             song.setDescription(request.getDescription());
         }
 
-        if (request.getGenreId() != null && !request.getGenreId().isEmpty()) {
-            List<Genre> genres = request.getGenreId().stream()
-                    .map(index -> genreRepository.findById(index)
-                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
+        if (request.getGenreIds() != null && !request.getGenreIds().isEmpty()) {
+            List<Long> newGenreIds = request.getGenreIds();
+
+            List<Long> currentGenreIds = song.getGenreSongs().stream()
+                    .map(gs -> gs.getGenreSongId().getGenre().getId())
                     .toList();
-            List<GenreSong> genreSongs = genres.stream()
-                    .map(genre -> new GenreSong(new GenreSongId(song, genre)))
-                    .toList();
-            song.setGenreSongs(genreSongs);
+
+            for (Long genreId : newGenreIds) {
+                if (!currentGenreIds.contains(genreId)) {
+                    Genre genre = genreRepository.findById(genreId)
+                            .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+                    song.getGenreSongs().add(new GenreSong(new GenreSongId(song, genre)));
+                }
+            }
+
+            song.getGenreSongs().removeIf(gs -> !newGenreIds.contains(gs.getGenreSongId().getGenre().getId()));
+        } else {
+            song.getGenreSongs().clear();
         }
 
-        if (request.getAdditionalArtistIds() != null && !request.getAdditionalArtistIds().isEmpty()) {
-            List<Long> newArtistIds = request.getAdditionalArtistIds().stream()
+        if (request.getArtistIds() != null && !request.getArtistIds().isEmpty()) {
+            List<Long> newAdditionalArtistIds = request.getArtistIds().stream()
                     .filter(id -> !id.equals(artistId))
                     .toList();
 
-            List<Long> currentArtistIds = song.getArtistSongs().stream()
+            List<Long> currentAdditionalArtistIds = song.getArtistSongs().stream()
                     .map(ap -> ap.getArtistSongId().getArtist().getId())
                     .filter(id -> !id.equals(artistId))
                     .toList();
 
-            for (Long additionalArtistId : newArtistIds) {
-                if (!currentArtistIds.contains(additionalArtistId)) {
-                    Artist artist = artistRepository.findById(additionalArtistId)
+            for (Long additionalArtistId : newAdditionalArtistIds) {
+                if (!currentAdditionalArtistIds.contains(additionalArtistId)) {
+                    Artist additionalArtist = artistRepository.findById(additionalArtistId)
                             .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-                    if (artist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
+                    if (additionalArtist.getStatus() == CommonStatus.INACTIVE.getStatus()) {
                         throw new BusinessException(ApiResponseCode.INVALID_STATUS);
                     }
 
-                    ArtistSong newArtistSong = new ArtistSong();
-                    newArtistSong.setArtistSongId(new ArtistSongId(artist, song));
-                    song.getArtistSongs().add(newArtistSong);
+                    artistSongRepository.save(new ArtistSong(new ArtistSongId(song, additionalArtist)));
                 }
             }
 
             song.getArtistSongs().removeIf(ap -> {
                 Long id = ap.getArtistSongId().getArtist().getId();
-                return !id.equals(artistId) && !newArtistIds.contains(id);
+                return !id.equals(artistId) && !newAdditionalArtistIds.contains(id);
             });
-
-            if (request.getImage() != null && !request.getImage().isEmpty()) {
-                String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
-                song.setImageUrl(imageUrl);
-            }
-
-            if (request.getFile() != null && !request.getFile().isEmpty()) {
-                SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(request.getFile());
-                String audioUrl = uploaded.getMp3Url();
-                String formattedDuration = uploaded.getDuration();
-
-                song.setMp3Url(audioUrl);
-                song.setDuration(formattedDuration);
-            }
-        }
-
-        song.setLastModifiedDate(Instant.now());
-        if (song.getSongStatus() != SongStatus.DECLINED) {
-            song.setSongStatus(song.getSongStatus());
         } else {
-            song.setSongStatus(SongStatus.EDITED);
+            song.getArtistSongs().removeIf(ap -> {
+                Long id = ap.getArtistSongId().getArtist().getId();
+                return !id.equals(artistId);
+            });
         }
+
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImageToCloudinary(request.getImage());
+            song.setImageUrl(imageUrl);
+        }
+
+        if (request.getFile() != null && !request.getFile().isEmpty()) {
+            SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(request.getFile());
+            String audioUrl = uploaded.getMp3Url();
+            String formattedDuration = uploaded.getDuration();
+
+            song.setMp3Url(audioUrl);
+            song.setDuration(formattedDuration);
+        }
+
+        song.setLastModifiedDate(now);
+        song.setSongStatus(song.getSongStatus());
         Song updated = songRepository.save(song);
         songRepository.save(updated);
 
@@ -533,6 +606,15 @@ public class SongServiceImpl implements SongService {
     @Override
     public List<SongResponse> getAllSongs() {
         List<Song> songs = songRepository.findAll();
+
+        return songs.stream()
+                .map(this::convertToSongResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SongResponse> getAllSongsByArtistId(Long artistId) {
+        List<Song> songs = songRepository.findByArtistId(artistId);
         return songs.stream()
                 .map(this::convertToSongResponse)
                 .collect(Collectors.toList());
@@ -542,7 +624,6 @@ public class SongServiceImpl implements SongService {
     public SongResponse getSongById(Long songId) {
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-
         return convertToSongResponse(song);
     }
 
@@ -552,7 +633,6 @@ public class SongServiceImpl implements SongService {
         List<Song> songs = genreSongs.stream()
                 .map(gs -> gs.getGenreSongId().getSong())
                 .toList();
-
         return songs.stream()
                 .map(this::convertToSongResponse)
                 .collect(Collectors.toList());
@@ -569,38 +649,17 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public List<SongResponse> getSongsByStatus(String status) {
-        SongStatus songStatus = SongStatus.valueOf(status.toUpperCase());
-        List<Song> songs = songRepository.findAllBySongStatus(songStatus);
+    public List<SongResponse> getAcceptedSongsByArtistId() {
+        Long artistId = jwtHelper.getIdUserRequesting();
+        List<Song> songs = songRepository.findByArtistIdAndStatus(artistId, SongStatus.ACCEPTED);
         return songs.stream()
                 .map(this::convertToSongResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<SongResponse> getSongsByStatusAndArtistId(String status) {
-        Long artistId = jwtHelper.getIdUserRequesting();
-
-        SongStatus songStatus;
-        try {
-            songStatus = SongStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException(ApiResponseCode.INVALID_STATUS);
-        }
-
-        List<Song> songs = songRepository.findByArtistIdAndStatus(artistId, songStatus);
-
-        return songs.stream()
-                .map(this::convertToSongResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<SongResponse> getSongsByArtistId() {
-        Long artistId = jwtHelper.getIdUserRequesting();
-
-        List<Song> songs = songRepository.findByArtistId(artistId);
-
+    public List<SongResponse> getAllAcceptedSongs() {
+        List<Song> songs = songRepository.findAllBySongStatus(SongStatus.ACCEPTED);
         return songs.stream()
                 .map(this::convertToSongResponse)
                 .collect(Collectors.toList());
@@ -655,46 +714,55 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public ApiResponse addSongRequest(AdminAddSongRequest request) {
+        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
+        Instant now = dueDateInVietnam.toInstant();
+
+        // Upload thông tin
         String title = request.getTitle();
         String lyrics = request.getLyrics();
-        String duration = request.getDuration();
+        String description = request.getDescription();
+        Boolean downloadPermission = request.getDownloadPermission();
 
-        // Kiểm tra xem các nghệ sĩ tồn tại ko
-        List<Artist> artists = request.getArtistId().stream()
-                .map(artistId -> artistRepository.findById(artistId)
-                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
-                .toList();
+        // Upload file lên Cloudinary
+        MultipartFile mp3File = request.getFile();
+        SongUploadResponse uploaded = cloudinaryService.uploadAudioToCloudinary(mp3File);
+        String audioUrl = uploaded.getMp3Url();
+        String formattedDuration = uploaded.getDuration();
 
-        // Kiểm tra xem các thể loại tồn tại ko
-        List<Genre> genres = request.getGenreId().stream()
-                .map(genreId -> genreRepository.findById(genreId)
-                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
-                .toList();
+        MultipartFile image = request.getImage();
+        String imageUrl = cloudinaryService.uploadImageToCloudinary(image);
 
         // Tạo bài hát mới
         Song song = Song.builder()
                 .title(title)
                 .lyrics(lyrics)
-                .duration(duration)
-                .releaseDate(Instant.now())
-                .downloadPermission(false)
+                .description(description)
+                .mp3Url(audioUrl)
+                .imageUrl(imageUrl)
+                .duration(formattedDuration)
+                .releaseDate(now)
+                .downloadPermission(downloadPermission != null ? downloadPermission : false)
                 .songStatus(SongStatus.ACCEPTED)
                 .countListener(0L)
-                .createdDate(Instant.now())
-                .lastModifiedDate(Instant.now())
+                .createdDate(now)
+                .lastModifiedDate(now)
                 .build();
         song = songRepository.save(song);
 
-        for (Artist artist : artists) {
-            artistSongRepository.save(new ArtistSong(new ArtistSongId(artist, song)));
+        List<Long> artistIds = request.getArtistIds();
+        for (Long artistId : artistIds) {
+            Artist artist = artistRepository.findById(artistId)
+                    .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+            artistSongRepository.save(new ArtistSong(new ArtistSongId(song, artist)));
         }
 
+        List<Genre> genres = request.getGenreIds().stream()
+                .map(genreId -> genreRepository.findById(genreId)
+                        .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND)))
+                .toList();
         for (Genre genre : genres) {
             genreSongRepository.save(new GenreSong(new GenreSongId(song, genre)));
         }
-
-        // Lưu lại bài hát với các thể loại đã liên kết
-        songRepository.save(song);
 
         return ApiResponse.ok("Thêm bài hát thành công!");
     }
@@ -702,10 +770,7 @@ public class SongServiceImpl implements SongService {
     @Override
     public Long totalSongsByArtist() {
         Long artistId = jwtHelper.getIdUserRequesting();
-
-        return songRepository.findByArtistId(artistId).stream()
-                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
-                .count();
+        return songRepository.findByArtistId(artistId).stream().count();
     }
 
     @Override

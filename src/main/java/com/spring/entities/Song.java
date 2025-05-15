@@ -38,15 +38,6 @@ public class Song {
     @Column(name = "image_url", columnDefinition = "text")
     private String imageUrl;    // Song image url from Cloudinary
 
-    @Column(name = "art_small_url", columnDefinition = "text")
-    private String artSmallUrl;
-
-    @Column(name = "art_medium_url", columnDefinition = "text")
-    private String artMediumUrl;
-
-    @Column(name = "art_big_url", columnDefinition = "text")
-    private String artBigUrl;
-
     @Column(name = "download_permission")
     private Boolean downloadPermission;
 
@@ -55,9 +46,6 @@ public class Song {
 
     @Column(name = "mp3_url", columnDefinition = "text")
     private String mp3Url;        // Song file url from Cloudinary
-
-    @Column(name = "track_url", columnDefinition = "text")
-    private String trackUrl;       // Song url from Spotify_API
 
     @Column(name = "count_listener")
     private Long countListener;     // Số người nghe
@@ -74,20 +62,20 @@ public class Song {
     @Column
     private Instant lastModifiedDate;
 
-    @OneToMany(mappedBy = "artistSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ArtistSong> artistSongs = new ArrayList<>();
-
     @OneToMany(mappedBy = "song", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistoryListen> historyListens;
 
-    @OneToMany(mappedBy = "albumSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AlbumSong> albumSongs = new ArrayList<>();
+    @OneToMany(mappedBy = "artistSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArtistSong> artistSongs = new ArrayList<>();
 
     @OneToMany(mappedBy = "playlistSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlaylistSong> playlistSongs = new ArrayList<>();
 
+    @OneToMany(mappedBy = "albumSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AlbumSong> albumSongs = new ArrayList<>();
+
     @OneToMany(mappedBy = "genreSongId.song", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GenreSong> genreSongs;
+    private List<GenreSong> genreSongs = new ArrayList<>();
 
     @OneToMany(mappedBy = "userSongLikeId.song", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSongLike> userSongLikes;

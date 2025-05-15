@@ -6,17 +6,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AdminPresentation {
+public class SearchArtistPresentation {
     private Long id;
     private String avatar;
     private String firstName;
     private String lastName;
+    private String artistName;
+    private String description;
+    private String image;
+    private String backgroundImage;
+    private Long countListen;
+    private Long numberOfFollowers;
     private String email;
     private String gender;
     private String birthDay;
@@ -27,4 +33,7 @@ public class AdminPresentation {
     private String createdDate;
     private String lastModifiedDate;
     private UserType userType;
+    private List<Long> artistSongIds;
+    private List<Long> artistPlaylistIds;
+    private List<Long> artistAlbumIds;
 }

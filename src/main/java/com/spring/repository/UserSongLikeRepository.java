@@ -16,5 +16,13 @@ public interface UserSongLikeRepository extends JpaRepository<UserSongLike, User
 
     @Query("SELECT COUNT(DISTINCT usc.userSongLikeId.user.id) FROM UserSongLike usc WHERE usc.userSongLikeId.song.id IN :songIds AND usc.userSongLikeId.user.userType = 'USER'")
     Long countDistinctListenersBySongIds(@Param("songIds") List<Long> songIds);
+
+    @Query("""
+                SELECT CASE WHEN COUNT(usc) > 0 THEN true ELSE false END
+                FROM UserSongLike usc
+                WHERE usc.userSongLikeId.song.id = :songId AND usc.userSongLikeId.user.id = :userId
+            """)
+    boolean existsByUserIdAndSongId(@Param("userId") Long userId, @Param("songId") Long songId);
+
 }
 

@@ -15,7 +15,43 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
     @Query("SELECT asg.artistAlbumId.album FROM ArtistAlbum asg WHERE asg.artistAlbumId.artist.id = :artistId")
     List<Album> findByArtistId(@Param("artistId") Long artistId);
 
-    @Query("SELECT a FROM Album a WHERE LOWER(a.albumName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<Album> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT COUNT(a) FROM Album a")
+    Long countAllAlbums();
 
+
+    @Query("SELECT COUNT(a) FROM Album a WHERE a.playlistAndAlbumStatus = 'PENDING'")
+    Long countAllPendingAlbums();
+
+    @Query("""
+            SELECT a FROM Album a
+            LEFT JOIN ArtistAlbum aai ON aai.artistAlbumId.album = a
+            WHERE (:search IS NULL OR LOWER(a.albumName) LIKE %:search%)
+              AND (aai.artistAlbumId.artist.id = :artistId)
+            GROUP BY a
+            """)
+    Page<Album> findArtistAlbumsByFilter(Pageable pageable, @Param("search") String search, @Param("artistId") Long artistId);
+
+    @Query("""
+            SELECT a FROM Album a
+            LEFT JOIN ArtistAlbum aai ON aai.artistAlbumId.album = a
+            WHERE (:search IS NULL OR LOWER(a.albumName) LIKE %:search%)
+            GROUP BY a
+            """)
+    Page<Album> findAlbumsByFilter(Pageable pageable, @Param("search") String search);
+
+    @Query(nativeQuery = true, value = """
+                SELECT a.*
+                FROM albums a
+                LEFT JOIN artist_albums abs ON abs.album_id = a.id
+                WHERE (:title IS NULL OR LOWER(a.album_name) LIKE CONCAT('%', :title, '%'))
+                    AND (a.status LIKE 'ACCEPTED')
+                GROUP BY a.id
+                ORDER BY a.release_date DESC
+                LIMIT :limit OFFSET :offset
+            """)
+    List<Album> getAllAlbumsByTitle(
+            @Param("title") String title,
+            @Param("limit") Integer limit,
+            @Param("offset") Integer offset
+    );
 }

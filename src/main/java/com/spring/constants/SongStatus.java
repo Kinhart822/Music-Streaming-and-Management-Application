@@ -5,6 +5,5 @@ public enum SongStatus {
     DRAFT,
     PROCESSING,
     PENDING,
-    EDITED,
     ACCEPTED
 }

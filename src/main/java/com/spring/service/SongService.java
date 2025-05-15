@@ -13,6 +13,7 @@ public interface SongService {
     ApiResponse updateSong(Long id, EditSongRequest editSongRequest);
     ApiResponse deleteSong(Long id);
     List<SongResponse> getAllSongs();
+    List<SongResponse> getAllSongsByArtistId(Long artistId);
 
     SongResponse getSongById(Long songId);
     List<SongResponse> getSongsByGenre(Long genreId);
@@ -28,16 +29,16 @@ public interface SongService {
     Long totalNumberOfLikes();
     Long totalNumberOfUserFollowers();
 
-    List<SongResponse> getSongsByStatus(String status);
-    List<SongResponse> getSongsByStatusAndArtistId(String status);
-    List<SongResponse> getSongsByArtistId();
+    List<SongResponse> getAcceptedSongsByArtistId();
+    List<SongResponse> getAllAcceptedSongs();
     List<SongResponse> getTrendingSongs();
     List<SongResponse> getTop15BestSongEachGenre(Long genreId);
 
     // Upload Song Process
     ApiResponse createDraftSong(SongUploadRequest songUploadRequest);
     ApiResponse uploadSong(Long songId);     // Artist
-    ApiResponse manageUploadSong(Long id, String manageProcess);    // Admin
+    ApiResponse publishSong(Long id);    // Admin
+    ApiResponse declineSong(Long id);    // Admin
 
     // Admin
     ApiResponse addSongRequest(AdminAddSongRequest request);

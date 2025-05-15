@@ -7,12 +7,12 @@ public class PaginationSongRequest {
     private int page = 1;
     private int size = 10;
     private Long genreId;                    // Lọc theo thể loại
-    private String orderBy = "releaseDate";  // releaseDate | songCount
+    private String orderBy = "releaseDate";  // title | releaseDate | numberOfListeners| countListen
     private String order = "asc";            // asc | desc
     private String search = "";
 
     public String getOrder() {
-        return order != null ? order : "asc";
+        return order != null ? order.toLowerCase() : "asc";
     }
 
     public String getSearch() {

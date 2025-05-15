@@ -1,5 +1,6 @@
 package com.spring.dto.response;
 
+import com.spring.constants.UserType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +24,7 @@ public class UserPresentation {
     private Integer status;
     private Long createdBy;
     private Long lastModifiedBy;
-    private Instant createdDate;
-    private Instant lastModifiedDate;
+    private String createdDate;
+    private String lastModifiedDate;
+    private UserType userType;
 }
