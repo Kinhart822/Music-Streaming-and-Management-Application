@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.parcelize)
 }
 
@@ -124,4 +125,7 @@ dependencies {
     // Compose UI testing
     androidTestImplementation(platform(libs.androidx.compose.bom.v20250401))
     androidTestImplementation(libs.ui.test.junit4)
+
+    // Additional
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }

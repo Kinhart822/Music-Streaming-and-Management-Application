@@ -22,9 +22,7 @@ import vn.edu.usth.msma.network.CustomAuthenticator
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.screen.SplashScreen
 import vn.edu.usth.msma.ui.theme.MSMATheme
-import vn.edu.usth.msma.utils.eventbus.Event
-import vn.edu.usth.msma.utils.eventbus.Event.ProfileUpdatedEvent
-import vn.edu.usth.msma.utils.eventbus.Event.SessionExpiredEvent
+import vn.edu.usth.msma.utils.eventbus.Event.*
 import vn.edu.usth.msma.utils.eventbus.EventBus
 import javax.inject.Inject
 
@@ -94,19 +92,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        lifecycleScope.launch {
-            if (preferencesManager.isMiniPlayerVisibleFlow.first()) {
-                val intent = Intent(this@MainActivity, MusicService::class.java).apply {
-                    action = "CLOSE"
-                }
-                startService(intent)
             }
         }
     }

@@ -49,10 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import vn.edu.usth.msma.ui.screen.settings.history_listen.ViewHistoryListenActivity
-import vn.edu.usth.msma.ui.screen.settings.profile.change_password.ChangePasswordActivity
-import vn.edu.usth.msma.ui.screen.settings.profile.edit.EditAccountInfoActivity
-import vn.edu.usth.msma.ui.screen.settings.profile.view.ViewProfileActivity
+import vn.edu.usth.msma.ui.components.ScreenRoute
 
 data class SettingItem(
     val title: String,
@@ -120,9 +117,7 @@ fun SettingScreen(
             firstName = settingState.firstName,
             lastName = settingState.lastName,
             isUserInfo = true,
-            onClick = {
-                context.startActivity(Intent(context, ViewProfileActivity::class.java))
-            }
+            onClick = { navController.navigate(ScreenRoute.ViewProfile.route) }
         )
     )
 
@@ -130,23 +125,17 @@ fun SettingScreen(
         SettingItem(
             title = "Edit / Update",
             icon = { Icon(Icons.Default.Edit, contentDescription = "Edit") },
-            onClick = {
-                context.startActivity(Intent(context, EditAccountInfoActivity::class.java))
-            }
+            onClick = { navController.navigate(ScreenRoute.EditProfile.route) }
         ),
         SettingItem(
             title = "Change Password",
             icon = { Icon(Icons.Default.Lock, contentDescription = "Lock") },
-            onClick = {
-                context.startActivity(Intent(context, ChangePasswordActivity::class.java))
-            }
+            onClick = { navController.navigate(ScreenRoute.ChangePasswordScreen.route) }
         ),
         SettingItem(
             title = "View History Listen",
             icon = { Icon(Icons.Default.History, contentDescription = "History") },
-            onClick = {
-                context.startActivity(Intent(context, ViewHistoryListenActivity::class.java))
-            }
+            onClick = { navController.navigate(ScreenRoute.ViewHistoryListen.route) }
         ),
         SettingItem(
             title = "Delete Account",

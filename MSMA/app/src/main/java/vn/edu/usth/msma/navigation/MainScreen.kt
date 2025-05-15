@@ -1,7 +1,6 @@
 package vn.edu.usth.msma.navigation
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,12 +25,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
-import vn.edu.usth.msma.ui.screen.notification.NotificationActivity
+import vn.edu.usth.msma.ui.components.ScreenRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    screenTitle: String,
+    screenTitle: String?,
     onNotificationClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null
 ) {
@@ -61,7 +60,7 @@ fun TopBar(
                 }
             }
         },
-        title = { Text(screenTitle) },
+        title = { Text(screenTitle.toString()) },
         actions = {
             onNotificationClick?.let {
                 IconButton(onClick = it) {
@@ -77,7 +76,6 @@ fun TopBar(
     )
 }
 
-
 @Composable
 fun MainScreen(
     navController: NavHostController = rememberNavController(),
@@ -87,18 +85,19 @@ fun MainScreen(
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = currentBackStackEntry?.destination?.route
 
-    // Show top and bottom bars for non-authentication screens
-    val showTopAndBottomBar = currentRoute?.startsWith(Screen.Login.route) == false &&
-            currentRoute.startsWith(Screen.Register.route) == false &&
-            currentRoute.startsWith(Screen.ForgotPassword.route) == false &&
-            currentRoute.startsWith(Screen.Otp.route) == false &&
-            currentRoute.startsWith(Screen.ResetPassword.route) == false
+    // Show top and bottom bars for non-authentication ScreenRoutes
+    val showTopAndBottomBar = currentRoute?.startsWith(ScreenRoute.Login.route) == false &&
+            currentRoute.startsWith(ScreenRoute.Register.route) == false &&
+            currentRoute.startsWith(ScreenRoute.ForgotPassword.route) == false &&
+            currentRoute.startsWith(ScreenRoute.Otp.route) == false &&
+            currentRoute.startsWith(ScreenRoute.ResetPassword.route) == false &&
+            currentRoute.startsWith(ScreenRoute.SongDetails.route) == false
 
-    // Determine screen title
+    // Determine ScreenRoute title
     val screenTitle = when {
         currentRoute?.contains("genre") == true -> {
             // Extract genreJson from arguments and decode
-            val genreJson = currentBackStackEntry?.arguments?.getString("genreJson") ?: ""
+            val genreJson = currentBackStackEntry.arguments?.getString("genreJson") ?: ""
             try {
                 val genre = Gson().fromJson(genreJson, GenreResponse::class.java)
                 genre.name
@@ -106,22 +105,46 @@ fun MainScreen(
                 "Genre"
             }
         }
-        currentRoute == Screen.Home.route -> "Home"
-        currentRoute == Screen.Search.route -> "Search"
-        currentRoute == Screen.Library.route -> "Library"
-        currentRoute == Screen.Settings.route -> "Settings"
+
+        currentRoute == ScreenRoute.Home.route -> "Home"
+        currentRoute == ScreenRoute.Search.route -> "Search"
+        currentRoute == ScreenRoute.Library.route -> "Library"
+        currentRoute == ScreenRoute.Settings.route -> "Settings"
+        currentRoute == ScreenRoute.NotificationScreen.route -> "Notifications"
+        currentRoute == ScreenRoute.ViewProfile.route -> "View Profile"
+        currentRoute == ScreenRoute.EditProfile.route -> "Edit Profile"
+        currentRoute == ScreenRoute.ChangePasswordScreen.route -> "Change Password"
+        currentRoute == ScreenRoute.ViewHistoryListen.route -> "History Listen"
+
         else -> "Home"
     }
+
+    // Trackers
+    val isInNotificationScreen = currentRoute == ScreenRoute.NotificationScreen.route
+    val isInGenreScreen = currentRoute == ScreenRoute.Genre.route
+    val isInViewProfileScreen = currentRoute == ScreenRoute.ViewProfile.route
+    val isInEditProfileScreen = currentRoute == ScreenRoute.EditProfile.route
+    val isInChangePasswordScreen = currentRoute == ScreenRoute.ChangePasswordScreen.route
+    val isInViewHistoryListenScreen = currentRoute == ScreenRoute.ViewHistoryListen.route
 
     Scaffold(
         topBar = {
             if (showTopAndBottomBar) {
                 TopBar(
                     screenTitle = screenTitle,
-                    onNotificationClick = if (currentRoute.startsWith(Screen.Genre.route) == false) {
-                        { context.startActivity(Intent(context, NotificationActivity::class.java)) }
+                    onNotificationClick = if (currentRoute.startsWith(ScreenRoute.Genre.route) == false
+                        && !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
+                        && !isInEditProfileScreen && !isInChangePasswordScreen &&
+                        !isInViewHistoryListenScreen
+                    ) {
+                        {
+                            navController.navigate(ScreenRoute.NotificationScreen.route)
+                        }
                     } else null,
-                    onBackClick = if (currentRoute.contains("genre") == true) {
+                    onBackClick = if (currentRoute.contains("genre") == true ||
+                        isInNotificationScreen || isInViewProfileScreen || isInEditProfileScreen ||
+                        isInChangePasswordScreen || isInViewHistoryListenScreen
+                    ) {
                         { navController.popBackStack() }
                     } else null
                 )
@@ -129,7 +152,12 @@ fun MainScreen(
         },
         bottomBar = {
             if (showTopAndBottomBar) {
-                BottomNavigationBar(navController)
+                if (!isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
+                    && !isInEditProfileScreen && !isInChangePasswordScreen &&
+                    !isInViewHistoryListenScreen
+                ) {
+                    BottomNavigationBar(navController)
+                }
             }
         }
     ) { innerPadding ->

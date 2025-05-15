@@ -36,36 +36,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.screen.notification.NotificationActivity"
-            android:exported="false"
-            android:label="@string/title_activity_notification"
-            android:theme="@style/Theme.MSMA" />
-        <activity
-            android:name=".ui.screen.settings.profile.edit.EditAccountInfoActivity"
-            android:exported="false"
-            android:label="@string/title_activity_notification"
-            android:theme="@style/Theme.MSMA" />
-        <activity
-            android:name=".ui.screen.settings.profile.view.ViewProfileActivity"
-            android:exported="false"
-            android:label="@string/title_activity_view_profile"
-            android:theme="@style/Theme.MSMA" />
-        <activity
-            android:name=".ui.screen.settings.profile.change_password.ChangePasswordActivity"
-            android:exported="false"
-            android:label="@string/title_activity_change_password"
-            android:theme="@style/Theme.MSMA" />
-        <activity
-            android:name=".ui.screen.settings.history_listen.ViewHistoryListenActivity"
-            android:exported="false"
-            android:label="@string/title_activity_view_history_listen"
-            android:theme="@style/Theme.MSMA" />
-        <activity
-            android:name=".ui.screen.songs.SongDetailsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_song_details"
-            android:theme="@style/Theme.MSMA" />
 
         <service
             android:name=".service.MusicService"

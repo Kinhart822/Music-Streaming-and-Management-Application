@@ -86,7 +86,7 @@ class MusicPlayerViewModel @Inject constructor(
                 when (intent.action) {
                     "POSITION_UPDATE" -> {
                         if (!isDragging.value) {
-                            val position = intent.getLongExtra("POSITION", 0L)
+                            val position = intent.getLongExtra("CURRENT_POSITION", 0L)
                             val audioDuration = intent.getLongExtra("DURATION", 0L)
                             currentPosition.longValue = position
                             duration.longValue = audioDuration
@@ -148,7 +148,7 @@ class MusicPlayerViewModel @Inject constructor(
                                         _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
                                         _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
                                         _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
-                                        currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                                        currentPosition.longValue = intent.getLongExtra("CURRENT_POSITION", 0L)
                                         duration.longValue = intent.getLongExtra("DURATION", 0L)
                                     }
                                 }
@@ -170,7 +170,7 @@ class MusicPlayerViewModel @Inject constructor(
                                         _isPlaying.value = intent.getBooleanExtra("IS_PLAYING", false)
                                         _isLoopEnabled.value = intent.getBooleanExtra("IS_LOOP_ENABLED", false)
                                         _isShuffleEnabled.value = intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
-                                        currentPosition.longValue = intent.getLongExtra("POSITION", 0L)
+                                        currentPosition.longValue = intent.getLongExtra("CURRENT_POSITION", 0L)
                                         duration.longValue = intent.getLongExtra("DURATION", 0L)
                                     }
                                 }
@@ -407,7 +407,7 @@ class MusicPlayerViewModel @Inject constructor(
     ) {
         val intent = Intent(context, MusicService::class.java).apply {
             this.action = action
-            position?.let { putExtra("POSITION", it) }
+            position?.let { putExtra("CURRENT_POSITION", it) }
         }
 
         context.startService(intent)

@@ -1,10 +1,20 @@
 package vn.edu.usth.msma.ui.screen.search
 
-import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -14,8 +24,23 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,9 +57,8 @@ import coil.compose.AsyncImage
 import com.google.gson.Gson
 import vn.edu.usth.msma.data.dto.response.management.ContentItem
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
-import vn.edu.usth.msma.navigation.Screen
 import vn.edu.usth.msma.ui.components.LoadingScreen
-import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
+import vn.edu.usth.msma.ui.components.ScreenRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +152,7 @@ fun SearchScreen(
                             genre = genre,
                             onClick = {
                                 val genreJson = Gson().toJson(genre)
-                                navController.navigate(Screen.Genre.createRoute(genreJson))
+                                navController.navigate(ScreenRoute.Genre.createRoute(genreJson))
                             }
                         )
                     }
@@ -177,7 +201,7 @@ fun SearchScreen(
                     items(state.contents) { content ->
                         ContentItemView(
                             content = content,
-                            context = context
+                            navController
                         )
                     }
                 }
@@ -235,7 +259,8 @@ fun GenreCard(
 @Composable
 fun ContentItemView(
     content: ContentItem,
-    context: Context
+    navController: NavHostController
+
 ) {
     when (content) {
         is ContentItem.SongItem -> {
@@ -243,28 +268,7 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {
-                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
-                            putExtra("SONG_ID", content.id)
-                            putExtra("FROM_MINI_PLAYER", false)
-                            putExtra("IS_PLAYING", false)
-                            putExtra("IS_LOOP_ENABLED", false)
-                            putExtra("IS_SHUFFLE_ENABLED", false)
-                        }
-                        // Send broadcast to update MiniPlayer
-                        val broadcastIntent = Intent("MUSIC_EVENT").apply {
-                            putExtra("ACTION", "CURRENT_SONG")
-                            putExtra("SONG_ID", content.id)
-                            putExtra("SONG_TITLE", content.title)
-                            putExtra("SONG_ARTIST", content.artistNameList?.joinToString(", ") ?: "Unknown Artist")
-                            putExtra("SONG_IMAGE", content.imageUrl)
-                            putExtra("IS_PLAYING", false)
-                            putExtra("IS_LOOP_ENABLED", false)
-                            putExtra("IS_SHUFFLE_ENABLED", false)
-                        }
-                        context.sendBroadcast(broadcastIntent)
-                        context.startActivity(intent)
-                    },
+                    .clickable { navController.navigate(ScreenRoute.SongDetails.createRoute(content.id)) },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -304,12 +308,7 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {
-                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
-                            putExtra("playlistId", content.id)
-                        }
-                        context.startActivity(intent)
-                    },
+                    .clickable {},
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -348,12 +347,7 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {
-                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
-                            putExtra("albumId", content.id)
-                        }
-                        context.startActivity(intent)
-                    },
+                    .clickable {},
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -392,12 +386,7 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {
-                        val intent = Intent(context, SongDetailsActivity::class.java).apply {
-                            putExtra("artistId", content.id)
-                        }
-                        context.startActivity(intent)
-                    },
+                    .clickable {},
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(

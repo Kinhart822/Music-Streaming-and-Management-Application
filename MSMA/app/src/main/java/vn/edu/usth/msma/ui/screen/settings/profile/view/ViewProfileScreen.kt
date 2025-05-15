@@ -30,97 +30,75 @@ fun ViewProfileScreen(
     Log.d("ViewProfileScreen", "Composing ViewProfileScreen")
     val state by viewModel.state.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("View Profile") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { paddingValues ->
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Avatar Display
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(vertical = 16.dp)
         ) {
-            // Avatar Display
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 16.dp)
-            ) {
-                state.avatarUri?.let { uri ->
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = "Selected Avatar",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: state.avatar?.let { avatarUrl ->
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = "Current Avatar",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: Box(
+            state.avatarUri?.let { uri ->
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Selected Avatar",
                     modifier = Modifier
                         .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
-            }
-
-            // First Name
-            ProfileField(
-                label = "First Name",
-                value = state.firstName ?: "Not set"
+            } ?: state.avatar?.let { avatarUrl ->
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = "Current Avatar",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } ?: Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
             )
-
-            // Last Name
-            ProfileField(
-                label = "Last Name",
-                value = state.lastName ?: "Not set"
-            )
-
-            // Gender
-            ProfileField(
-                label = "Gender",
-                value = state.gender.name
-            )
-
-            // Date of Birth
-            ProfileField(
-                label = "Date of Birth",
-                value = state.birthDay ?: "Not set"
-            )
-
-            // Phone
-            ProfileField(
-                label = "Phone",
-                value = state.phone ?: "Not set"
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
+
+        // First Name
+        ProfileField(
+            label = "First Name",
+            value = state.firstName ?: "Not set"
+        )
+
+        // Last Name
+        ProfileField(
+            label = "Last Name",
+            value = state.lastName ?: "Not set"
+        )
+
+        // Gender
+        ProfileField(
+            label = "Gender",
+            value = state.gender.name
+        )
+
+        // Date of Birth
+        ProfileField(
+            label = "Date of Birth",
+            value = state.birthDay ?: "Not set"
+        )
+
+        // Phone
+        ProfileField(
+            label = "Phone",
+            value = state.phone ?: "Not set"
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

@@ -3,9 +3,17 @@ package vn.edu.usth.msma.navigation
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,6 +30,7 @@ import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
+import vn.edu.usth.msma.ui.components.ScreenRoute
 import vn.edu.usth.msma.ui.screen.auth.forgot.ForgotPasswordScreen
 import vn.edu.usth.msma.ui.screen.auth.forgot.ForgotPasswordViewModel
 import vn.edu.usth.msma.ui.screen.auth.login.LoginScreen
@@ -34,45 +43,28 @@ import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordScreen
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModel
 import vn.edu.usth.msma.ui.screen.home.HomeNavigation
 import vn.edu.usth.msma.ui.screen.library.LibraryScreen
+import vn.edu.usth.msma.ui.screen.library.LibraryViewModel
+import vn.edu.usth.msma.ui.screen.notification.NotificationScreen
 import vn.edu.usth.msma.ui.screen.search.SearchScreen
 import vn.edu.usth.msma.ui.screen.search.SearchViewModel
 import vn.edu.usth.msma.ui.screen.search.genres.GenreScreen
 import vn.edu.usth.msma.ui.screen.search.genres.GenreViewModel
 import vn.edu.usth.msma.ui.screen.settings.SettingScreen
 import vn.edu.usth.msma.ui.screen.settings.SettingViewModel
+import vn.edu.usth.msma.ui.screen.settings.changepassword.ChangePasswordScreen
+import vn.edu.usth.msma.ui.screen.settings.history_listen.ViewHistoryListenScreen
+import vn.edu.usth.msma.ui.screen.settings.history_listen.ViewHistoryListenViewModel
+import vn.edu.usth.msma.ui.screen.settings.profile.change_password.ChangePasswordViewModel
+import vn.edu.usth.msma.ui.screen.settings.profile.edit.EditProfileScreen
+import vn.edu.usth.msma.ui.screen.settings.profile.edit.EditProfileViewModel
+import vn.edu.usth.msma.ui.screen.settings.profile.view.ViewProfileScreen
 import vn.edu.usth.msma.ui.screen.songs.MiniPlayerScreen
 import vn.edu.usth.msma.ui.screen.songs.MiniPlayerViewModel
 import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
-import vn.edu.usth.msma.ui.screen.songs.SongDetailsActivity
+import vn.edu.usth.msma.ui.screen.songs.SongDetailsScreen
 import java.net.URLDecoder
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import javax.inject.Inject
-
-sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object ForgotPassword : Screen("forgot_password")
-    object Otp : Screen("otp/{email}/{sessionId}/{otpDueDate}") {
-        fun createRoute(email: String, sessionId: String, otpDueDate: String) =
-            "otp/$email/$sessionId/$otpDueDate"
-    }
-
-    object ResetPassword : Screen("reset_password/{sessionId}") {
-        fun createRoute(sessionId: String) = "reset_password/$sessionId"
-    }
-
-    object Home : Screen("home")
-    object Search : Screen("search")
-    object Library : Screen("library")
-    object Settings : Screen("settings")
-    object Genre : Screen("genre/{genreJson}") {
-        fun createRoute(genreJson: String): String {
-            val encodedJson = URLEncoder.encode(genreJson, StandardCharsets.UTF_8.toString())
-            return "genre/$encodedJson"
-        }
-    }
-}
 
 @HiltViewModel
 class NavigationViewModel @Inject constructor(
@@ -98,8 +90,20 @@ fun AppNavigation(
 
     val currentSong by miniPlayerViewModel.currentSong.collectAsState()
     val isPlaying by miniPlayerViewModel.isPlaying.collectAsState()
-
+    val isLoopEnabled by musicPlayerViewModel.isLoopEnabled.collectAsState()
+    val isShuffleEnabled by musicPlayerViewModel.isShuffleEnabled.collectAsState()
+    val currentPosition by miniPlayerViewModel.currentPosition
+    val duration by miniPlayerViewModel.duration
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
+    // Trackers
+    val isInNotificationScreen = currentRoute == ScreenRoute.NotificationScreen.route
+    val isInGenreScreen = currentRoute == ScreenRoute.Genre.route
+    val isInViewProfileScreen = currentRoute == ScreenRoute.ViewProfile.route
+    val isInEditProfileScreen = currentRoute == ScreenRoute.EditProfile.route
+    val isInChangePasswordScreen = currentRoute == ScreenRoute.ChangePasswordScreen.route
+    val isInViewHistoryListenScreen = currentRoute == ScreenRoute.ViewHistoryListen.route
 
     // Handle navigation based on isLoggedIn
     LaunchedEffect(isLoggedIn, currentBackStackEntry) {
@@ -107,23 +111,23 @@ fun AppNavigation(
         Log.d("MainActivity", "Current route: $currentRoute, isLoggedIn: $isLoggedIn")
 
         val authRoutes = listOf(
-            Screen.Login.route,
-            Screen.Register.route,
-            Screen.ForgotPassword.route,
-            Screen.Otp.route,
-            Screen.ResetPassword.route
+            ScreenRoute.Login.route,
+            ScreenRoute.Register.route,
+            ScreenRoute.ForgotPassword.route,
+            ScreenRoute.Otp.route,
+            ScreenRoute.ResetPassword.route
         )
 
         if (isLoggedIn && currentRoute != null && authRoutes.contains(currentRoute)) {
             Log.d("MainActivity", "User is logged in, navigating to home")
-            navController.navigate(Screen.Home.route) {
-                popUpTo(Screen.Login.route) { inclusive = true }
+            navController.navigate(ScreenRoute.Home.route) {
+                popUpTo(ScreenRoute.Login.route) { inclusive = true }
                 launchSingleTop = true
             }
         } else if (!isLoggedIn && currentRoute != null && !authRoutes.contains(currentRoute)) {
             Log.d("MainActivity", "User not logged in, navigating to login")
-            navController.navigate(Screen.Login.route) {
-                popUpTo(Screen.Home.route) { inclusive = true }
+            navController.navigate(ScreenRoute.Login.route) {
+                popUpTo(ScreenRoute.Home.route) { inclusive = true }
                 launchSingleTop = true
             }
         }
@@ -146,45 +150,60 @@ fun AppNavigation(
         Scaffold(
             bottomBar = {
                 Column {
-                    if (isMiniPlayerVisible) {
-                        currentSong?.let {
-                            MiniPlayerScreen(
-                                song = it,
-                                isPlaying = isPlaying,
-                                onPlayPauseClick = {
-                                    if (isPlaying) {
-                                        // Pause music
-                                        val intent =
-                                            Intent(context, MusicService::class.java).apply {
-                                                action = "PAUSE"
-                                            }
-                                        context.startService(intent)
-                                        miniPlayerViewModel.updatePlaybackState(false)
-                                    } else {
-                                        // Resume music
-                                        val intent =
-                                            Intent(context, MusicService::class.java).apply {
-                                                action = "RESUME"
-                                                putExtra("SEEK_POSITION", 0L)
-                                            }
-                                        context.startService(intent)
-                                        miniPlayerViewModel.updatePlaybackState(true)
-                                    }
-                                },
-                                musicPlayerViewModel = musicPlayerViewModel,
-                                onMiniPlayerClick = { miniPlayerViewModel.openDetails(context) },
-                                onCloseClick = {
+                    if (isMiniPlayerVisible && currentSong != null &&
+                        currentRoute?.startsWith(ScreenRoute.SongDetails.route) == false &&
+                        !isInNotificationScreen && !isInViewProfileScreen &&
+                        !isInEditProfileScreen && !isInChangePasswordScreen &&
+                        !isInViewHistoryListenScreen
+                    ) {
+                        MiniPlayerScreen(
+                            song = currentSong!!,
+                            isPlaying = isPlaying,
+                            onMiniPlayerClick = {
+                                navController.navigate(
+                                    ScreenRoute.SongDetails.createRoute(
+                                        currentSong!!.id
+                                    )
+                                )
+                            },
+                            onPlayPauseClick = {
+                                if (isPlaying) {
+                                    // Pause music
                                     val intent =
                                         Intent(context, MusicService::class.java).apply {
-                                            action = "CLOSE"
+                                            action = "PAUSE"
                                         }
                                     context.startService(intent)
-                                },
-                                miniPlayerViewModel = miniPlayerViewModel
-                            )
-                        }
+                                    miniPlayerViewModel.updatePlaybackState(false)
+                                } else {
+                                    // Resume music
+                                    val intent =
+                                        Intent(context, MusicService::class.java).apply {
+                                            action = "RESUME"
+                                            putExtra("SEEK", 0L)
+                                        }
+                                    context.startService(intent)
+                                    miniPlayerViewModel.updatePlaybackState(true)
+                                }
+                            },
+                            onCloseClick = {
+                                val intent =
+                                    Intent(context, MusicService::class.java).apply {
+                                        action = "CLOSE"
+                                    }
+                                context.startService(intent)
+                            },
+                            miniPlayerViewModel = miniPlayerViewModel,
+                        )
                     }
-                    BottomNavigationBar(navController = navController)
+
+                    if (currentRoute?.startsWith(ScreenRoute.SongDetails.route) == false &&
+                        !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen &&
+                        !isInEditProfileScreen && !isInChangePasswordScreen &&
+                        !isInViewHistoryListenScreen
+                    ) {
+                        BottomNavigationBar(navController = navController)
+                    }
                 }
             }
         ) { paddingValues ->
@@ -193,34 +212,96 @@ fun AppNavigation(
                     .fillMaxSize()
                     .padding(
                         top = paddingValues.calculateTopPadding(),
-                        bottom = if (isMiniPlayerVisible) 60.dp else 0.dp
+                        bottom = if (isMiniPlayerVisible &&
+                            currentRoute?.startsWith(ScreenRoute.SongDetails.route) == false &&
+                            !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
+                            && !isInEditProfileScreen && !isInChangePasswordScreen &&
+                            !isInViewHistoryListenScreen
+                        ) 60.dp else 0.dp
                     )
             ) {
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.Home.route,
+                    startDestination = ScreenRoute.Home.route,
                     modifier = modifier
                 ) {
-                    composable(Screen.Home.route) {
+                    composable(ScreenRoute.Home.route) {
                         HomeNavigation()
                     }
-                    composable(Screen.Search.route) {
+                    composable(ScreenRoute.Search.route) {
                         val searchViewModel: SearchViewModel = hiltViewModel()
                         SearchScreen(searchViewModel, navController)
                     }
-                    composable(Screen.Library.route) {
-                        LibraryScreen()
+                    composable(ScreenRoute.Library.route) {
+                        val libraryViewModel: LibraryViewModel = hiltViewModel()
+                        LibraryScreen(libraryViewModel, navController)
                     }
-                    composable(Screen.Settings.route) {
+                    composable(ScreenRoute.Settings.route) {
                         val settingViewModel: SettingViewModel = hiltViewModel()
-                        SettingScreen(
-                            context,
-                            navController,
-                            settingViewModel
+                        SettingScreen(context, navController, settingViewModel)
+                    }
+                    composable(ScreenRoute.ViewProfile.route) {
+                        val viewProfileViewModel: EditProfileViewModel = hiltViewModel()
+                        ViewProfileScreen(
+                            viewProfileViewModel,
+                            onBack = { navController.popBackStack() })
+                    }
+                    composable(ScreenRoute.EditProfile.route) {
+                        val editProfileViewModel: EditProfileViewModel = hiltViewModel()
+                        EditProfileScreen(
+                            editProfileViewModel,
+                            onBack = { navController.popBackStack() })
+                    }
+                    composable(ScreenRoute.ChangePasswordScreen.route) {
+                        val changePasswordViewModel: ChangePasswordViewModel = hiltViewModel()
+                        ChangePasswordScreen(
+                            changePasswordViewModel,
+                            onBack = { navController.popBackStack() })
+                    }
+                    composable(ScreenRoute.ViewHistoryListen.route) {
+                        val viewHistoryListenViewModel: ViewHistoryListenViewModel = hiltViewModel()
+                        ViewHistoryListenScreen(
+                            viewHistoryListenViewModel,
+                            onBack = { navController.popBackStack() })
+                    }
+                    composable(ScreenRoute.NotificationScreen.route) {
+                        NotificationScreen(
+                            onBackClick = {
+                                // Restore mini player visibility when leaving NotificationScreen
+                                if (isMiniPlayerVisible) {
+                                    val intent = Intent("MUSIC_EVENT").apply {
+                                        putExtra("ACTION", "SHOW_MINI_PLAYER")
+                                    }
+                                    context.sendBroadcast(intent)
+                                }
+                                navController.popBackStack()
+                            }
                         )
                     }
                     composable(
-                        Screen.Genre.route,
+                        ScreenRoute.SongDetails.route,
+                        arguments = listOf(
+                            navArgument("songId") { type = NavType.LongType }
+                        )
+                    ) { backStackEntry ->
+                        val songId = backStackEntry.arguments?.getLong("songId") ?: 0L
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            SongDetailsScreen(
+                                songId = songId,
+                                onBack = { navController.popBackStack() },
+                                fromMiniPlayer = true,
+                                isPlaying = isPlaying,
+                                isLoopEnabled = isLoopEnabled,
+                                isShuffleEnabled = isShuffleEnabled,
+                                songRepository = navigationViewModel.songRepository,
+                                context = context,
+                                position = currentPosition,
+                                duration = duration
+                            )
+                        }
+                    }
+                    composable(
+                        ScreenRoute.Genre.route,
                         arguments = listOf(
                             navArgument("genreJson") { type = NavType.StringType }
                         )
@@ -270,45 +351,51 @@ fun AppNavigation(
     } else {
         NavHost(
             navController = navController,
-            startDestination = Screen.Login.route,
+            startDestination = ScreenRoute.Login.route,
             modifier = modifier
         ) {
-            composable(Screen.Login.route) {
+            composable(ScreenRoute.Login.route) {
                 val viewModel: LoginViewModel = hiltViewModel()
                 LoginScreen(
                     viewModel = viewModel,
                     onNavigateToRegister = {
-                        navController.navigate(Screen.Register.route)
+                        navController.navigate(ScreenRoute.Register.route)
                     },
                     onNavigateToForgotPassword = {
-                        navController.navigate(Screen.ForgotPassword.route)
+                        navController.navigate(ScreenRoute.ForgotPassword.route)
                     }
                 )
             }
-            composable(Screen.Register.route) {
+            composable(ScreenRoute.Register.route) {
                 val viewModel: RegisterViewModel = hiltViewModel()
                 RegisterScreen(
                     viewModel = viewModel,
                     onNavigateToLogin = {
-                        navController.navigate(Screen.Login.route)
+                        navController.navigate(ScreenRoute.Login.route)
                     }
                 )
             }
-            composable(Screen.ForgotPassword.route) {
+            composable(ScreenRoute.ForgotPassword.route) {
                 val viewModel: ForgotPasswordViewModel = hiltViewModel()
                 ForgotPasswordScreen(
                     viewModel = viewModel,
                     onNavigateToLogin = {
-                        navController.navigate(Screen.Login.route)
+                        navController.navigate(ScreenRoute.Login.route)
                     },
                     onNavigateToOtp = { email, sessionId, otpDueDate ->
-                        navController.navigate(Screen.Otp.createRoute(email, sessionId, otpDueDate))
+                        navController.navigate(
+                            ScreenRoute.Otp.createRoute(
+                                email,
+                                sessionId,
+                                otpDueDate
+                            )
+                        )
                     },
                     navController = navController
                 )
             }
             composable(
-                Screen.Otp.route,
+                ScreenRoute.Otp.route,
                 arguments = listOf(
                     navArgument("email") { type = NavType.StringType },
                     navArgument("sessionId") { type = NavType.StringType },
@@ -319,17 +406,17 @@ fun AppNavigation(
                 OtpScreen(
                     viewModel = viewModel,
                     onNavigateToResetPassword = { sessionId ->
-                        navController.navigate(Screen.ResetPassword.createRoute(sessionId))
+                        navController.navigate(ScreenRoute.ResetPassword.createRoute(sessionId))
                     },
                     onNavigateToLogin = {
-                        navController.navigate(Screen.Login.route)
+                        navController.navigate(ScreenRoute.Login.route)
                     },
                     navBackStackEntry = backStackEntry,
                     navController = navController
                 )
             }
             composable(
-                Screen.ResetPassword.route,
+                ScreenRoute.ResetPassword.route,
                 arguments = listOf(
                     navArgument("sessionId") { type = NavType.StringType }
                 )
@@ -338,7 +425,7 @@ fun AppNavigation(
                 ResetPasswordScreen(
                     viewModel = viewModel,
                     onNavigateToLogin = {
-                        navController.navigate(Screen.Login.route)
+                        navController.navigate(ScreenRoute.Login.route)
                     }
                 )
             }

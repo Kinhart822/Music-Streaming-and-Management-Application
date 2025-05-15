@@ -7,7 +7,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -48,6 +52,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,8 +60,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.palette.graphics.Palette
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -68,6 +71,11 @@ import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.components.LoadingScreen
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 
 @Composable
 fun SongDetailsScreen(
@@ -79,34 +87,43 @@ fun SongDetailsScreen(
     isShuffleEnabled: Boolean = false,
     songRepository: SongRepository,
     context: Context,
-    initialPosition: Long = 0L,
-    initialDuration: Long = 0L
+    position: Long = 0L,
+    duration: Long = 0L
 ) {
-    val miniPlayerViewModel: MiniPlayerViewModel =
-        viewModel(viewModelStoreOwner = LocalViewModelStoreOwner.current!!)
+    val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
     val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
     val song = songRepository.getSongById(songId)
     val scope = rememberCoroutineScope()
-    var currentPosition by remember { mutableLongStateOf(initialPosition) }
-    var duration by remember { mutableLongStateOf(initialDuration) }
+    var currentPosition by remember { mutableLongStateOf(position) }
+    var duration by remember { mutableLongStateOf(duration) }
+    var dragOffset by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
 
     var currentDisplayedSong by remember { mutableStateOf(song) }
     val currentSongInMiniPlayerViewModel by miniPlayerViewModel.currentSong.collectAsState()
     val isPlayingInMiniPlayerViewModel by miniPlayerViewModel.isPlaying.collectAsState()
+
+    // Animation for drag offset
+    val animatedOffset by animateFloatAsState(
+        targetValue = dragOffset,
+        animationSpec = tween(durationMillis = 300),
+        label = "dragOffset"
+    )
 
     LaunchedEffect(songId, fromMiniPlayer) {
         try {
             musicPlayerViewModel.registerPositionReceiver(context)
 
             if (fromMiniPlayer && song != null) {
-                Log.d("SongDetailsScreen", "Initializing with isPlaying: $isPlaying")
+                Log.d(
+                    "SongDetailsScreen",
+                    "Initializing from MiniPlayer with isPlaying: $isPlaying"
+                )
                 musicPlayerViewModel.updatePlaybackState(isPlaying)
                 musicPlayerViewModel.setLoopEnabled(isLoopEnabled)
                 musicPlayerViewModel.setShuffleEnabled(isShuffleEnabled)
                 miniPlayerViewModel.updateCurrentSong(song)
                 musicPlayerViewModel.updateCurrentSong(song)
-                currentPosition = initialPosition
-                duration = initialDuration
 
                 // Sync state with MusicService
                 val intent = Intent(context, MusicService::class.java).apply {
@@ -121,8 +138,8 @@ fun SongDetailsScreen(
                     putExtra("IS_PLAYING", isPlaying)
                     putExtra("IS_LOOP_ENABLED", isLoopEnabled)
                     putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
-                    putExtra("POSITION", initialPosition)
-                    putExtra("DURATION", initialDuration)
+                    putExtra("CURRENT_POSITION", currentPosition)
+                    putExtra("DURATION", duration)
                 }
                 context.startService(intent)
             } else if (song != null) {
@@ -187,7 +204,7 @@ fun SongDetailsScreen(
                                     musicPlayerViewModel.updateCurrentSong(it)
                                 }
                             }
-                            currentPosition = intent.getLongExtra("POSITION", 0L)
+                            currentPosition = intent.getLongExtra("CURRENT_POSITION", 0L)
                             duration = intent.getLongExtra("DURATION", 0L)
                             musicPlayerViewModel.currentPosition.longValue = currentPosition
                             musicPlayerViewModel.duration.longValue = duration
@@ -227,7 +244,7 @@ fun SongDetailsScreen(
                                                 "IS_SHUFFLE_ENABLED",
                                                 musicPlayerViewModel.isShuffleEnabled.value
                                             )
-                                            putExtra("POSITION", 0L)
+                                            putExtra("CURRENT_POSITION", 0L)
                                             putExtra("DURATION", duration)
                                         }
                                         context?.sendBroadcast(broadcastIntent)
@@ -246,10 +263,11 @@ fun SongDetailsScreen(
                         "PAUSE" -> {
                             Log.d("SongDetailsScreen", "Updating isPlaying to false for PAUSE")
                             musicPlayerViewModel.updatePlaybackState(false)
+                            miniPlayerViewModel.updatePlaybackState(false)
                         }
 
                         "POSITION_UPDATE" -> {
-                            currentPosition = intent.getLongExtra("POSITION", 0L)
+                            currentPosition = intent.getLongExtra("CURRENT_POSITION", 0L)
                             duration = intent.getLongExtra("DURATION", 0L)
                             musicPlayerViewModel.currentPosition.longValue = currentPosition
                             musicPlayerViewModel.duration.longValue = duration
@@ -292,12 +310,44 @@ fun SongDetailsScreen(
             onSeek = { newPosition ->
                 currentPosition = newPosition
                 val intent = Intent(context, MusicService::class.java).apply {
-                    action = "SEEK"
-                    putExtra("POSITION", newPosition)
+                    action = "SEEK_POSITION"
+                    putExtra("CURRENT_POSITION", newPosition)
                 }
                 context.startService(intent)
             },
-            musicPlayerViewModel = musicPlayerViewModel
+            musicPlayerViewModel = musicPlayerViewModel,
+            modifier = Modifier
+                .offset { IntOffset(0, animatedOffset.roundToInt()) }
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { change, dragAmount ->
+                            dragOffset += dragAmount
+                        },
+                        onDragEnd = {
+                            if (dragOffset > 100) { // Threshold to trigger back navigation
+                                val intent = Intent(context, MusicService::class.java).apply {
+                                    action = "MINIMIZE"
+                                    putExtra("IS_PLAYING", isPlaying)
+                                    putExtra("SONG_ID", song.id)
+                                    putExtra("SONG_TITLE", song.title)
+                                    putExtra(
+                                        "SONG_ARTIST",
+                                        song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
+                                    )
+                                    putExtra("SONG_IMAGE", song.imageUrl)
+                                    putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
+                                    putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                                    putExtra("CURRENT_POSITION", currentPosition)
+                                    putExtra("DURATION", duration)
+                                }
+                                context.startService(intent)
+                                onBack()
+                            } else {
+                                dragOffset = 0f
+                            }
+                        }
+                    )
+                }
         )
     } ?: LoadingScreen()
 }
@@ -307,7 +357,8 @@ fun PlaySong(
     song: Song,
     onBack: () -> Unit,
     onSeek: (Long) -> Unit,
-    musicPlayerViewModel: MusicPlayerViewModel
+    musicPlayerViewModel: MusicPlayerViewModel,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val isPlaying by musicPlayerViewModel.isPlaying.collectAsState()
@@ -317,6 +368,7 @@ fun PlaySong(
     }
     val currentPosition by musicPlayerViewModel.currentPosition
     val duration by musicPlayerViewModel.duration
+    var dragOffset by remember { mutableStateOf(0f) }
 
     LaunchedEffect(song.imageUrl) {
         val imageLoader = ImageLoader(context)
@@ -342,10 +394,41 @@ fun PlaySong(
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(backgroundBrush)
             .padding(16.dp)
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onVerticalDrag = { change, dragAmount ->
+                        dragOffset += dragAmount
+                    },
+                    onDragEnd = {
+                        if (dragOffset > 100) {
+                            val intent = Intent(context, MusicService::class.java).apply {
+                                action = "MINIMIZE"
+                                putExtra("IS_PLAYING", isPlaying)
+                                putExtra("SONG_ID", song.id)
+                                putExtra("SONG_TITLE", song.title)
+                                putExtra(
+                                    "SONG_ARTIST",
+                                    song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
+                                )
+                                putExtra("SONG_IMAGE", song.imageUrl)
+                                putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
+                                putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
+                                putExtra("IS_FAVORITE", isFavorite)
+                                putExtra("CURRENT_POSITION", currentPosition)
+                                putExtra("DURATION", duration)
+                            }
+                            context.startService(intent)
+                            onBack()
+                        } else {
+                            dragOffset = 0f
+                        }
+                    }
+                )
+            }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -354,6 +437,7 @@ fun PlaySong(
         ) {
             IconButton(
                 onClick = {
+                    // Handle minimize action when icon is clicked
                     val intent = Intent(context, MusicService::class.java).apply {
                         action = "MINIMIZE"
                         putExtra("IS_PLAYING", isPlaying)
@@ -367,18 +451,16 @@ fun PlaySong(
                         putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
                         putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
                         putExtra("IS_FAVORITE", isFavorite)
-                        putExtra("POSITION", currentPosition)
+                        putExtra("CURRENT_POSITION", currentPosition)
                         putExtra("DURATION", duration)
                     }
                     context.startService(intent)
                     onBack()
                 },
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.KeyboardArrowLeft,
+                    imageVector = Icons.Filled.KeyboardArrowDown,
                     contentDescription = "Minimize",
                     tint = Color.White
                 )
@@ -541,7 +623,8 @@ fun MusicControls(
                 onSeek(newValue)
             },
             onValueChangeFinished = {
-                viewModel.seekTo(context, viewModel.currentPosition.longValue)
+                val newPosition = (progress * duration.longValue).toLong()
+                viewModel.seekTo(context, newPosition)
                 viewModel.isDragging.value = false
             },
             modifier = Modifier.fillMaxWidth(0.9f)

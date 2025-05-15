@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import vn.edu.usth.msma.ui.components.ScreenRoute
 
 private object CustomRippleTheme : RippleTheme {
     @Composable
@@ -54,11 +55,11 @@ fun BottomNavigationBar(
 
     navController.addOnDestinationChangedListener { _, destination, _ ->
         selectedItemIndex = when {
-            destination.route?.startsWith(Screen.Genre.route) == true -> 1 // Keep Search selected for GenreScreen
-            destination.route == Screen.Home.route -> 0
-            destination.route == Screen.Search.route -> 1
-            destination.route == Screen.Library.route -> 2
-            destination.route == Screen.Settings.route -> 3
+            destination.route?.startsWith(ScreenRoute.Genre.route) == true -> 1
+            destination.route == ScreenRoute.Home.route -> 0
+            destination.route == ScreenRoute.Search.route -> 1
+            destination.route == ScreenRoute.Library.route -> 2
+            destination.route == ScreenRoute.Settings.route -> 3
             else -> 0
         }
     }
@@ -82,11 +83,11 @@ fun BottomNavigationBar(
                         onClick = {
                             selectedItemIndex = index
                             val route = when (index) {
-                                0 -> Screen.Home.route
-                                1 -> Screen.Search.route
-                                2 -> Screen.Library.route
-                                3 -> Screen.Settings.route
-                                else -> Screen.Home.route
+                                0 -> ScreenRoute.Home.route
+                                1 -> ScreenRoute.Search.route
+                                2 -> ScreenRoute.Library.route
+                                3 -> ScreenRoute.Settings.route
+                                else -> ScreenRoute.Home.route
                             }
                             navController.navigate(route) {
                                 popUpTo(navController.graph.findStartDestination().id) {

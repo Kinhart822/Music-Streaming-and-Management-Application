@@ -49,127 +49,105 @@ fun ChangePasswordScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Change Password") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { paddingValues ->
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // New Password
+        TextField(
+            value = state.newPassword ?: "",
+            onValueChange = { viewModel.onNewPasswordChanged(it) },
+            label = { Text("New Password") },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(8.dp),
+            visualTransformation = if (state.newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            isError = state.newPasswordError != null,
+            supportingText = {
+                state.newPasswordError?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            trailingIcon = {
+                val image = if (state.newPasswordVisible)
+                    painterResource(id = R.drawable.visibility_24)
+                else
+                    painterResource(id = R.drawable.visibility_off_24)
+                Icon(
+                    painter = image,
+                    contentDescription = "Toggle password visibility",
+                    modifier = Modifier.clickable { viewModel.toggleNewPasswordVisibility() }
+                )
+            }
+        )
+
+        // Confirm Password
+        TextField(
+            value = state.confirmPassword ?: "",
+            onValueChange = { viewModel.onConfirmPasswordChanged(it) },
+            label = { Text("Confirm Password") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(8.dp),
+            visualTransformation = if (state.confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            isError = state.confirmPasswordError != null,
+            supportingText = {
+                state.confirmPasswordError?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            trailingIcon = {
+                val image = if (state.confirmPasswordVisible)
+                    painterResource(id = R.drawable.visibility_24)
+                else
+                    painterResource(id = R.drawable.visibility_off_24)
+                Icon(
+                    painter = image,
+                    contentDescription = "Toggle confirm password visibility",
+                    modifier = Modifier.clickable { viewModel.toggleConfirmPasswordVisibility() }
+                )
+            }
+        )
+
+        // Submit Button
+        Button(
+            onClick = { viewModel.changePassword() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            shape = RoundedCornerShape(8.dp),
+            enabled = !state.isLoading
         ) {
-            // New Password
-            TextField(
-                value = state.newPassword ?: "",
-                onValueChange = { viewModel.onNewPasswordChanged(it) },
-                label = { Text("New Password") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-                visualTransformation = if (state.newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                isError = state.newPasswordError != null,
-                supportingText = {
-                    state.newPasswordError?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 12.sp
-                        )
-                    }
-                },
-                trailingIcon = {
-                    val image = if (state.newPasswordVisible)
-                        painterResource(id = R.drawable.visibility_24)
-                    else
-                        painterResource(id = R.drawable.visibility_off_24)
-                    Icon(
-                        painter = image,
-                        contentDescription = "Toggle password visibility",
-                        modifier = Modifier.clickable { viewModel.toggleNewPasswordVisibility() }
-                    )
-                }
-            )
-
-            // Confirm Password
-            TextField(
-                value = state.confirmPassword ?: "",
-                onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-                label = { Text("Confirm Password") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-                visualTransformation = if (state.confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                isError = state.confirmPasswordError != null,
-                supportingText = {
-                    state.confirmPasswordError?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 12.sp
-                        )
-                    }
-                },
-                trailingIcon = {
-                    val image = if (state.confirmPasswordVisible)
-                        painterResource(id = R.drawable.visibility_24)
-                    else
-                        painterResource(id = R.drawable.visibility_off_24)
-                    Icon(
-                        painter = image,
-                        contentDescription = "Toggle confirm password visibility",
-                        modifier = Modifier.clickable { viewModel.toggleConfirmPasswordVisibility() }
-                    )
-                }
-            )
-
-            // Submit Button
-            Button(
-                onClick = { viewModel.changePassword() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                shape = RoundedCornerShape(8.dp),
-                enabled = !state.isLoading
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Change Password")
-                }
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Change Password")
             }
         }
     }
