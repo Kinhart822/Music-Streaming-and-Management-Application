@@ -39,12 +39,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.google.gson.Gson
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.data.dto.response.management.SongResponse
 import vn.edu.usth.msma.navigation.NavigationViewModel
 import vn.edu.usth.msma.ui.components.LoadingScreen
 import vn.edu.usth.msma.ui.components.ScreenRoute
-import vn.edu.usth.msma.ui.screen.songs.MiniPlayerViewModel
+import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +57,7 @@ fun GenreScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
+    val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
     val navigationViewModel: NavigationViewModel = hiltViewModel()
     val isMiniPlayerVisible by navigationViewModel.preferencesManager.isMiniPlayerVisibleFlow.collectAsState(
         initial = false
@@ -72,16 +73,15 @@ fun GenreScreen(
     }
 
     DisposableEffect(context) {
-        miniPlayerViewModel.registerReceivers(context)
+        musicPlayerViewModel.registerMusicEventReceiver(context)
         onDispose {
-            miniPlayerViewModel.unregisterMusicEventReceiver(context)
+            musicPlayerViewModel.unregisterMusicEventReceiver(context)
         }
     }
 
     LaunchedEffect(Unit) {
-        miniPlayerViewModel.refreshCurrentSongData(context)
+        musicPlayerViewModel.refreshCurrentSongData(context)
     }
-
 
     LazyColumn(
         modifier = Modifier
@@ -176,7 +176,12 @@ fun GenreScreen(
                 SongItem(
                     song = song,
                     onSongClick = {
-                        navController.navigate(ScreenRoute.SongDetails.createRoute(song.id))
+                        val songJson = Gson().toJson(song)
+                        navController.navigate(
+                            ScreenRoute.SongDetails.createRoute(songJson, false)
+                        ) {
+                            popUpTo(ScreenRoute.SongDetails.route) { inclusive = true }
+                        }
                     }
                 )
             }

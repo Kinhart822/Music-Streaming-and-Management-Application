@@ -25,4 +25,5 @@ sealed class Event {
     object SongLoopUpdateEvent: Event()
     object SongUnLoopUpdateEvent: Event()
     object MediaNotificationCancelSongEvent: Event()
+    object HistoryListenUpdateEvent: Event()
 }

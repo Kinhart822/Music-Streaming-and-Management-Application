@@ -268,7 +268,12 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable { navController.navigate(ScreenRoute.SongDetails.createRoute(content.id)) },
+                    .clickable {
+                        val songJson = Gson().toJson(content)
+                        navController.navigate(
+                            ScreenRoute.SongDetails.createRoute(songJson, true)
+                        )
+                    },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(

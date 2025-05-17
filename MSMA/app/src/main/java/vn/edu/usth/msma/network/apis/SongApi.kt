@@ -6,9 +6,14 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import vn.edu.usth.msma.data.dto.response.auth.ApiResponse
+import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
 import vn.edu.usth.msma.data.dto.response.management.SongResponse
 
 interface SongApi {
+    // Song Listen History
+    @POST("/api/v1/user/listen/{songId}")
+    suspend fun recordSongListen(@Path("songId") songId: Long): Response<ApiResponse>
+
     // Favourite Songs
     @POST("/api/v1/user/likeSong/{songId}")
     suspend fun userLikeSong(@Path("songId") songId: Long): Response<ApiResponse>

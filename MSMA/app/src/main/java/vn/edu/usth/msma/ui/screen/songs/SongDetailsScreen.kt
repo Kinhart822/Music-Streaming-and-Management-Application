@@ -39,7 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableLongState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -62,14 +62,18 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.palette.graphics.Palette
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import vn.edu.usth.msma.R
 import vn.edu.usth.msma.data.Song
+import vn.edu.usth.msma.navigation.NavigationViewModel
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.components.LoadingScreen
@@ -77,29 +81,29 @@ import kotlin.math.roundToInt
 
 @Composable
 fun SongDetailsScreen(
-    songId: Long,
+    song: Song,
     onBack: () -> Unit,
     fromMiniPlayer: Boolean = false,
-    isPlaying: Boolean = false,
-    isLoopEnabled: Boolean = false,
-    isShuffleEnabled: Boolean = false,
     songRepository: SongRepository,
     context: Context,
-    position: Long = 0L,
-    duration: Long = 0L
+    navController: NavController
 ) {
-    val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
     val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
-    val song = songRepository.getSongById(songId)
+    val navigationViewModel: NavigationViewModel = hiltViewModel()
     val scope = rememberCoroutineScope()
-    var currentPosition by remember { mutableLongStateOf(position) }
-    var duration by remember { mutableLongStateOf(duration) }
-    var dragOffset by remember { mutableStateOf(0f) }
+
+    var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
 
+    val currentSong by musicPlayerViewModel.currentSong.collectAsState()
+    val isPlaying by musicPlayerViewModel.isPlaying.collectAsState()
+    val isLoopEnabled by musicPlayerViewModel.isLoopEnabled.collectAsState()
+    val isShuffleEnabled by musicPlayerViewModel.isShuffleEnabled.collectAsState()
+    val currentPosition by musicPlayerViewModel.currentPosition
+    val duration by musicPlayerViewModel.duration
+
+    // Sử dụng state để theo dõi bài hát hiện tại
     var currentDisplayedSong by remember { mutableStateOf(song) }
-    val currentSongInMiniPlayerViewModel by miniPlayerViewModel.currentSong.collectAsState()
-    val isPlayingInMiniPlayerViewModel by miniPlayerViewModel.isPlaying.collectAsState()
 
     // Animation for drag offset
     val animatedOffset by animateFloatAsState(
@@ -108,51 +112,24 @@ fun SongDetailsScreen(
         label = "dragOffset"
     )
 
-    LaunchedEffect(songId, fromMiniPlayer) {
+    LaunchedEffect(Unit) {
         try {
-            musicPlayerViewModel.registerPositionReceiver(context)
+            musicPlayerViewModel.registerMusicEventReceiver(context)
 
-            if (fromMiniPlayer && song != null) {
-                Log.d(
-                    "SongDetailsScreen",
-                    "Initializing from MiniPlayer with isPlaying: $isPlaying"
-                )
-                musicPlayerViewModel.updatePlaybackState(isPlaying)
-                musicPlayerViewModel.setLoopEnabled(isLoopEnabled)
-                musicPlayerViewModel.setShuffleEnabled(isShuffleEnabled)
-                miniPlayerViewModel.updateCurrentSong(song)
-                musicPlayerViewModel.updateCurrentSong(song)
+            // Check if the current song is already loaded
+            val isSameSong = currentSong?.id == song.id
 
-                // Sync state with MusicService
-                val intent = Intent(context, MusicService::class.java).apply {
-                    action = "EXPAND"
-                    putExtra("SONG_ID", song.id)
-                    putExtra("SONG_TITLE", song.title)
-                    putExtra(
-                        "SONG_ARTIST",
-                        song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
-                    )
-                    putExtra("SONG_IMAGE", song.imageUrl)
-                    putExtra("IS_PLAYING", isPlaying)
-                    putExtra("IS_LOOP_ENABLED", isLoopEnabled)
-                    putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
-                    putExtra("CURRENT_POSITION", currentPosition)
-                    putExtra("DURATION", duration)
-                }
-                context.startService(intent)
-            } else if (song != null) {
-                val isSameSong = currentSongInMiniPlayerViewModel?.id == song.id
+            if (!fromMiniPlayer) {
                 if (!isSameSong) {
-                    miniPlayerViewModel.updateCurrentSong(song)
-                    musicPlayerViewModel.updateCurrentSong(song)
                     musicPlayerViewModel.playSong(context, song)
-                    miniPlayerViewModel.updatePlaybackState(true)
-                    musicPlayerViewModel.updatePlaybackState(true)
-                } else if (isPlayingInMiniPlayerViewModel) {
+                } else if (isPlaying) {
                     musicPlayerViewModel.resumeSong(context)
-                    miniPlayerViewModel.updatePlaybackState(true)
-                    musicPlayerViewModel.updatePlaybackState(true)
                 }
+            }
+
+            // Cập nhật trạng thái từ MiniPlayer nếu đang mở từ MiniPlayer
+            if (fromMiniPlayer) {
+                musicPlayerViewModel.refreshCurrentSongData(context)
             }
         } catch (e: Exception) {
             Log.e("SongDetailsScreen", "Error loading song: ${e.message}", e)
@@ -168,86 +145,25 @@ fun SongDetailsScreen(
                     Log.d("SongDetailsScreen", "Received MUSIC_EVENT: $action")
 
                     when (action) {
-                        "EXPAND", "MINIMIZE" -> {
-                            val newIsPlaying = intent.getBooleanExtra("IS_PLAYING", false)
-                            musicPlayerViewModel.updatePlaybackState(newIsPlaying)
-                            Log.d(
-                                "SongDetailsScreen",
-                                "Updating isPlaying to $newIsPlaying for $action"
-                            )
-                            musicPlayerViewModel.setLoopEnabled(
-                                intent.getBooleanExtra(
-                                    "IS_LOOP_ENABLED",
-                                    false
-                                )
-                            )
-                            musicPlayerViewModel.setShuffleEnabled(
-                                intent.getBooleanExtra(
-                                    "IS_SHUFFLE_ENABLED",
-                                    false
-                                )
-                            )
-                            musicPlayerViewModel.setFavorite(
-                                intent.getBooleanExtra(
-                                    "IS_FAVORITE",
-                                    false
-                                )
-                            )
-                            val newSongId = intent.getLongExtra("SONG_ID", 0L)
-                            if (newSongId != 0L) {
-                                val newSong = songRepository.getSongById(newSongId)
-                                newSong?.let {
-                                    currentDisplayedSong = it
-                                    miniPlayerViewModel.updateCurrentSong(it)
-                                    musicPlayerViewModel.updateCurrentSong(it)
-                                }
-                            }
-                            currentPosition = intent.getLongExtra("CURRENT_POSITION", 0L)
-                            duration = intent.getLongExtra("DURATION", 0L)
-                            musicPlayerViewModel.currentPosition.longValue = currentPosition
-                            musicPlayerViewModel.duration.longValue = duration
-                        }
-
-                        "NEXT", "PREVIOUS" -> {
+                        "CLOSE" -> onBack()
+                        "CURRENT_SONG", "NEXT", "PREVIOUS" -> {
                             scope.launch {
                                 val newSongId = intent.getLongExtra("SONG_ID", 0L)
                                 if (newSongId != 0L) {
                                     val newSong = songRepository.getSongById(newSongId)
                                     newSong?.let {
-                                        currentDisplayedSong = it
-                                        miniPlayerViewModel.updateCurrentSong(it)
+                                        // Cập nhật UI với bài hát mới
+                                        currentDisplayedSong = newSong
+
                                         musicPlayerViewModel.updateCurrentSong(it)
-                                        duration = parseDuration(it.duration?.toString() ?: "0:00")
-                                        currentPosition = 0L
                                         musicPlayerViewModel.updatePlaybackState(true)
-                                        miniPlayerViewModel.updatePlaybackState(true)
-
-                                        // Send broadcast to update MiniPlayer
-                                        val broadcastIntent = Intent("MUSIC_EVENT").apply {
-                                            putExtra("ACTION", "CURRENT_SONG")
-                                            putExtra("SONG_ID", it.id)
-                                            putExtra("SONG_TITLE", it.title)
-                                            putExtra(
-                                                "SONG_ARTIST",
-                                                it.artistNameList?.joinToString(", ")
-                                                    ?: "Unknown Artist"
-                                            )
-                                            putExtra("SONG_IMAGE", it.imageUrl)
-                                            putExtra("IS_PLAYING", true)
-                                            putExtra(
-                                                "IS_LOOP_ENABLED",
-                                                musicPlayerViewModel.isLoopEnabled.value
-                                            )
-                                            putExtra(
-                                                "IS_SHUFFLE_ENABLED",
-                                                musicPlayerViewModel.isShuffleEnabled.value
-                                            )
-                                            putExtra("CURRENT_POSITION", 0L)
-                                            putExtra("DURATION", duration)
-                                        }
-                                        context?.sendBroadcast(broadcastIntent)
+                                        musicPlayerViewModel.setLoopEnabled(
+                                            intent.getBooleanExtra("IS_LOOP_ENABLED", false)
+                                        )
+                                        musicPlayerViewModel.setShuffleEnabled(
+                                            intent.getBooleanExtra("IS_SHUFFLE_ENABLED", false)
+                                        )
                                     }
-
                                 }
                             }
                         }
@@ -255,18 +171,14 @@ fun SongDetailsScreen(
                         "PLAY", "RESUMED", "LOADED" -> {
                             Log.d("SongDetailsScreen", "Updating isPlaying to true for PLAY")
                             musicPlayerViewModel.updatePlaybackState(true)
-                            miniPlayerViewModel.updatePlaybackState(true)
                         }
 
                         "PAUSE" -> {
                             Log.d("SongDetailsScreen", "Updating isPlaying to false for PAUSE")
                             musicPlayerViewModel.updatePlaybackState(false)
-                            miniPlayerViewModel.updatePlaybackState(false)
                         }
 
                         "POSITION_UPDATE" -> {
-                            currentPosition = intent.getLongExtra("CURRENT_POSITION", 0L)
-                            duration = intent.getLongExtra("DURATION", 0L)
                             musicPlayerViewModel.currentPosition.longValue = currentPosition
                             musicPlayerViewModel.duration.longValue = duration
                         }
@@ -301,17 +213,36 @@ fun SongDetailsScreen(
         }
     }
 
-    currentDisplayedSong?.let { song ->
+    currentSong?.let { song ->
         PlaySong(
             song = song,
-            onBack = onBack,
-            onSeek = { newPosition ->
-                currentPosition = newPosition
-                val intent = Intent(context, MusicService::class.java).apply {
-                    action = "SEEK_POSITION"
-                    putExtra("CURRENT_POSITION", newPosition)
+            onBack = {
+                // Gửi thông tin bài hát hiện tại trước khi thoát
+                val intent = Intent("MUSIC_EVENT").apply {
+                    putExtra("ACTION", "CURRENT_SONG")
+                    putExtra("SONG_ID", song.id)
+                    putExtra("SONG_TITLE", song.title)
+                    putExtra(
+                        "SONG_ARTIST",
+                        song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
+                    )
+                    putExtra("SONG_IMAGE", song.imageUrl)
+                    putExtra("IS_PLAYING", isPlaying)
+                    putExtra("IS_LOOP_ENABLED", isLoopEnabled)
+                    putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
+                    putExtra("POSITION", currentPosition)
+                    putExtra("DURATION", duration)
                 }
-                context.startService(intent)
+                context.sendBroadcast(intent)
+
+                // Hiển thị MiniPlayer
+                CoroutineScope(Dispatchers.IO).launch {
+                    navigationViewModel.preferencesManager.setMiniPlayerVisible(true)
+                }
+                navController.popBackStack()
+            },
+            onSeek = { newPosition ->
+                musicPlayerViewModel.seekTo(context, newPosition)
             },
             musicPlayerViewModel = musicPlayerViewModel,
             modifier = Modifier
@@ -319,13 +250,15 @@ fun SongDetailsScreen(
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
                         onVerticalDrag = { change, dragAmount ->
-                            dragOffset += dragAmount
+                            if (dragAmount > 0) { // Chỉ cho phép kéo xuống
+                                dragOffset = (dragOffset + dragAmount).coerceAtLeast(0f)
+                            }
                         },
                         onDragEnd = {
-                            if (dragOffset > 100) { // Threshold to trigger back navigation
-                                val intent = Intent(context, MusicService::class.java).apply {
-                                    action = "MINIMIZE"
-                                    putExtra("IS_PLAYING", isPlaying)
+                            if (dragOffset > 100) { // Ngưỡng để thoát
+                                // Gửi thông tin bài hát hiện tại trước khi thoát
+                                val intent = Intent("MUSIC_EVENT").apply {
+                                    putExtra("ACTION", "CURRENT_SONG")
                                     putExtra("SONG_ID", song.id)
                                     putExtra("SONG_TITLE", song.title)
                                     putExtra(
@@ -333,22 +266,21 @@ fun SongDetailsScreen(
                                         song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
                                     )
                                     putExtra("SONG_IMAGE", song.imageUrl)
-                                    putExtra(
-                                        "IS_LOOP_ENABLED",
-                                        musicPlayerViewModel.isLoopEnabled.value
-                                    )
-                                    putExtra(
-                                        "IS_SHUFFLE_ENABLED",
-                                        musicPlayerViewModel.isShuffleEnabled.value
-                                    )
-                                    putExtra("CURRENT_POSITION", currentPosition)
+                                    putExtra("IS_PLAYING", isPlaying)
+                                    putExtra("IS_LOOP_ENABLED", isLoopEnabled)
+                                    putExtra("IS_SHUFFLE_ENABLED", isShuffleEnabled)
+                                    putExtra("POSITION", currentPosition)
                                     putExtra("DURATION", duration)
                                 }
-                                context.startService(intent)
-                                onBack()
-                            } else {
-                                dragOffset = 0f
+                                context.sendBroadcast(intent)
+
+                                // Hiển thị MiniPlayer
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    navigationViewModel.preferencesManager.setMiniPlayerVisible(true)
+                                }
+                                navController.popBackStack()
                             }
+                            dragOffset = 0f
                         }
                     )
                 }
@@ -370,9 +302,7 @@ fun PlaySong(
     var backgroundBrush by remember {
         mutableStateOf(Brush.verticalGradient(listOf(Color.Black, Color.DarkGray)))
     }
-    val currentPosition by musicPlayerViewModel.currentPosition
-    val duration by musicPlayerViewModel.duration
-    var dragOffset by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(song.imageUrl) {
         val imageLoader = ImageLoader(context)
@@ -409,29 +339,6 @@ fun PlaySong(
                     },
                     onDragEnd = {
                         if (dragOffset > 100) {
-                            val intent = Intent(context, MusicService::class.java).apply {
-                                action = "MINIMIZE"
-                                putExtra("IS_PLAYING", isPlaying)
-                                putExtra("SONG_ID", song.id)
-                                putExtra("SONG_TITLE", song.title)
-                                putExtra(
-                                    "SONG_ARTIST",
-                                    song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
-                                )
-                                putExtra("SONG_IMAGE", song.imageUrl)
-                                putExtra(
-                                    "IS_LOOP_ENABLED",
-                                    musicPlayerViewModel.isLoopEnabled.value
-                                )
-                                putExtra(
-                                    "IS_SHUFFLE_ENABLED",
-                                    musicPlayerViewModel.isShuffleEnabled.value
-                                )
-                                putExtra("IS_FAVORITE", isFavorite)
-                                putExtra("CURRENT_POSITION", currentPosition)
-                                putExtra("DURATION", duration)
-                            }
-                            context.startService(intent)
                             onBack()
                         } else {
                             dragOffset = 0f
@@ -446,27 +353,7 @@ fun PlaySong(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
-                onClick = {
-                    // Handle minimize action when icon is clicked
-                    val intent = Intent(context, MusicService::class.java).apply {
-                        action = "MINIMIZE"
-                        putExtra("IS_PLAYING", isPlaying)
-                        putExtra("SONG_ID", song.id)
-                        putExtra("SONG_TITLE", song.title)
-                        putExtra(
-                            "SONG_ARTIST",
-                            song.artistNameList?.joinToString(", ") ?: "Unknown Artist"
-                        )
-                        putExtra("SONG_IMAGE", song.imageUrl)
-                        putExtra("IS_LOOP_ENABLED", musicPlayerViewModel.isLoopEnabled.value)
-                        putExtra("IS_SHUFFLE_ENABLED", musicPlayerViewModel.isShuffleEnabled.value)
-                        putExtra("IS_FAVORITE", isFavorite)
-                        putExtra("CURRENT_POSITION", currentPosition)
-                        putExtra("DURATION", duration)
-                    }
-                    context.startService(intent)
-                    onBack()
-                },
+                onClick = { onBack() },
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
@@ -739,19 +626,4 @@ private fun formatTime(timeMs: Long): String {
     val minutes = (timeMs / 1000) / 60
     val seconds = (timeMs / 1000) % 60
     return String.format("%02d:%02d", minutes, seconds)
-}
-
-private fun parseDuration(duration: String): Long {
-    return try {
-        val parts = duration.split(":")
-        if (parts.size == 2) {
-            val minutes = parts[0].toLong()
-            val seconds = parts[1].toLong()
-            (minutes * 60 + seconds) * 1000
-        } else {
-            0L
-        }
-    } catch (e: Exception) {
-        0L
-    }
 }

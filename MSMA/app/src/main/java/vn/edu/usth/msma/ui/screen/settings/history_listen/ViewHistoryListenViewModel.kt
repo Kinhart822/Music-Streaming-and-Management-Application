@@ -9,8 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import vn.edu.usth.msma.data.dto.request.management.HistoryListenResponse
+import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
 import vn.edu.usth.msma.network.ApiService
+import vn.edu.usth.msma.utils.eventbus.Event.HistoryListenUpdateEvent
+import vn.edu.usth.msma.utils.eventbus.EventBus
 import javax.inject.Inject
 
 data class ViewHistoryListenState(
@@ -26,11 +28,29 @@ class ViewHistoryListenViewModel @Inject constructor(
     private val _state = MutableStateFlow(ViewHistoryListenState())
     val state: StateFlow<ViewHistoryListenState> = _state.asStateFlow()
 
+    private var isInitialized = false // Biến cờ để kiểm soát khởi tạo
+
     init {
-        fetchHistoryListen()
+        // Chỉ gọi fetchUserDetails lần đầu nếu chưa khởi tạo
+        if (!isInitialized) {
+            fetchHistoryListen()
+            isInitialized = true
+        }
+
+        // Subscribe to history update events
+        viewModelScope.launch {
+            EventBus.events.collect { event ->
+                when (event) {
+                    is HistoryListenUpdateEvent -> {
+                        fetchHistoryListen()
+                    }
+                    else -> {}
+                }
+            }
+        }
     }
 
-    private fun fetchHistoryListen() {
+    fun fetchHistoryListen() {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch(Dispatchers.IO) {
             try {

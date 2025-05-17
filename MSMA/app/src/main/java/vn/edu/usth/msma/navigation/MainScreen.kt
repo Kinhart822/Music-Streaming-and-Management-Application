@@ -91,7 +91,7 @@ fun MainScreen(
             currentRoute.startsWith(ScreenRoute.ForgotPassword.route) == false &&
             currentRoute.startsWith(ScreenRoute.Otp.route) == false &&
             currentRoute.startsWith(ScreenRoute.ResetPassword.route) == false &&
-            currentRoute.startsWith(ScreenRoute.SongDetails.route) == false
+            currentRoute.contains("songDetails") == false
 
     // Determine ScreenRoute title
     val screenTitle = when {

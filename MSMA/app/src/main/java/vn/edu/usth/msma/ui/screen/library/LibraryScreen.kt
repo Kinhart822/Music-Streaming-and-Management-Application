@@ -21,6 +21,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,10 +39,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.ui.components.LoadingScreen
 import vn.edu.usth.msma.ui.components.ScreenRoute
+import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
 import vn.edu.usth.msma.utils.eventbus.Event.InitializeDataLibrary
 import vn.edu.usth.msma.utils.eventbus.EventBus
 
@@ -49,9 +53,22 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel(),
     navController: NavHostController
 ) {
+    val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
+    val context = LocalContext.current
     val favoriteSongs by viewModel.favoriteSongs.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+
+    DisposableEffect(context) {
+        musicPlayerViewModel.registerMusicEventReceiver(context)
+        onDispose {
+            musicPlayerViewModel.unregisterMusicEventReceiver(context)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        musicPlayerViewModel.refreshCurrentSongData(context)
+    }
 
     // Emit InitializeDataLibrary event when the screen is first composed
     LaunchedEffect(Unit) {
@@ -89,7 +106,12 @@ fun LibraryScreen(
                 items(favoriteSongs, key = { song -> song.id }) { song ->
                     SongItem(song = song, onSongClick = {
                         Log.d("LibraryScreen", "Song clicked: ${song.title} (ID: ${song.id})")
-                        navController.navigate(ScreenRoute.SongDetails.createRoute(song.id))
+                        val songJson = Gson().toJson(song)
+                        navController.navigate(
+                            ScreenRoute.SongDetails.createRoute(songJson, false)
+                        ) {
+                            popUpTo(ScreenRoute.SongDetails.route) { inclusive = true }
+                        }
                     })
                     Spacer(modifier = Modifier.height(8.dp))
                 }

@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-import vn.edu.usth.msma.data.dto.request.management.HistoryListenResponse
+import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
 import vn.edu.usth.msma.ui.components.LoadingScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,12 +48,22 @@ fun ViewHistoryListenScreen(
             }
 
             state.history.isEmpty() -> {
-                Text(
-                    text = "No history available",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "No listening history found",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             }
 
             else -> {
@@ -78,7 +86,8 @@ fun ViewHistoryListenScreen(
 @Composable
 fun HistoryListenCard(historyItem: HistoryListenResponse) {
     // Parse message into title and description
-    val (title, description) = parseHistoryMessage(historyItem.message)
+    val title = historyItem.songName
+    val description = historyItem.message
 
     Card(
         modifier = Modifier
@@ -123,15 +132,5 @@ fun HistoryListenCard(historyItem: HistoryListenResponse) {
                 }
             }
         }
-    }
-}
-
-private fun parseHistoryMessage(message: String): Pair<String, String> {
-    val delimiter = " on "
-    return if (message.contains(delimiter)) {
-        val parts = message.split(delimiter, limit = 2)
-        parts[0] to parts[1]
-    } else {
-        message to ""
     }
 }

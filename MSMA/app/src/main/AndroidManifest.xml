@@ -53,8 +53,8 @@
                 <action android:name="vn.edu.usth.msma.ACTION_PREVIOUS" />
                 <action android:name="vn.edu.usth.msma.ACTION_NEXT" />
                 <action android:name="vn.edu.usth.msma.ACTION_CLOSE" />
-                <action android:name="vn.edu.usth.msma.ACTION_MINIMIZE" />
-                <action android:name="vn.edu.usth.msma.ACTION_EXPAND" />
+<!--                <action android:name="vn.edu.usth.msma.ACTION_MINIMIZE" />-->
+<!--                <action android:name="vn.edu.usth.msma.ACTION_EXPAND" />-->
             </intent-filter>
         </receiver>
     </application>

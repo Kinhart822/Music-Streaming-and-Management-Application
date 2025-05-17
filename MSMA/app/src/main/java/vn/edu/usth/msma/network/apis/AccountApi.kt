@@ -16,7 +16,7 @@ import vn.edu.usth.msma.data.dto.request.auth.CheckOtpRequest
 import vn.edu.usth.msma.data.dto.request.auth.NewPasswordRequest
 import vn.edu.usth.msma.data.dto.request.auth.SendOtpRequest
 import vn.edu.usth.msma.data.dto.request.auth.SignUpRequest
-import vn.edu.usth.msma.data.dto.request.management.HistoryListenResponse
+import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
 import vn.edu.usth.msma.data.dto.response.auth.ApiResponse
 import vn.edu.usth.msma.data.dto.response.auth.EmailExistenceResponse
 import vn.edu.usth.msma.data.dto.response.auth.OtpCheckResultResponse

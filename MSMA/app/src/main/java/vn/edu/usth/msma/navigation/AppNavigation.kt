@@ -27,6 +27,7 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import vn.edu.usth.msma.data.PreferencesManager
+import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
@@ -59,7 +60,6 @@ import vn.edu.usth.msma.ui.screen.settings.profile.edit.EditProfileScreen
 import vn.edu.usth.msma.ui.screen.settings.profile.edit.EditProfileViewModel
 import vn.edu.usth.msma.ui.screen.settings.profile.view.ViewProfileScreen
 import vn.edu.usth.msma.ui.screen.songs.MiniPlayerScreen
-import vn.edu.usth.msma.ui.screen.songs.MiniPlayerViewModel
 import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
 import vn.edu.usth.msma.ui.screen.songs.SongDetailsScreen
 import java.net.URLDecoder
@@ -81,19 +81,24 @@ fun AppNavigation(
     modifier: Modifier = Modifier
 ) {
     Log.d("MainActivity", "AppNavigation: isLoggedIn = $isLoggedIn")
-    val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
     val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
     val navigationViewModel: NavigationViewModel = hiltViewModel()
     val isMiniPlayerVisible by navigationViewModel.preferencesManager.isMiniPlayerVisibleFlow.collectAsState(
         initial = false
     )
 
-    val currentSong by miniPlayerViewModel.currentSong.collectAsState()
-    val isPlaying by miniPlayerViewModel.isPlaying.collectAsState()
-    val isLoopEnabled by musicPlayerViewModel.isLoopEnabled.collectAsState()
-    val isShuffleEnabled by musicPlayerViewModel.isShuffleEnabled.collectAsState()
-    val currentPosition by miniPlayerViewModel.currentPosition
-    val duration by miniPlayerViewModel.duration
+    LaunchedEffect(Unit) {
+        musicPlayerViewModel.registerMusicEventReceiver(context)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            musicPlayerViewModel.unregisterMusicEventReceiver(context)
+        }
+    }
+
+    val currentSong by musicPlayerViewModel.currentSong.collectAsState()
+    val isPlaying by musicPlayerViewModel.isPlaying.collectAsState()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
 
@@ -133,59 +138,24 @@ fun AppNavigation(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (currentSong != null) {
+            navigationViewModel.preferencesManager.setMiniPlayerVisible(true)
+        }
+    }
+
     if (isLoggedIn) {
-        DisposableEffect(context) {
-            miniPlayerViewModel.registerReceivers(context)
-            musicPlayerViewModel.registerPositionReceiver(context)
-            onDispose {
-                miniPlayerViewModel.unregisterMusicEventReceiver(context)
-            }
-        }
-
-        // Refresh current song data when route changes
-        LaunchedEffect(currentBackStackEntry?.destination?.route) {
-            miniPlayerViewModel.refreshCurrentSongData(context)
-        }
-
         Scaffold(
             bottomBar = {
                 Column {
                     if (isMiniPlayerVisible && currentSong != null &&
-                        currentRoute?.startsWith(ScreenRoute.SongDetails.route) == false &&
+                        currentRoute?.contains("songDetails") == false &&
                         !isInNotificationScreen && !isInViewProfileScreen &&
                         !isInEditProfileScreen && !isInChangePasswordScreen &&
                         !isInViewHistoryListenScreen
                     ) {
                         MiniPlayerScreen(
-                            song = currentSong!!,
-                            isPlaying = isPlaying,
-                            onMiniPlayerClick = {
-                                navController.navigate(
-                                    ScreenRoute.SongDetails.createRoute(
-                                        currentSong!!.id
-                                    )
-                                )
-                            },
-                            onPlayPauseClick = {
-                                if (isPlaying) {
-                                    // Pause music
-                                    val intent =
-                                        Intent(context, MusicService::class.java).apply {
-                                            action = "PAUSE"
-                                        }
-                                    context.startService(intent)
-                                    miniPlayerViewModel.updatePlaybackState(false)
-                                } else {
-                                    // Resume music
-                                    val intent =
-                                        Intent(context, MusicService::class.java).apply {
-                                            action = "RESUME"
-                                            putExtra("SEEK", 0L)
-                                        }
-                                    context.startService(intent)
-                                    miniPlayerViewModel.updatePlaybackState(true)
-                                }
-                            },
+                            musicPlayerViewModel,
                             onCloseClick = {
                                 val intent =
                                     Intent(context, MusicService::class.java).apply {
@@ -193,11 +163,11 @@ fun AppNavigation(
                                     }
                                 context.startService(intent)
                             },
-                            miniPlayerViewModel = miniPlayerViewModel,
+                            navController = navController,
                         )
                     }
 
-                    if (currentRoute?.startsWith(ScreenRoute.SongDetails.route) == false &&
+                    if (currentRoute?.contains("songDetails") == false &&
                         !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen &&
                         !isInEditProfileScreen && !isInChangePasswordScreen &&
                         !isInViewHistoryListenScreen
@@ -213,7 +183,7 @@ fun AppNavigation(
                     .padding(
                         top = paddingValues.calculateTopPadding(),
                         bottom = if (isMiniPlayerVisible &&
-                            currentRoute?.startsWith(ScreenRoute.SongDetails.route) == false &&
+                            currentRoute?.contains("songDetails") == false &&
                             !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                             && !isInEditProfileScreen && !isInChangePasswordScreen &&
                             !isInViewHistoryListenScreen
@@ -244,30 +214,61 @@ fun AppNavigation(
                         val viewProfileViewModel: EditProfileViewModel = hiltViewModel()
                         ViewProfileScreen(
                             viewProfileViewModel,
-                            onBack = { navController.popBackStack() })
+                            onBack = {
+                                if (isMiniPlayerVisible) {
+                                    val intent = Intent("MUSIC_EVENT").apply {
+                                        putExtra("ACTION", "SHOW_MINI_PLAYER")
+                                    }
+                                    context.sendBroadcast(intent)
+                                }
+                                navController.popBackStack()
+                            })
                     }
                     composable(ScreenRoute.EditProfile.route) {
                         val editProfileViewModel: EditProfileViewModel = hiltViewModel()
                         EditProfileScreen(
                             editProfileViewModel,
-                            onBack = { navController.popBackStack() })
+                            onBack = {
+                                if (isMiniPlayerVisible) {
+                                    val intent = Intent("MUSIC_EVENT").apply {
+                                        putExtra("ACTION", "SHOW_MINI_PLAYER")
+                                    }
+                                    context.sendBroadcast(intent)
+                                }
+                                navController.popBackStack()
+                            })
                     }
                     composable(ScreenRoute.ChangePasswordScreen.route) {
                         val changePasswordViewModel: ChangePasswordViewModel = hiltViewModel()
                         ChangePasswordScreen(
                             changePasswordViewModel,
-                            onBack = { navController.popBackStack() })
+                            onBack = {
+                                if (isMiniPlayerVisible) {
+                                    val intent = Intent("MUSIC_EVENT").apply {
+                                        putExtra("ACTION", "SHOW_MINI_PLAYER")
+                                    }
+                                    context.sendBroadcast(intent)
+                                }
+                                navController.popBackStack()
+                            })
                     }
                     composable(ScreenRoute.ViewHistoryListen.route) {
                         val viewHistoryListenViewModel: ViewHistoryListenViewModel = hiltViewModel()
                         ViewHistoryListenScreen(
                             viewHistoryListenViewModel,
-                            onBack = { navController.popBackStack() })
+                            onBack = {
+                                if (isMiniPlayerVisible) {
+                                    val intent = Intent("MUSIC_EVENT").apply {
+                                        putExtra("ACTION", "SHOW_MINI_PLAYER")
+                                    }
+                                    context.sendBroadcast(intent)
+                                }
+                                navController.popBackStack()
+                            })
                     }
                     composable(ScreenRoute.NotificationScreen.route) {
                         NotificationScreen(
                             onBackClick = {
-                                // Restore mini player visibility when leaving NotificationScreen
                                 if (isMiniPlayerVisible) {
                                     val intent = Intent("MUSIC_EVENT").apply {
                                         putExtra("ACTION", "SHOW_MINI_PLAYER")
@@ -281,24 +282,25 @@ fun AppNavigation(
                     composable(
                         ScreenRoute.SongDetails.route,
                         arguments = listOf(
-                            navArgument("songId") { type = NavType.LongType }
+                            navArgument("songJson") { type = NavType.StringType },
+                            navArgument("fromMiniPlayer") {
+                                type = NavType.BoolType
+                                defaultValue = false
+                            }
                         )
                     ) { backStackEntry ->
-                        val songId = backStackEntry.arguments?.getLong("songId") ?: 0L
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            SongDetailsScreen(
-                                songId = songId,
-                                onBack = { navController.popBackStack() },
-                                fromMiniPlayer = currentSong?.id == songId,
-                                isPlaying = isPlaying,
-                                isLoopEnabled = isLoopEnabled,
-                                isShuffleEnabled = isShuffleEnabled,
-                                songRepository = navigationViewModel.songRepository,
-                                context = context,
-                                position = currentPosition,
-                                duration = duration
-                            )
-                        }
+                        val songJson = backStackEntry.arguments?.getString("songJson") ?: ""
+                        val fromMiniPlayer = backStackEntry.arguments?.getBoolean("fromMiniPlayer") ?: false
+                        val decodedJson = URLDecoder.decode(songJson, StandardCharsets.UTF_8.toString())
+                        val song = Gson().fromJson(decodedJson, Song::class.java)
+                        SongDetailsScreen(
+                            song = song,
+                            onBack = { navController.popBackStack() },
+                            fromMiniPlayer = fromMiniPlayer,
+                            songRepository = navigationViewModel.songRepository,
+                            context = context,
+                            navController = navController,
+                        )
                     }
                     composable(
                         ScreenRoute.Genre.route,

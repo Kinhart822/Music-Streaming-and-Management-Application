@@ -24,8 +24,11 @@ sealed class ScreenRoute(val route: String) {
     object Library : ScreenRoute("library")
     object Settings : ScreenRoute("settings")
 
-    object SongDetails : ScreenRoute("songDetails/{songId}") {
-        fun createRoute(songId: Long) = "songDetails/$songId"
+    object SongDetails : ScreenRoute("songDetails/{songJson}?fromMiniPlayer={fromMiniPlayer}") {
+        fun createRoute(songJson: String, fromMiniPlayer: Boolean): String {
+            val encodedJson = URLEncoder.encode(songJson, StandardCharsets.UTF_8.toString())
+            return "songDetails/$encodedJson?fromMiniPlayer=$fromMiniPlayer"
+        }
     }
 
     object Genre : ScreenRoute("genre/{genreJson}") {

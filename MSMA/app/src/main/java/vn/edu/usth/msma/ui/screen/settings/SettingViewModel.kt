@@ -13,9 +13,7 @@ import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.network.ApiService
 import vn.edu.usth.msma.utils.constants.UserType
-import vn.edu.usth.msma.utils.eventbus.Event
 import vn.edu.usth.msma.utils.eventbus.Event.ProfileUpdatedEvent
-import vn.edu.usth.msma.utils.eventbus.Event.SessionExpiredEvent
 import vn.edu.usth.msma.utils.eventbus.EventBus
 import javax.inject.Inject
 
