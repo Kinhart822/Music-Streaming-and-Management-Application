@@ -85,13 +85,14 @@ fun MainScreen(
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = currentBackStackEntry?.destination?.route
 
-    // Show top and bottom bars for non-authentication ScreenRoutes
+    // Show top and bottom bars
     val showTopAndBottomBar = currentRoute?.startsWith(ScreenRoute.Login.route) == false &&
             currentRoute.startsWith(ScreenRoute.Register.route) == false &&
             currentRoute.startsWith(ScreenRoute.ForgotPassword.route) == false &&
             currentRoute.startsWith(ScreenRoute.Otp.route) == false &&
             currentRoute.startsWith(ScreenRoute.ResetPassword.route) == false &&
-            currentRoute.contains("songDetails") == false
+            currentRoute.contains("songDetails") == false && currentRoute.contains("artist") == false &&
+            currentRoute.contains("playlist") == false && currentRoute.contains("album") == false
 
     // Determine ScreenRoute title
     val screenTitle = when {
@@ -115,12 +116,14 @@ fun MainScreen(
         currentRoute == ScreenRoute.EditProfile.route -> "Edit Profile"
         currentRoute == ScreenRoute.ChangePasswordScreen.route -> "Change Password"
         currentRoute == ScreenRoute.ViewHistoryListen.route -> "History Listen"
+        currentRoute == ScreenRoute.FavoriteSongs.route -> "Favourite Songs"
 
         else -> "Home"
     }
 
     // Trackers
     val isInNotificationScreen = currentRoute == ScreenRoute.NotificationScreen.route
+    val isInFavoriteSongsScreen = currentRoute == ScreenRoute.FavoriteSongs.route
     val isInGenreScreen = currentRoute == ScreenRoute.Genre.route
     val isInViewProfileScreen = currentRoute == ScreenRoute.ViewProfile.route
     val isInEditProfileScreen = currentRoute == ScreenRoute.EditProfile.route
@@ -135,7 +138,7 @@ fun MainScreen(
                     onNotificationClick = if (currentRoute.startsWith(ScreenRoute.Genre.route) == false
                         && !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                         && !isInEditProfileScreen && !isInChangePasswordScreen &&
-                        !isInViewHistoryListenScreen
+                        !isInViewHistoryListenScreen && !isInFavoriteSongsScreen
                     ) {
                         {
                             navController.navigate(ScreenRoute.NotificationScreen.route)
@@ -143,7 +146,7 @@ fun MainScreen(
                     } else null,
                     onBackClick = if (currentRoute.contains("genre") == true ||
                         isInNotificationScreen || isInViewProfileScreen || isInEditProfileScreen ||
-                        isInChangePasswordScreen || isInViewHistoryListenScreen
+                        isInChangePasswordScreen || isInViewHistoryListenScreen || isInFavoriteSongsScreen
                     ) {
                         { navController.popBackStack() }
                     } else null
@@ -154,7 +157,7 @@ fun MainScreen(
             if (showTopAndBottomBar) {
                 if (!isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                     && !isInEditProfileScreen && !isInChangePasswordScreen &&
-                    !isInViewHistoryListenScreen
+                    !isInViewHistoryListenScreen && !isInFavoriteSongsScreen
                 ) {
                     BottomNavigationBar(navController)
                 }

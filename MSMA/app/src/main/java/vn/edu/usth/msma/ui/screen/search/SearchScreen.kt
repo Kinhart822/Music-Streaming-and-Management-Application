@@ -58,6 +58,7 @@ import com.google.gson.Gson
 import vn.edu.usth.msma.data.dto.response.management.ContentItem
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.ui.components.LoadingScreen
+import vn.edu.usth.msma.ui.components.MarqueeText
 import vn.edu.usth.msma.ui.components.ScreenRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -298,9 +299,8 @@ fun ContentItemView(
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(
+                        MarqueeText(
                             text = "Song - ${content.artistNameList?.joinToString(", ") ?: ""}",
-                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }

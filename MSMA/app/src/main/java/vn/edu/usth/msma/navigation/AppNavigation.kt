@@ -43,8 +43,12 @@ import vn.edu.usth.msma.ui.screen.auth.register.RegisterViewModel
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordScreen
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModel
 import vn.edu.usth.msma.ui.screen.home.HomeNavigation
+import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsScreen
+import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsViewModel
 import vn.edu.usth.msma.ui.screen.library.LibraryScreen
 import vn.edu.usth.msma.ui.screen.library.LibraryViewModel
+import vn.edu.usth.msma.ui.screen.library.artists.ArtistProfileScreen
+import vn.edu.usth.msma.ui.screen.library.artists.ArtistProfileViewModel
 import vn.edu.usth.msma.ui.screen.notification.NotificationScreen
 import vn.edu.usth.msma.ui.screen.search.SearchScreen
 import vn.edu.usth.msma.ui.screen.search.SearchViewModel
@@ -98,12 +102,15 @@ fun AppNavigation(
     }
 
     val currentSong by musicPlayerViewModel.currentSong.collectAsState()
-    val isPlaying by musicPlayerViewModel.isPlaying.collectAsState()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
 
     // Trackers
     val isInNotificationScreen = currentRoute == ScreenRoute.NotificationScreen.route
+    val isInFavoriteSongsScreen = currentRoute == ScreenRoute.FavoriteSongs.route
+    val isInArtistProfileScreen = currentRoute == ScreenRoute.ArtistDetails.route
+    val isInPlaylistScreen = currentRoute == ScreenRoute.PlaylistDetails.route
+    val isInAlbumScreen = currentRoute == ScreenRoute.AlbumDetails.route
     val isInGenreScreen = currentRoute == ScreenRoute.Genre.route
     val isInViewProfileScreen = currentRoute == ScreenRoute.ViewProfile.route
     val isInEditProfileScreen = currentRoute == ScreenRoute.EditProfile.route
@@ -170,7 +177,8 @@ fun AppNavigation(
                     if (currentRoute?.contains("songDetails") == false &&
                         !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen &&
                         !isInEditProfileScreen && !isInChangePasswordScreen &&
-                        !isInViewHistoryListenScreen
+                        !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
+                        !isInAlbumScreen && !isInPlaylistScreen
                     ) {
                         BottomNavigationBar(navController = navController)
                     }
@@ -186,7 +194,8 @@ fun AppNavigation(
                             currentRoute?.contains("songDetails") == false &&
                             !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                             && !isInEditProfileScreen && !isInChangePasswordScreen &&
-                            !isInViewHistoryListenScreen
+                            !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
+                            !isInAlbumScreen && !isInPlaylistScreen
                         ) 60.dp else 0.dp
                     )
             ) {
@@ -209,6 +218,19 @@ fun AppNavigation(
                     composable(ScreenRoute.Settings.route) {
                         val settingViewModel: SettingViewModel = hiltViewModel()
                         SettingScreen(context, navController, settingViewModel)
+                    }
+                    composable(ScreenRoute.FavoriteSongs.route) {
+                        val favoriteSongsViewModel: FavoriteSongsViewModel = hiltViewModel()
+                        FavoriteSongsScreen(favoriteSongsViewModel, navController)
+                    }
+                    composable(ScreenRoute.ArtistDetails.route) {
+                        // TODO
+                    }
+                    composable(ScreenRoute.PlaylistDetails.route) {
+                        // TODO
+                    }
+                    composable(ScreenRoute.AlbumDetails.route) {
+                        // TODO
                     }
                     composable(ScreenRoute.ViewProfile.route) {
                         val viewProfileViewModel: EditProfileViewModel = hiltViewModel()
@@ -290,8 +312,10 @@ fun AppNavigation(
                         )
                     ) { backStackEntry ->
                         val songJson = backStackEntry.arguments?.getString("songJson") ?: ""
-                        val fromMiniPlayer = backStackEntry.arguments?.getBoolean("fromMiniPlayer") ?: false
-                        val decodedJson = URLDecoder.decode(songJson, StandardCharsets.UTF_8.toString())
+                        val fromMiniPlayer =
+                            backStackEntry.arguments?.getBoolean("fromMiniPlayer") ?: false
+                        val decodedJson =
+                            URLDecoder.decode(songJson, StandardCharsets.UTF_8.toString())
                         val song = Gson().fromJson(decodedJson, Song::class.java)
                         SongDetailsScreen(
                             song = song,

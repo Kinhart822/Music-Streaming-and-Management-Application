@@ -77,6 +77,7 @@ import vn.edu.usth.msma.navigation.NavigationViewModel
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
 import vn.edu.usth.msma.ui.components.LoadingScreen
+import vn.edu.usth.msma.ui.components.MarqueeText
 import kotlin.math.roundToInt
 
 @Composable
@@ -418,9 +419,8 @@ fun PlaySong(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
+                MarqueeText(
                     text = song.artistNameList?.joinToString(", ") ?: "",
-                    style = MaterialTheme.typography.bodyLarge,
                     color = Color.White.copy(alpha = 0.7f)
                 )
             }

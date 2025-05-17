@@ -19,6 +19,9 @@ sealed class ScreenRoute(val route: String) {
     }
 
     // Main
+    @Serializable
+    object NotificationScreen : ScreenRoute("notification_screen")
+
     object Home : ScreenRoute("home")
     object Search : ScreenRoute("search")
     object Library : ScreenRoute("library")
@@ -38,8 +41,10 @@ sealed class ScreenRoute(val route: String) {
         }
     }
 
-    @Serializable
-    object NotificationScreen : ScreenRoute("notification_screen")
+    object FavoriteSongs : ScreenRoute("favorite_songs")
+    object ArtistDetails : ScreenRoute("artist")
+    object PlaylistDetails : ScreenRoute("playlist")
+    object AlbumDetails : ScreenRoute("album")
 
     object ViewProfile: ScreenRoute("view_profile")
     object EditProfile: ScreenRoute("edit_profile")
