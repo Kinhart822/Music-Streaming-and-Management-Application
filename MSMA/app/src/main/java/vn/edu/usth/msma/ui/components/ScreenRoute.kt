@@ -42,9 +42,27 @@ sealed class ScreenRoute(val route: String) {
     }
 
     object FavoriteSongs : ScreenRoute("favorite_songs")
-    object ArtistDetails : ScreenRoute("artist")
-    object PlaylistDetails : ScreenRoute("playlist")
-    object AlbumDetails : ScreenRoute("album")
+
+    object ArtistDetails : ScreenRoute("artist/{artistDetailsJson}") {
+        fun createRoute(artistDetailsJson: String): String {
+            val encodedJson = URLEncoder.encode(artistDetailsJson, StandardCharsets.UTF_8.toString())
+            return "artist/$encodedJson"
+        }
+    }
+
+    object PlaylistDetails : ScreenRoute("playlist/{playlistJson}") {
+        fun createRoute(playlistJson: String): String {
+            val encodedJson = URLEncoder.encode(playlistJson, StandardCharsets.UTF_8.toString())
+            return "playlist/$encodedJson"
+        }
+    }
+
+    object AlbumDetails : ScreenRoute("album/{albumJson}") {
+        fun createRoute(albumJson: String): String {
+            val encodedJson = URLEncoder.encode(albumJson, StandardCharsets.UTF_8.toString())
+            return "album/$encodedJson"
+        }
+    }
 
     object ViewProfile: ScreenRoute("view_profile")
     object EditProfile: ScreenRoute("edit_profile")

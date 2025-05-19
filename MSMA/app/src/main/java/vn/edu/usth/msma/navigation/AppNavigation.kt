@@ -26,6 +26,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
+import vn.edu.usth.msma.data.Album
+import vn.edu.usth.msma.data.Artist
+import vn.edu.usth.msma.data.Playlist
 import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
@@ -43,17 +46,18 @@ import vn.edu.usth.msma.ui.screen.auth.register.RegisterViewModel
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordScreen
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModel
 import vn.edu.usth.msma.ui.screen.home.HomeNavigation
-import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsScreen
-import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsViewModel
 import vn.edu.usth.msma.ui.screen.library.LibraryScreen
 import vn.edu.usth.msma.ui.screen.library.LibraryViewModel
-import vn.edu.usth.msma.ui.screen.library.artists.ArtistProfileScreen
-import vn.edu.usth.msma.ui.screen.library.artists.ArtistProfileViewModel
+import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsScreen
+import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsViewModel
 import vn.edu.usth.msma.ui.screen.notification.NotificationScreen
 import vn.edu.usth.msma.ui.screen.search.SearchScreen
 import vn.edu.usth.msma.ui.screen.search.SearchViewModel
+import vn.edu.usth.msma.ui.screen.search.albums.AlbumScreen
+import vn.edu.usth.msma.ui.screen.search.artists.ArtistProfileScreen
 import vn.edu.usth.msma.ui.screen.search.genres.GenreScreen
 import vn.edu.usth.msma.ui.screen.search.genres.GenreViewModel
+import vn.edu.usth.msma.ui.screen.search.playlists.PlaylistScreen
 import vn.edu.usth.msma.ui.screen.settings.SettingScreen
 import vn.edu.usth.msma.ui.screen.settings.SettingViewModel
 import vn.edu.usth.msma.ui.screen.settings.changepassword.ChangePasswordScreen
@@ -191,12 +195,8 @@ fun AppNavigation(
                     .padding(
                         top = paddingValues.calculateTopPadding(),
                         bottom = if (isMiniPlayerVisible &&
-                            currentRoute?.contains("songDetails") == false &&
-                            !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
-                            && !isInEditProfileScreen && !isInChangePasswordScreen &&
-                            !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
-                            !isInAlbumScreen && !isInPlaylistScreen
-                        ) 60.dp else 0.dp
+                            currentRoute?.contains("songDetails") == false
+                        ) 75.dp else 0.dp
                     )
             ) {
                 NavHost(
@@ -223,14 +223,54 @@ fun AppNavigation(
                         val favoriteSongsViewModel: FavoriteSongsViewModel = hiltViewModel()
                         FavoriteSongsScreen(favoriteSongsViewModel, navController)
                     }
-                    composable(ScreenRoute.ArtistDetails.route) {
-                        // TODO
+
+                    composable(
+                        route = ScreenRoute.ArtistDetails.route,
+                        arguments = listOf(
+                            navArgument("artistDetailsJson") { type = NavType.StringType },
+                        )
+                    ) { backStackEntry ->
+                        val artistDetailsJson =
+                            backStackEntry.arguments?.getString("artistDetailsJson") ?: ""
+                        val decodedJson =
+                            URLDecoder.decode(artistDetailsJson, StandardCharsets.UTF_8.toString())
+                        val artist = Gson().fromJson(decodedJson, Artist::class.java)
+                        ArtistProfileScreen(
+                            artist = artist,
+                            navController = navController
+                        )
                     }
-                    composable(ScreenRoute.PlaylistDetails.route) {
-                        // TODO
+                    composable(
+                        route = ScreenRoute.PlaylistDetails.route,
+                        arguments = listOf(
+                            navArgument("playlistJson") { type = NavType.StringType },
+                        )
+                    ) { backStackEntry ->
+                        val playlistJson =
+                            backStackEntry.arguments?.getString("playlistJson") ?: ""
+                        val decodedJson =
+                            URLDecoder.decode(playlistJson, StandardCharsets.UTF_8.toString())
+                        val playlist = Gson().fromJson(decodedJson, Playlist::class.java)
+                        PlaylistScreen(
+                            playlist = playlist,
+                            navController = navController
+                        )
                     }
-                    composable(ScreenRoute.AlbumDetails.route) {
-                        // TODO
+                    composable(
+                        route = ScreenRoute.AlbumDetails.route,
+                        arguments = listOf(
+                            navArgument("albumJson") { type = NavType.StringType },
+                        )
+                    ) { backStackEntry ->
+                        val albumJson =
+                            backStackEntry.arguments?.getString("albumJson") ?: ""
+                        val decodedJson =
+                            URLDecoder.decode(albumJson, StandardCharsets.UTF_8.toString())
+                        val album = Gson().fromJson(decodedJson, Album::class.java)
+                        AlbumScreen(
+                            album = album,
+                            navController = navController
+                        )
                     }
                     composable(ScreenRoute.ViewProfile.route) {
                         val viewProfileViewModel: EditProfileViewModel = hiltViewModel()

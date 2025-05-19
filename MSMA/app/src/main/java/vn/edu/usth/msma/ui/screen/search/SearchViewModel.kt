@@ -16,6 +16,9 @@ import vn.edu.usth.msma.data.dto.response.management.ContentItemDeserializer
 import vn.edu.usth.msma.data.dto.response.management.ContentResponseDeserializer
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.network.ApiService
+import vn.edu.usth.msma.repository.AlbumRepository
+import vn.edu.usth.msma.repository.ArtistRepository
+import vn.edu.usth.msma.repository.PlaylistRepository
 import vn.edu.usth.msma.repository.SongRepository
 import javax.inject.Inject
 
@@ -32,7 +35,10 @@ data class SearchState(
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val songRepository: SongRepository
+    private val songRepository: SongRepository,
+    private val artistRepository: ArtistRepository,
+    private val playlistRepository: PlaylistRepository,
+    private val albumRepository: AlbumRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
@@ -122,6 +128,15 @@ class SearchViewModel @Inject constructor(
 
                     val songItems = contentResponse.content.filterIsInstance<ContentItem.SongItem>()
                     songRepository.updateSearchSongs(songItems)
+
+                    val artistItems = contentResponse.content.filterIsInstance<ContentItem.ArtistItem>()
+                    artistRepository.updateSearchArtists(artistItems)
+
+                    val playlistItems = contentResponse.content.filterIsInstance<ContentItem.PlaylistItem>()
+                    playlistRepository.updateSearchPlaylists(playlistItems)
+
+                    val albumItems = contentResponse.content.filterIsInstance<ContentItem.AlbumItem>()
+                    albumRepository.updateSearchAlbums(albumItems)
 
                     _state.update {
                         it.copy(

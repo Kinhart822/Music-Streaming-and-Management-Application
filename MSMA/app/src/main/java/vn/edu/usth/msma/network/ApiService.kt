@@ -1,9 +1,6 @@
 package vn.edu.usth.msma.network
 
-import vn.edu.usth.msma.network.apis.AccountApi
-import vn.edu.usth.msma.network.apis.AuthApi
-import vn.edu.usth.msma.network.apis.SearchApi
-import vn.edu.usth.msma.network.apis.SongApi
+import vn.edu.usth.msma.network.apis.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,6 +32,18 @@ class ApiService @Inject constructor(
         apiClient.getAuthenticatedClient().create(SongApi::class.java)
     }
 
+    private val _artistApi: ArtistApi by lazy {
+        apiClient.getAuthenticatedClient().create(ArtistApi::class.java)
+    }
+
+    private val _albumApi: AlbumApi by lazy {
+        apiClient.getAuthenticatedClient().create(AlbumApi::class.java)
+    }
+
+    private val _playlistApi: PlaylistApi by lazy {
+        apiClient.getAuthenticatedClient().create(PlaylistApi::class.java)
+    }
+
     fun getUnAuthApi(): AuthApi = _unAuthApi
 
     fun getAuthApi(): AuthApi = _authApi
@@ -46,4 +55,10 @@ class ApiService @Inject constructor(
     fun getSearchApi(): SearchApi = _searchApi
 
     fun getSongApi(): SongApi = _songApi
+
+    fun getArtistApi(): ArtistApi = _artistApi
+
+    fun getAlbumApi(): AlbumApi = _albumApi
+
+    fun getPlaylistApi(): PlaylistApi = _playlistApi
 }

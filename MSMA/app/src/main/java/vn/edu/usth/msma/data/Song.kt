@@ -21,4 +21,4 @@ data class Song(
     val countListen: Long?,
     val numberOfUserLike: Long?,
     val numberOfDownload: Long?
-): Parcelable
+) : Parcelable

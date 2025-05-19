@@ -1,6 +1,9 @@
 package vn.edu.usth.msma.data.dto.response.management
 
-import com.google.gson.*
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonParseException
 import com.google.gson.annotations.SerializedName
 import vn.edu.usth.msma.utils.constants.UserType
 import java.lang.reflect.Type
@@ -35,7 +38,9 @@ sealed class ContentItem {
         @SerializedName("playlistName") val playlistName: String,
         @SerializedName("playTimeLength") val playTimeLength: Float?,
         @SerializedName("releaseDate") val releaseDate: String?,
+        @SerializedName("songIdList") val songIdList: List<Long>?,
         @SerializedName("songNameList") val songNameList: List<String>?,
+        @SerializedName("artistIdList") val artistIdList: List<Long>?,
         @SerializedName("artistNameList") val artistNameList: List<String>?,
         @SerializedName("imageUrl") val imageUrl: String?,
         @SerializedName("description") val description: String?,
@@ -48,7 +53,9 @@ sealed class ContentItem {
         @SerializedName("description") val description: String?,
         @SerializedName("releaseDate") val releaseDate: String?,
         @SerializedName("albumTimeLength") val albumTimeLength: Float?,
+        @SerializedName("songIdList") val songIdList: List<Long>?,
         @SerializedName("songNameList") val songNameList: List<String>?,
+        @SerializedName("artistIdList") val artistIdList: List<Long>?,
         @SerializedName("artistNameList") val artistNameList: List<String>?,
         @SerializedName("imageUrl") val imageUrl: String?,
         @SerializedName("status") val status: String?
@@ -69,10 +76,6 @@ sealed class ContentItem {
         val description: String?,
         @SerializedName("image")
         val image: String?,
-        @SerializedName("backgroundImage")
-        val backgroundImage: String?,
-        @SerializedName("countListen")
-        val countListen: Long?,
         @SerializedName("numberOfFollowers")
         val numberOfFollowers: Long?,
         @SerializedName("email")
@@ -97,10 +100,16 @@ sealed class ContentItem {
         val userType: UserType?,
         @SerializedName("artistSongIds")
         val artistSongIds: List<Long>?,
+        @SerializedName("artistSongNameList")
+        val artistSongNameList: List<String>,
         @SerializedName("artistPlaylistIds")
         val artistPlaylistIds: List<Long>?,
+        @SerializedName("artistPlaylistNameList")
+        val artistPlaylistNameList: List<String>?,
         @SerializedName("artistAlbumIds")
-        val artistAlbumIds: List<Long>?
+        val artistAlbumIds: List<Long>?,
+        @SerializedName("artistAlbumNameList")
+        val artistAlbumNameList: List<String>?
     ) : ContentItem()
 }
 

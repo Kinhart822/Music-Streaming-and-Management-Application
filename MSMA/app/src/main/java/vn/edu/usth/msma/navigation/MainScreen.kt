@@ -24,8 +24,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import vn.edu.usth.msma.data.Album
+import vn.edu.usth.msma.data.Artist
+import vn.edu.usth.msma.data.Playlist
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.ui.components.ScreenRoute
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,8 +96,7 @@ fun MainScreen(
             currentRoute.startsWith(ScreenRoute.ForgotPassword.route) == false &&
             currentRoute.startsWith(ScreenRoute.Otp.route) == false &&
             currentRoute.startsWith(ScreenRoute.ResetPassword.route) == false &&
-            currentRoute.contains("songDetails") == false && currentRoute.contains("artist") == false &&
-            currentRoute.contains("playlist") == false && currentRoute.contains("album") == false
+            currentRoute.contains("songDetails") == false
 
     // Determine ScreenRoute title
     val screenTitle = when {
@@ -104,6 +108,46 @@ fun MainScreen(
                 genre.name
             } catch (e: Exception) {
                 "Genre"
+            }
+        }
+
+        currentRoute?.contains("artist") == true -> {
+            // Extract genreJson from arguments and decode
+            val artistDetailsJson =
+                currentBackStackEntry.arguments?.getString("artistDetailsJson") ?: ""
+            try {
+                val decodedJson =
+                    URLDecoder.decode(artistDetailsJson, StandardCharsets.UTF_8.toString())
+                val artist = Gson().fromJson(decodedJson, Artist::class.java)
+                artist.artistName + " Profile"
+            } catch (e: Exception) {
+                "Artist Profile"
+            }
+        }
+
+        currentRoute?.contains("playlist") == true -> {
+            // Extract genreJson from arguments and decode
+            val playlistJson = currentBackStackEntry.arguments?.getString("playlistJson") ?: ""
+            try {
+                val decodedJson =
+                    URLDecoder.decode(playlistJson, StandardCharsets.UTF_8.toString())
+                val playlist = Gson().fromJson(decodedJson, Playlist::class.java)
+                playlist.playlistName + " Playlist"
+            } catch (e: Exception) {
+                "Playlist"
+            }
+        }
+
+        currentRoute?.contains("album") == true -> {
+            // Extract genreJson from arguments and decode
+            val albumJson = currentBackStackEntry.arguments?.getString("albumJson") ?: ""
+            try {
+                val decodedJson =
+                    URLDecoder.decode(albumJson, StandardCharsets.UTF_8.toString())
+                val album = Gson().fromJson(decodedJson, Album::class.java)
+                album.albumName + " Album"
+            } catch (e: Exception) {
+                "Album"
             }
         }
 
@@ -129,6 +173,9 @@ fun MainScreen(
     val isInEditProfileScreen = currentRoute == ScreenRoute.EditProfile.route
     val isInChangePasswordScreen = currentRoute == ScreenRoute.ChangePasswordScreen.route
     val isInViewHistoryListenScreen = currentRoute == ScreenRoute.ViewHistoryListen.route
+    val isInArtistProfileScreen = currentRoute == ScreenRoute.ArtistDetails.route
+    val isInPlaylistScreen = currentRoute == ScreenRoute.PlaylistDetails.route
+    val isInAlbumScreen = currentRoute == ScreenRoute.AlbumDetails.route
 
     Scaffold(
         topBar = {
@@ -138,7 +185,8 @@ fun MainScreen(
                     onNotificationClick = if (currentRoute.startsWith(ScreenRoute.Genre.route) == false
                         && !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                         && !isInEditProfileScreen && !isInChangePasswordScreen &&
-                        !isInViewHistoryListenScreen && !isInFavoriteSongsScreen
+                        !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
+                        !isInPlaylistScreen && !isInAlbumScreen
                     ) {
                         {
                             navController.navigate(ScreenRoute.NotificationScreen.route)
@@ -146,7 +194,8 @@ fun MainScreen(
                     } else null,
                     onBackClick = if (currentRoute.contains("genre") == true ||
                         isInNotificationScreen || isInViewProfileScreen || isInEditProfileScreen ||
-                        isInChangePasswordScreen || isInViewHistoryListenScreen || isInFavoriteSongsScreen
+                        isInChangePasswordScreen || isInViewHistoryListenScreen || isInFavoriteSongsScreen || isInArtistProfileScreen ||
+                        isInPlaylistScreen || isInAlbumScreen
                     ) {
                         { navController.popBackStack() }
                     } else null
@@ -157,7 +206,8 @@ fun MainScreen(
             if (showTopAndBottomBar) {
                 if (!isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                     && !isInEditProfileScreen && !isInChangePasswordScreen &&
-                    !isInViewHistoryListenScreen && !isInFavoriteSongsScreen
+                    !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
+                    !isInPlaylistScreen && !isInAlbumScreen
                 ) {
                     BottomNavigationBar(navController)
                 }

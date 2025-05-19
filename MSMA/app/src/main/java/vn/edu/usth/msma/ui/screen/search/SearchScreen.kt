@@ -83,7 +83,7 @@ fun SearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(top = 16.dp, start = 16.dp, end = 16.dp)
     ) {
         // Search bar with Cancel button
         Row(
@@ -313,7 +313,12 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {},
+                    .clickable {
+                        val playlistJson = Gson().toJson(content)
+                        navController.navigate(
+                            ScreenRoute.PlaylistDetails.createRoute(playlistJson)
+                        )
+                    },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -352,7 +357,12 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {},
+                    .clickable {
+                        val albumJson = Gson().toJson(content)
+                        navController.navigate(
+                            ScreenRoute.AlbumDetails.createRoute(albumJson)
+                        )
+                    },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -391,7 +401,12 @@ fun ContentItemView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable {},
+                    .clickable {
+                        val artistDetailsJson = Gson().toJson(content)
+                        navController.navigate(
+                            ScreenRoute.ArtistDetails.createRoute(artistDetailsJson)
+                        )
+                    },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(

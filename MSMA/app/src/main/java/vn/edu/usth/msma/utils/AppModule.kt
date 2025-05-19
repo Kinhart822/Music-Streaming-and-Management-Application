@@ -7,7 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import vn.edu.usth.msma.data.PreferencesManager
-import vn.edu.usth.msma.repository.SongRepository
+import vn.edu.usth.msma.repository.*
 import javax.inject.Singleton
 
 @Module
@@ -16,6 +16,18 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSongRepository(): SongRepository = SongRepository()
+
+    @Provides
+    @Singleton
+    fun provideArtistRepository(): ArtistRepository = ArtistRepository()
+
+    @Provides
+    @Singleton
+    fun providePlaylistRepository(): PlaylistRepository = PlaylistRepository()
+
+    @Provides
+    @Singleton
+    fun provideAlbumRepository(): AlbumRepository = AlbumRepository()
 
     @Provides
     @Singleton
