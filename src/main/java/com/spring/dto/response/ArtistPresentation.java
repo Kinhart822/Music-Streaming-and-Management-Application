@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,8 +20,6 @@ public class ArtistPresentation {
     private String artistName;
     private String description;
     private String image;
-    private String backgroundImage;
-    private Long countListen;
     private Long numberOfFollowers;
     private String email;
     private String gender;
@@ -33,4 +31,11 @@ public class ArtistPresentation {
     private String createdDate;
     private String lastModifiedDate;
     private UserType userType;
+    private List<Long> artistSongIds;
+    private List<String> artistSongNameList;
+    private List<Long> artistPlaylistIds;
+    private List<String> artistPlaylistNameList;
+    private List<Long> artistAlbumIds;
+    private List<String> artistAlbumNameList;
+
 }

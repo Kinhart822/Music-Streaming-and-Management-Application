@@ -22,9 +22,6 @@ public class Artist extends User{
     @Column(name = "image_url", columnDefinition = "text")
     private String imageUrl;
 
-    @Column(name = "count_listen")
-    private Long countListen;
-
     @OneToMany(mappedBy = "artistSongId.artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistSong> artistSongs;
 

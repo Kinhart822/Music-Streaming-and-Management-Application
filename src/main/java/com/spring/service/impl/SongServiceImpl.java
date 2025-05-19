@@ -621,6 +621,32 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
+    public List<SongResponse> getAllAcceptedSongsByArtistId(Long artistId) {
+        List<Song> songs = songRepository.findByArtistId(artistId);
+        return songs.stream()
+                .filter(p -> p.getSongStatus().equals(SongStatus.ACCEPTED))
+                .map(this::convertToSongResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SongResponse> getAllAcceptedSongsByPlaylistId(Long playlistId) {
+        List<Song> songs = songRepository.findByPlaylistId(playlistId);
+        return songs.stream()
+                .filter(p -> p.getSongStatus().equals(SongStatus.ACCEPTED))
+                .map(this::convertToSongResponse)
+                .collect(Collectors.toList());    }
+
+    @Override
+    public List<SongResponse> getAllAcceptedSongsByAlbumId(Long albumId) {
+        List<Song> songs = songRepository.findByAlbumId(albumId);
+        return songs.stream()
+                .filter(p -> p.getSongStatus().equals(SongStatus.ACCEPTED))
+                .map(this::convertToSongResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public SongResponse getSongById(Long songId) {
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));

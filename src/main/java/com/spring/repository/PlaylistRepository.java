@@ -1,6 +1,7 @@
 package com.spring.repository;
 
 import com.spring.entities.Playlist;
+import com.spring.entities.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,9 @@ import java.util.List;
 public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
     @Query("SELECT asg.artistPlaylistId.playlist FROM ArtistPlaylist asg WHERE asg.artistPlaylistId.artist.id = :artistId")
     List<Playlist> findByArtistId(@Param("artistId") Long artistId);
+
+    @Query("SELECT auf.userSavedPlaylistId.playlist FROM UserSavedPlaylist auf WHERE auf.userSavedPlaylistId.user = :user")
+    List<Playlist> findByUser(@Param("user") User user);
 
     @Query("SELECT COUNT(a) FROM Playlist a")
     Long countAllPlaylists();

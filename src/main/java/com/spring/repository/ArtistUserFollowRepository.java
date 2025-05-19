@@ -15,4 +15,11 @@ public interface ArtistUserFollowRepository extends JpaRepository<ArtistUserFoll
 
     @Query("SELECT COUNT(DISTINCT usc.artistUserFollowId.user.id) FROM ArtistUserFollow usc WHERE usc.artistUserFollowId.artist.id = :artistId AND usc.artistUserFollowId.user.userType = 'USER'")
     Long countDistinctUsersByArtistId(@Param("artistId") Long artistId);
+
+    @Query("""
+                SELECT CASE WHEN COUNT(usc) > 0 THEN true ELSE false END
+                FROM ArtistUserFollow usc
+                WHERE usc.artistUserFollowId.artist.id = :artistId AND usc.artistUserFollowId.user.id = :userId
+            """)
+    boolean existsByUserIdAndArtistId(@Param("userId") Long userId, @Param("artistId") Long artistId);
 }

@@ -24,6 +24,11 @@ public class UserPlaylistController {
         return ResponseEntity.ok(playlistService.userSavePlaylist(id));
     }
 
+    @DeleteMapping("/userUnSavePlaylist/{id}")
+    public ResponseEntity<ApiResponse> userUnSavePlaylist(@PathVariable Long id) {
+        return ResponseEntity.ok(playlistService.userUnSavePlaylist(id));
+    }
+
     @PostMapping("/create")
     public ResponseEntity<PlaylistResponse> createPlaylist(@ModelAttribute @Valid PlaylistRequest request) {
         return ResponseEntity.ok(playlistService.createPlaylist(request));
@@ -47,6 +52,16 @@ public class UserPlaylistController {
     @GetMapping("/infoAll/{id}")
     public ResponseEntity<List<PlaylistResponse>> getAllPlaylistsByArtistId(@PathVariable Long id) {
         return ResponseEntity.ok(playlistService.getAllPlaylistsByArtistId(id));
+    }
+
+    @GetMapping("/saved-playlists")
+    public ResponseEntity<List<PlaylistResponse>> getAllUserSavedPlaylists() {
+        return ResponseEntity.ok(playlistService.getCurrentUserSavedPlaylists());
+    }
+
+    @GetMapping("/saved-playlist-check/{id}")
+    public ResponseEntity<Boolean> checkFollowed(@PathVariable Long id) {
+        return ResponseEntity.ok(playlistService.isSavedPlaylist(id));
     }
 
     @PostMapping("/song/add")

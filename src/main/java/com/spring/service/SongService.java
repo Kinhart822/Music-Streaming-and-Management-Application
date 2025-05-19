@@ -14,6 +14,9 @@ public interface SongService {
     ApiResponse deleteSong(Long id);
     List<SongResponse> getAllSongs();
     List<SongResponse> getAllSongsByArtistId(Long artistId);
+    List<SongResponse> getAllAcceptedSongsByArtistId(Long artistId);
+    List<SongResponse> getAllAcceptedSongsByPlaylistId(Long playlistId);
+    List<SongResponse> getAllAcceptedSongsByAlbumId(Long albumId);
 
     SongResponse getSongById(Long songId);
     List<SongResponse> getSongsByGenre(Long genreId);

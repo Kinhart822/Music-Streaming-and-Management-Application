@@ -249,6 +249,39 @@ public class PlaylistServiceImpl implements PlaylistService {
     }
 
     @Override
+    public List<PlaylistResponse> getAllAcceptedPlaylistsByArtistId(Long id) {
+        Artist artist = artistRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        return artist.getArtistPlaylists().stream()
+                .filter(p -> p.getArtistPlaylistId().getPlaylist().getPlaylistAndAlbumStatus().equals(PlaylistAndAlbumStatus.ACCEPTED))
+                .map(ap -> convertToPlaylistResponse(ap.getArtistPlaylistId().getPlaylist()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Boolean isSavedPlaylist(Long id) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        return userSavedPlaylistRepository.existsByUserIdAndPlaylistId(userId, id);
+    }
+
+    @Override
+    public List<PlaylistResponse> getCurrentUserSavedPlaylists() {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        List<Playlist> playlists = playlistRepository.findByUser(user);
+        if (playlists.isEmpty()) {
+            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND);
+        }
+
+        return playlists.stream()
+                .map(this::convertToPlaylistResponse)
+                .toList();
+    }
+
+    @Override
     public ApiResponse addSongToPlaylist(AddSongRequest request) {
         ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
         Instant now = dueDateInVietnam.toInstant();
@@ -537,6 +570,22 @@ public class PlaylistServiceImpl implements PlaylistService {
         return ApiResponse.ok("Playlist đã được lưu!");
     }
 
+    @Override
+    public ApiResponse userUnSavePlaylist(Long playlistId) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        UserSavedPlaylistId id = new UserSavedPlaylistId(playlist, user);
+        if (!userSavedPlaylistRepository.existsById(id)) {
+            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND);
+        }
+        userSavedPlaylistRepository.deleteById(id);
+        return ApiResponse.ok("Đã unsaved Playlist !");
+    }
+
     private PlaylistResponse convertToPlaylistResponse(Playlist playlist) {
         Long id = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(id)
@@ -547,6 +596,12 @@ public class PlaylistServiceImpl implements PlaylistService {
                 ? formatter.format(playlist.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
                 : null;
 
+        List<Long> songIdList = playlist.getPlaylistSongs() != null
+                ? playlist.getPlaylistSongs().stream()
+                .filter(Objects::nonNull)
+                .map(playlistSong -> playlistSong.getPlaylistSongId().getSong().getId())
+                .toList()
+                : Collections.emptyList();
         List<String> songNameList = playlist.getPlaylistSongs() != null
                 ? playlist.getPlaylistSongs().stream()
                 .filter(Objects::nonNull)
@@ -555,6 +610,14 @@ public class PlaylistServiceImpl implements PlaylistService {
                 : Collections.emptyList();
 
         if (user.getUserType() == UserType.ARTIST) {
+            List<Long> additionalArtistIdList = Optional.ofNullable(
+                            artistPlaylistRepository.findByArtistPlaylistId_Playlist_Id(playlist.getId()))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ap -> !ap.getArtistPlaylistId().getArtist().getId().equals(id))
+                    .map(ap -> ap.getArtistPlaylistId().getArtist().getId())
+                    .toList();
             List<String> additionalArtistNameList = Optional.ofNullable(
                             artistPlaylistRepository.findByArtistPlaylistId_Playlist_Id(playlist.getId()))
                     .orElse(Collections.emptyList())
@@ -570,12 +633,19 @@ public class PlaylistServiceImpl implements PlaylistService {
                     .description(playlist.getDescription())
                     .playTimeLength(playlist.getPlaylistTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(additionalArtistIdList)
                     .artistNameList(additionalArtistNameList)
                     .imageUrl(playlist.getImageUrl())
                     .status(playlist.getPlaylistAndAlbumStatus().toString())
                     .build();
         } else {
+            List<Long> artistIdList = playlist.getArtistPlaylists() != null
+                    ? playlist.getArtistPlaylists().stream()
+                    .map(as -> as.getArtistPlaylistId().getArtist().getId())
+                    .toList()
+                    : new ArrayList<>();
             List<String> artistNameList = playlist.getArtistPlaylists() != null
                     ? playlist.getArtistPlaylists().stream()
                     .map(as -> as.getArtistPlaylistId().getArtist().getArtistName())
@@ -588,7 +658,9 @@ public class PlaylistServiceImpl implements PlaylistService {
                     .description(playlist.getDescription())
                     .playTimeLength(playlist.getPlaylistTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(artistIdList)
                     .artistNameList(artistNameList)
                     .imageUrl(playlist.getImageUrl())
                     .status(playlist.getPlaylistAndAlbumStatus().toString())

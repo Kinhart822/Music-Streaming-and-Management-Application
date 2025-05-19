@@ -16,6 +16,10 @@ public interface PlaylistService {
     PlaylistResponse getPlaylistById(Long id);
     List<PlaylistResponse> getAllPlaylistsByCurrentAccount();
     List<PlaylistResponse> getAllPlaylistsByArtistId(Long id);
+    List<PlaylistResponse> getAllAcceptedPlaylistsByArtistId(Long id);
+
+    Boolean isSavedPlaylist(Long id);
+    List<PlaylistResponse> getCurrentUserSavedPlaylists();
 
     ApiResponse addSongToPlaylist(AddSongRequest addSongRequest);
     ApiResponse addListSongToPlaylist(AddSongRequest addSongRequest);
@@ -27,6 +31,7 @@ public interface PlaylistService {
     ApiResponse declinePlaylist(Long id);
 
     ApiResponse userSavePlaylist(Long playlistId);
+    ApiResponse userUnSavePlaylist(Long playlistId);
 
     Long totalPlaylists();
     Long totalPendingPlaylists();

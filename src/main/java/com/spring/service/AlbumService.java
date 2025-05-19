@@ -1,6 +1,9 @@
 package com.spring.service;
 
-import com.spring.dto.request.music.*;
+import com.spring.dto.request.music.AddSongRequest;
+import com.spring.dto.request.music.AdminAddAlbumRequest;
+import com.spring.dto.request.music.AlbumRequest;
+import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
 
@@ -13,6 +16,9 @@ public interface AlbumService {
     AlbumResponse getAlbumById(Long id);
     List<AlbumResponse> getAllAlbumsByCurrentAccount();
     List<AlbumResponse> getAllAlbumsByArtistId(Long id);
+    List<AlbumResponse> getAllAcceptedAlbumsByArtistId(Long id);
+    Boolean isSavedAlbum(Long id);
+    List<AlbumResponse> getCurrentUserSavedAlbums();
 
     ApiResponse addSongToAlbum(AddSongRequest addSongRequest);
     ApiResponse addListSongToAlbum(AddSongRequest addSongRequest);
@@ -24,6 +30,7 @@ public interface AlbumService {
     ApiResponse declineAlbum(Long id);
 
     ApiResponse userSaveAlbum(Long albumId);
+    ApiResponse userUnSaveAlbum(Long albumId);
 
     Long totalAlbums();
     Long totalPendingAlbums();

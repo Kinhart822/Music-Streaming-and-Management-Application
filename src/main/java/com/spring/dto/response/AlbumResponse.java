@@ -17,7 +17,9 @@ public class AlbumResponse {
     private String description;
     private String releaseDate;
     private Float albumTimeLength;
+    private List<Long> songIdList;
     private List<String> songNameList;
+    private List<Long> artistIdList;
     private List<String> artistNameList;
     private String imageUrl;
     private String status;

@@ -37,6 +37,7 @@ public class SearchServiceImpl implements SearchService {
     private final UserSongDownloadRepository userSongDownloadRepository;
     private final UserSongLikeRepository userSongLikeRepository;
     private final UserSongCountRepository userSongCountRepository;
+    private final ArtistUserFollowRepository artistUserFollowRepository;
     private final JwtHelper jwtHelper;
 
     @Override
@@ -388,8 +389,8 @@ public class SearchServiceImpl implements SearchService {
                 limit,
                 offset
         );
-        List<SearchArtistPresentation> artistPresentations = artists.stream()
-                .map(this::convertToSearchArtistPresentation)
+        List<ArtistPresentation> artistPresentations = artists.stream()
+                .map(this::convertToArtistPresentation)
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -538,47 +539,18 @@ public class SearchServiceImpl implements SearchService {
                 .lastModifiedDate(formattedLastModifiedDate)
                 .description(artist.getDescription() != null ? artist.getDescription() : "")
                 .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
-                .userType(artist.getUserType())
-                .build();
-    }
-
-    private SearchArtistPresentation convertToSearchArtistPresentation(Artist artist) {
-        String formattedDate = artist.getBirthDay() != null
-                ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                : null;
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        String formattedCreatedDate = artist.getCreatedDate() != null
-                ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
-                : null;
-        String formattedLastModifiedDate = artist.getLastModifiedDate() != null
-                ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
-                : null;
-
-        return SearchArtistPresentation.builder()
-                .id(artist.getId())
-                .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
-                .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
-                .lastName(artist.getLastName() != null ? artist.getLastName() : "")
-                .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
-                .email(artist.getEmail())
-                .gender(artist.getGender() != null ? artist.getGender().toString() : "")
-                .birthDay(formattedDate)
-                .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
-                .status(artist.getStatus())
-                .createdBy(artist.getCreatedBy())
-                .lastModifiedBy(artist.getLastModifiedBy())
-                .createdDate(formattedCreatedDate)
-                .lastModifiedDate(formattedLastModifiedDate)
-                .description(artist.getDescription() != null ? artist.getDescription() : "")
-                .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
                 .userType(artist.getUserType())
                 .artistSongIds(
                         artist.getArtistSongs().stream()
                                 .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
                                 .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistSongNameList(
+                        artist.getArtistSongs().stream()
+                                .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
                                 .collect(Collectors.toList())
                 )
                 .artistPlaylistIds(
@@ -587,13 +559,24 @@ public class SearchServiceImpl implements SearchService {
                                 .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
                                 .collect(Collectors.toList())
                 )
+                .artistPlaylistNameList(
+                        artist.getArtistPlaylists().stream()
+                                .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                .collect(Collectors.toList())
+                )
                 .artistAlbumIds(
                         artist.getArtistAlbums().stream()
                                 .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
                                 .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
                                 .collect(Collectors.toList())
                 )
-                .build();
+                .artistAlbumNameList(
+                        artist.getArtistAlbums().stream()
+                                .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                .collect(Collectors.toList())
+                ).build();
     }
 
     private SongResponse convertToSongResponse(Song song) {
@@ -724,6 +707,12 @@ public class SearchServiceImpl implements SearchService {
                 ? formatter.format(playlist.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
                 : null;
 
+        List<Long> songIdList = playlist.getPlaylistSongs() != null
+                ? playlist.getPlaylistSongs().stream()
+                .filter(Objects::nonNull)
+                .map(playlistSong -> playlistSong.getPlaylistSongId().getSong().getId())
+                .toList()
+                : Collections.emptyList();
         List<String> songNameList = playlist.getPlaylistSongs() != null
                 ? playlist.getPlaylistSongs().stream()
                 .filter(Objects::nonNull)
@@ -732,6 +721,14 @@ public class SearchServiceImpl implements SearchService {
                 : Collections.emptyList();
 
         if (user.getUserType() == UserType.ARTIST) {
+            List<Long> additionalArtistIdList = Optional.ofNullable(
+                            artistPlaylistRepository.findByArtistPlaylistId_Playlist_Id(playlist.getId()))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ap -> !ap.getArtistPlaylistId().getArtist().getId().equals(id))
+                    .map(ap -> ap.getArtistPlaylistId().getArtist().getId())
+                    .toList();
             List<String> additionalArtistNameList = Optional.ofNullable(
                             artistPlaylistRepository.findByArtistPlaylistId_Playlist_Id(playlist.getId()))
                     .orElse(Collections.emptyList())
@@ -747,12 +744,19 @@ public class SearchServiceImpl implements SearchService {
                     .description(playlist.getDescription())
                     .playTimeLength(playlist.getPlaylistTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(additionalArtistIdList)
                     .artistNameList(additionalArtistNameList)
                     .imageUrl(playlist.getImageUrl())
                     .status(playlist.getPlaylistAndAlbumStatus().toString())
                     .build();
         } else {
+            List<Long> artistIdList = playlist.getArtistPlaylists() != null
+                    ? playlist.getArtistPlaylists().stream()
+                    .map(as -> as.getArtistPlaylistId().getArtist().getId())
+                    .toList()
+                    : new ArrayList<>();
             List<String> artistNameList = playlist.getArtistPlaylists() != null
                     ? playlist.getArtistPlaylists().stream()
                     .map(as -> as.getArtistPlaylistId().getArtist().getArtistName())
@@ -765,7 +769,9 @@ public class SearchServiceImpl implements SearchService {
                     .description(playlist.getDescription())
                     .playTimeLength(playlist.getPlaylistTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(artistIdList)
                     .artistNameList(artistNameList)
                     .imageUrl(playlist.getImageUrl())
                     .status(playlist.getPlaylistAndAlbumStatus().toString())
@@ -779,6 +785,12 @@ public class SearchServiceImpl implements SearchService {
                 ? formatter.format(playlist.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
                 : null;
 
+        List<Long> songIdList = playlist.getPlaylistSongs() != null
+                ? playlist.getPlaylistSongs().stream()
+                .filter(Objects::nonNull)
+                .map(playlistSong -> playlistSong.getPlaylistSongId().getSong().getId())
+                .toList()
+                : Collections.emptyList();
         List<String> songNameList = playlist.getPlaylistSongs() != null
                 ? playlist.getPlaylistSongs().stream()
                 .filter(Objects::nonNull)
@@ -786,7 +798,11 @@ public class SearchServiceImpl implements SearchService {
                 .toList()
                 : Collections.emptyList();
 
-
+        List<Long> artistIdList = playlist.getArtistPlaylists() != null
+                ? playlist.getArtistPlaylists().stream()
+                .map(as -> as.getArtistPlaylistId().getArtist().getId())
+                .toList()
+                : new ArrayList<>();
         List<String> artistNameList = playlist.getArtistPlaylists() != null
                 ? playlist.getArtistPlaylists().stream()
                 .map(as -> as.getArtistPlaylistId().getArtist().getArtistName())
@@ -799,7 +815,9 @@ public class SearchServiceImpl implements SearchService {
                 .description(playlist.getDescription())
                 .playTimeLength(playlist.getPlaylistTimeLength())
                 .releaseDate(formattedDate)
+                .songIdList(songIdList)
                 .songNameList(songNameList)
+                .artistIdList(artistIdList)
                 .artistNameList(artistNameList)
                 .imageUrl(playlist.getImageUrl())
                 .status(playlist.getPlaylistAndAlbumStatus().toString())
@@ -816,6 +834,12 @@ public class SearchServiceImpl implements SearchService {
                 ? formatter.format(album.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
                 : null;
 
+        List<Long> songIdList = album.getAlbumSongs() != null
+                ? album.getAlbumSongs().stream()
+                .filter(Objects::nonNull)
+                .map(albumSong -> albumSong.getAlbumSongId().getSong().getId())
+                .toList()
+                : Collections.emptyList();
         List<String> songNameList = album.getAlbumSongs() != null
                 ? album.getAlbumSongs().stream()
                 .filter(Objects::nonNull)
@@ -824,6 +848,14 @@ public class SearchServiceImpl implements SearchService {
                 : Collections.emptyList();
 
         if (user.getUserType() == UserType.ARTIST) {
+            List<Long> additionalArtistIdList = Optional.ofNullable(
+                            artistAlbumRepository.findByArtistAlbumId_Album_Id(album.getId()))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ap -> !ap.getArtistAlbumId().getArtist().getId().equals(id))
+                    .map(ap -> ap.getArtistAlbumId().getArtist().getId())
+                    .toList();
             List<String> additionalArtistList = Optional.ofNullable(
                             artistAlbumRepository.findByArtistAlbumId_Album_Id(album.getId()))
                     .orElse(Collections.emptyList())
@@ -839,12 +871,19 @@ public class SearchServiceImpl implements SearchService {
                     .description(album.getDescription())
                     .albumTimeLength(album.getAlbumTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(additionalArtistIdList)
                     .artistNameList(additionalArtistList)
                     .imageUrl(album.getImageUrl())
                     .status(album.getPlaylistAndAlbumStatus().toString())
                     .build();
         } else {
+            List<Long> artistIdList = album.getArtistAlbums() != null
+                    ? album.getArtistAlbums().stream()
+                    .map(as -> as.getArtistAlbumId().getArtist().getId())
+                    .toList()
+                    : new ArrayList<>();
             List<String> artistNameList = album.getArtistAlbums() != null
                     ? album.getArtistAlbums().stream()
                     .map(as -> as.getArtistAlbumId().getArtist().getArtistName())
@@ -857,7 +896,9 @@ public class SearchServiceImpl implements SearchService {
                     .description(album.getDescription())
                     .albumTimeLength(album.getAlbumTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(artistIdList)
                     .artistNameList(artistNameList)
                     .imageUrl(album.getImageUrl())
                     .status(album.getPlaylistAndAlbumStatus().toString())
@@ -871,6 +912,12 @@ public class SearchServiceImpl implements SearchService {
                 ? formatter.format(album.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
                 : null;
 
+        List<Long> songIdList = album.getAlbumSongs() != null
+                ? album.getAlbumSongs().stream()
+                .filter(Objects::nonNull)
+                .map(albumSong -> albumSong.getAlbumSongId().getSong().getId())
+                .toList()
+                : Collections.emptyList();
         List<String> songNameList = album.getAlbumSongs() != null
                 ? album.getAlbumSongs().stream()
                 .filter(Objects::nonNull)
@@ -878,7 +925,11 @@ public class SearchServiceImpl implements SearchService {
                 .toList()
                 : Collections.emptyList();
 
-
+        List<Long> artistIdList = album.getArtistAlbums() != null
+                ? album.getArtistAlbums().stream()
+                .map(as -> as.getArtistAlbumId().getArtist().getId())
+                .toList()
+                : new ArrayList<>();
         List<String> artistNameList = album.getArtistAlbums() != null
                 ? album.getArtistAlbums().stream()
                 .map(as -> as.getArtistAlbumId().getArtist().getArtistName())
@@ -891,7 +942,9 @@ public class SearchServiceImpl implements SearchService {
                 .description(album.getDescription())
                 .albumTimeLength(album.getAlbumTimeLength())
                 .releaseDate(formattedDate)
+                .songIdList(songIdList)
                 .songNameList(songNameList)
+                .artistIdList(artistIdList)
                 .artistNameList(artistNameList)
                 .imageUrl(album.getImageUrl())
                 .status(album.getPlaylistAndAlbumStatus().toString())
@@ -1010,5 +1063,10 @@ public class SearchServiceImpl implements SearchService {
         result.put("totalPages", totalPages);
         result.put("totalElements", albumPage.getTotalElements());
         return result;
+    }
+
+    // Helpers
+    public Long totalNumberOfUserFollowers(Long artistId) {
+        return artistUserFollowRepository.countDistinctUsersByArtistId(artistId);
     }
 }

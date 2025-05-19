@@ -1,10 +1,7 @@
 package com.spring.service;
 
 import com.spring.dto.request.account.*;
-import com.spring.dto.response.AdminPresentation;
-import com.spring.dto.response.ApiResponse;
-import com.spring.dto.response.ArtistPresentation;
-import com.spring.dto.response.UserPresentation;
+import com.spring.dto.response.*;
 import com.spring.entities.Notification;
 
 import java.time.Instant;

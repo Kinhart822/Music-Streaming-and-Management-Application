@@ -32,6 +32,11 @@ public class UserLikeFollowingDownloadController {
         return ResponseEntity.ok(likeFollowingDownloadService.getCurrentUserFollowedArtists());
     }
 
+    @GetMapping("/followed-check/{artistId}")
+    public ResponseEntity<Boolean> checkFollowed(@PathVariable Long artistId) {
+        return ResponseEntity.ok(likeFollowingDownloadService.isFollowedArtist(artistId));
+    }
+
     // TODO: Favourite Songs
     @PostMapping("/likeSong/{songId}")
     public ResponseEntity<ApiResponse> userLikeSong(@PathVariable Long songId) {

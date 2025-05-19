@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class HistoryListenResponse {
     private String imageUrl;
+    private String songName;
     private String message;
 }

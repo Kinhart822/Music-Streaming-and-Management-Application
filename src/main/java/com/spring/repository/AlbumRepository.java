@@ -1,6 +1,8 @@
 package com.spring.repository;
 
 import com.spring.entities.Album;
+import com.spring.entities.Playlist;
+import com.spring.entities.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,9 +17,11 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
     @Query("SELECT asg.artistAlbumId.album FROM ArtistAlbum asg WHERE asg.artistAlbumId.artist.id = :artistId")
     List<Album> findByArtistId(@Param("artistId") Long artistId);
 
+    @Query("SELECT auf.userSavedAlbumId.album FROM UserSavedAlbum auf WHERE auf.userSavedAlbumId.user = :user")
+    List<Album> findByUser(@Param("user") User user);
+
     @Query("SELECT COUNT(a) FROM Album a")
     Long countAllAlbums();
-
 
     @Query("SELECT COUNT(a) FROM Album a WHERE a.playlistAndAlbumStatus = 'PENDING'")
     Long countAllPendingAlbums();

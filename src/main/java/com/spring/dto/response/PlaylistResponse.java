@@ -16,7 +16,9 @@ public class PlaylistResponse {
     private String playlistName;
     private Float playTimeLength;
     private String releaseDate;
+    private List<Long> songIdList;
     private List<String> songNameList;
+    private List<Long> artistIdList;
     private List<String> artistNameList;
     private String imageUrl;
     private String description;

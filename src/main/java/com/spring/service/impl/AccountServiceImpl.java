@@ -1,13 +1,21 @@
 package com.spring.service.impl;
 
-import com.spring.constants.*;
+import com.spring.constants.ApiResponseCode;
+import com.spring.constants.CommonStatus;
+import com.spring.constants.ManageProcess;
+import com.spring.constants.UserType;
 import com.spring.dto.request.account.*;
 import com.spring.dto.response.*;
-import com.spring.entities.*;
+import com.spring.entities.Artist;
+import com.spring.entities.Notification;
+import com.spring.entities.User;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
 import com.spring.security.JwtHelper;
-import com.spring.service.*;
+import com.spring.service.AccountService;
+import com.spring.service.CloudinaryService;
+import com.spring.service.EmailService;
+import com.spring.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +37,8 @@ public class AccountServiceImpl implements AccountService {
     private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
     private final SongRepository songRepository;
+    private final UserSongCountRepository userSongCountRepository;
+    private final ArtistUserFollowRepository artistUserFollowRepository;
     private final JwtHelper jwtHelper;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
@@ -112,7 +126,6 @@ public class AccountServiceImpl implements AccountService {
         artist.setLastModifiedDate(now);
         artist.setDescription(null);
         artist.setImageUrl(null);
-        artist.setCountListen(0L);
         artist.setCreatedBy(creatorId);
         artist.setLastModifiedBy(creatorId);
         artistRepository.save(artist);
@@ -139,7 +152,6 @@ public class AccountServiceImpl implements AccountService {
         artist.setLastModifiedDate(now);
         artist.setDescription(null);
         artist.setImageUrl(null);
-        artist.setCountListen(0L);
         artist.setCreatedBy(0L);
         artist.setLastModifiedBy(0L);
         artistRepository.save(artist);
@@ -314,9 +326,6 @@ public class AccountServiceImpl implements AccountService {
         Artist artist = artistRepository.findById(jwtHelper.getIdUserRequesting())
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-        Artist artist_info = artistRepository.findById(artist.getId())
-                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-
         String formattedDateOfBirth = artist.getBirthDay() != null ?
                 artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
 
@@ -334,9 +343,6 @@ public class AccountServiceImpl implements AccountService {
                 .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                 .lastName(artist.getLastName() != null ? artist.getLastName() : "")
                 .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
-                .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
-                .backgroundImage(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
-                .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
                 .email(artist.getEmail())
                 .gender(artist.getGender() != null ? artist.getGender().toString() : "")
                 .birthDay(formattedDateOfBirth)
@@ -346,6 +352,46 @@ public class AccountServiceImpl implements AccountService {
                 .lastModifiedBy(artist.getLastModifiedBy())
                 .createdDate(formattedCreatedDate)
                 .lastModifiedDate(formattedLastModifiedDate)
+                .description(artist.getDescription() != null ? artist.getDescription() : "")
+                .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
+                .userType(artist.getUserType())
+                .artistSongIds(
+                        artist.getArtistSongs().stream()
+                                .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistSongNameList(
+                        artist.getArtistSongs().stream()
+                                .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                .collect(Collectors.toList())
+                )
+                .artistPlaylistIds(
+                        artist.getArtistPlaylists().stream()
+                                .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistPlaylistNameList(
+                        artist.getArtistPlaylists().stream()
+                                .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                .collect(Collectors.toList())
+                )
+                .artistAlbumIds(
+                        artist.getArtistAlbums().stream()
+                                .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistAlbumNameList(
+                        artist.getArtistAlbums().stream()
+                                .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                .collect(Collectors.toList())
+                )
+                .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
                 .build();
     }
 
@@ -354,9 +400,6 @@ public class AccountServiceImpl implements AccountService {
         Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-        Artist artist_info = artistRepository.findById(artist.getId())
-                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-
         String formattedDateOfBirth = artist.getBirthDay() != null ?
                 artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : null;
 
@@ -374,9 +417,6 @@ public class AccountServiceImpl implements AccountService {
                 .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
                 .lastName(artist.getLastName() != null ? artist.getLastName() : "")
                 .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
-                .description(artist_info.getDescription() != null ? artist_info.getDescription() : "")
-                .image(artist_info.getImageUrl() != null ? artist_info.getImageUrl() : "")
-                .countListen(artist_info.getCountListen() != null ? artist_info.getCountListen() : 0)
                 .email(artist.getEmail())
                 .gender(artist.getGender() != null ? artist.getGender().toString() : "")
                 .birthDay(formattedDateOfBirth)
@@ -386,6 +426,46 @@ public class AccountServiceImpl implements AccountService {
                 .lastModifiedBy(artist.getLastModifiedBy())
                 .createdDate(formattedCreatedDate)
                 .lastModifiedDate(formattedLastModifiedDate)
+                .description(artist.getDescription() != null ? artist.getDescription() : "")
+                .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
+                .userType(artist.getUserType())
+                .artistSongIds(
+                        artist.getArtistSongs().stream()
+                                .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistSongNameList(
+                        artist.getArtistSongs().stream()
+                                .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                .collect(Collectors.toList())
+                )
+                .artistPlaylistIds(
+                        artist.getArtistPlaylists().stream()
+                                .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistPlaylistNameList(
+                        artist.getArtistPlaylists().stream()
+                                .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                .collect(Collectors.toList())
+                )
+                .artistAlbumIds(
+                        artist.getArtistAlbums().stream()
+                                .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                .collect(Collectors.toList())
+                )
+                .artistAlbumNameList(
+                        artist.getArtistAlbums().stream()
+                                .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                .collect(Collectors.toList())
+                )
+                .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
                 .build();
     }
 
@@ -490,7 +570,44 @@ public class AccountServiceImpl implements AccountService {
                     .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .userType(artist.getUserType())
+                    .artistSongIds(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistSongNameList(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistIds(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistNameList(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumIds(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumNameList(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                    .collect(Collectors.toList())
+                    )
+                    .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
                     .build();
         }).toList();
     }
@@ -532,7 +649,44 @@ public class AccountServiceImpl implements AccountService {
                     .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .userType(artist.getUserType())
+                    .artistSongIds(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistSongNameList(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistIds(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistNameList(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumIds(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumNameList(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                    .collect(Collectors.toList())
+                    )
+                    .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
                     .build();
         }).toList();
     }
@@ -573,7 +727,43 @@ public class AccountServiceImpl implements AccountService {
                     .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .userType(artist.getUserType())
+                    .artistSongIds(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistSongNameList(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistIds(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistNameList(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumIds(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumNameList(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                    .collect(Collectors.toList())
+                    )
                     .build();
         }).toList();
     }
@@ -905,7 +1095,44 @@ public class AccountServiceImpl implements AccountService {
                     .lastModifiedDate(formattedLastModifiedDate)
                     .description(artist.getDescription() != null ? artist.getDescription() : "")
                     .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                    .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
+                    .userType(artist.getUserType())
+                    .artistSongIds(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistSongNameList(
+                            artist.getArtistSongs().stream()
+                                    .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistIds(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistPlaylistNameList(
+                            artist.getArtistPlaylists().stream()
+                                    .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumIds(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                    .collect(Collectors.toList())
+                    )
+                    .artistAlbumNameList(
+                            artist.getArtistAlbums().stream()
+                                    .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                    .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                    .collect(Collectors.toList())
+                    )
+                    .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
                     .build();
         }).toList();
     }
@@ -926,7 +1153,7 @@ public class AccountServiceImpl implements AccountService {
         int currentStatus = user.getStatus();
         boolean isArtist = user.getUserType() == UserType.ARTIST;
         boolean validToProcess = (isArtist && currentStatus == CommonStatus.INACTIVE.getStatus()) ||
-                (!isArtist && currentStatus == CommonStatus.LOCKED.getStatus());
+                                 (!isArtist && currentStatus == CommonStatus.LOCKED.getStatus());
 
         if (!validToProcess) {
             throw new BusinessException(ApiResponseCode.INVALID_STATUS);
@@ -958,5 +1185,10 @@ public class AccountServiceImpl implements AccountService {
                 : "Account revoked successfully!";
 
         return ApiResponse.ok(message);
+    }
+
+    // Helpers
+    public Long totalNumberOfUserFollowers(Long artistId) {
+        return artistUserFollowRepository.countDistinctUsersByArtistId(artistId);
     }
 }

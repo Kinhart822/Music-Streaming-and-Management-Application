@@ -1,7 +1,10 @@
 package com.spring.service.impl;
 
 import com.spring.constants.*;
-import com.spring.dto.request.music.*;
+import com.spring.dto.request.music.AddSongRequest;
+import com.spring.dto.request.music.AdminAddAlbumRequest;
+import com.spring.dto.request.music.AlbumRequest;
+import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
 import com.spring.entities.*;
@@ -234,6 +237,39 @@ public class AlbumServiceImpl implements AlbumService {
         return artist.getArtistAlbums().stream()
                 .map(ap -> convertToAlbumResponse(ap.getArtistAlbumId().getAlbum()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AlbumResponse> getAllAcceptedAlbumsByArtistId(Long id) {
+        Artist artist = artistRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        return artist.getArtistAlbums().stream()
+                .filter(p -> p.getArtistAlbumId().getAlbum().getPlaylistAndAlbumStatus().equals(PlaylistAndAlbumStatus.ACCEPTED))
+                .map(ap -> convertToAlbumResponse(ap.getArtistAlbumId().getAlbum()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Boolean isSavedAlbum(Long id) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        return userSavedAlbumRepository.existsByUserIdAndAlbumId(userId, id);
+    }
+
+    @Override
+    public List<AlbumResponse> getCurrentUserSavedAlbums() {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        List<Album> albums = albumRepository.findByUser(user);
+        if (albums.isEmpty()) {
+            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND);
+        }
+
+        return albums.stream()
+                .map(this::convertToAlbumResponse)
+                .toList();
     }
 
     @Override
@@ -526,6 +562,22 @@ public class AlbumServiceImpl implements AlbumService {
         return ApiResponse.ok("Album đã được lưu!");
     }
 
+    @Override
+    public ApiResponse userUnSaveAlbum(Long albumId) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        UserSavedAlbumId id = new UserSavedAlbumId(album, user);
+        if (!userSavedAlbumRepository.existsById(id)) {
+            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND);
+        }
+        userSavedAlbumRepository.deleteById(id);
+        return ApiResponse.ok("Đã unsaved Playlist !");
+    }
+
     private AlbumResponse convertToAlbumResponse(Album album) {
         Long id = jwtHelper.getIdUserRequesting();
         User user = userRepository.findById(id)
@@ -536,6 +588,12 @@ public class AlbumServiceImpl implements AlbumService {
                 ? formatter.format(album.getReleaseDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
                 : null;
 
+        List<Long> songIdList = album.getAlbumSongs() != null
+                ? album.getAlbumSongs().stream()
+                .filter(Objects::nonNull)
+                .map(albumSong -> albumSong.getAlbumSongId().getSong().getId())
+                .toList()
+                : Collections.emptyList();
         List<String> songNameList = album.getAlbumSongs() != null
                 ? album.getAlbumSongs().stream()
                 .filter(Objects::nonNull)
@@ -544,6 +602,14 @@ public class AlbumServiceImpl implements AlbumService {
                 : Collections.emptyList();
 
         if (user.getUserType() == UserType.ARTIST) {
+            List<Long> additionalArtistIdList = Optional.ofNullable(
+                            artistAlbumRepository.findByArtistAlbumId_Album_Id(album.getId()))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ap -> !ap.getArtistAlbumId().getArtist().getId().equals(id))
+                    .map(ap -> ap.getArtistAlbumId().getArtist().getId())
+                    .toList();
             List<String> additionalArtistList = Optional.ofNullable(
                             artistAlbumRepository.findByArtistAlbumId_Album_Id(album.getId()))
                     .orElse(Collections.emptyList())
@@ -559,12 +625,19 @@ public class AlbumServiceImpl implements AlbumService {
                     .description(album.getDescription())
                     .albumTimeLength(album.getAlbumTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(songIdList)
                     .songNameList(songNameList)
+                    .artistIdList(additionalArtistIdList)
                     .artistNameList(additionalArtistList)
                     .imageUrl(album.getImageUrl())
                     .status(album.getPlaylistAndAlbumStatus().toString())
                     .build();
         } else {
+            List<Long> artistIdList = album.getArtistAlbums() != null
+                    ? album.getArtistAlbums().stream()
+                    .map(as -> as.getArtistAlbumId().getArtist().getId())
+                    .toList()
+                    : new ArrayList<>();
             List<String> artistNameList = album.getArtistAlbums() != null
                     ? album.getArtistAlbums().stream()
                     .map(as -> as.getArtistAlbumId().getArtist().getArtistName())
@@ -577,7 +650,9 @@ public class AlbumServiceImpl implements AlbumService {
                     .description(album.getDescription())
                     .albumTimeLength(album.getAlbumTimeLength())
                     .releaseDate(formattedDate)
+                    .songIdList(artistIdList)
                     .songNameList(songNameList)
+                    .artistIdList(artistIdList)
                     .artistNameList(artistNameList)
                     .imageUrl(album.getImageUrl())
                     .status(album.getPlaylistAndAlbumStatus().toString())

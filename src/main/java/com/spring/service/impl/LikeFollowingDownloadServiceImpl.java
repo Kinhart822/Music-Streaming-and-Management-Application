@@ -1,8 +1,9 @@
 package com.spring.service.impl;
 
 import com.spring.constants.ApiResponseCode;
-import com.spring.dto.response.ArtistPresentation;
+import com.spring.constants.SongStatus;
 import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.ArtistPresentation;
 import com.spring.dto.response.SongResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
@@ -20,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -161,10 +163,52 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                             .lastModifiedDate(formattedLastModifiedDate)
                             .description(artist.getDescription() != null ? artist.getDescription() : "")
                             .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                            .countListen(artist.getCountListen() != null ? artist.getCountListen() : 0)
-                            .build();
+                            .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
+                            .userType(artist.getUserType())
+                            .artistSongIds(
+                                    artist.getArtistSongs().stream()
+                                            .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                            .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
+                                            .collect(Collectors.toList())
+                            )
+                            .artistSongNameList(
+                                    artist.getArtistSongs().stream()
+                                            .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                                            .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
+                                            .collect(Collectors.toList())
+                            )
+                            .artistPlaylistIds(
+                                    artist.getArtistPlaylists().stream()
+                                            .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                            .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
+                                            .collect(Collectors.toList())
+                            )
+                            .artistPlaylistNameList(
+                                    artist.getArtistPlaylists().stream()
+                                            .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                                            .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                                            .collect(Collectors.toList())
+                            )
+                            .artistAlbumIds(
+                                    artist.getArtistAlbums().stream()
+                                            .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                            .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
+                                            .collect(Collectors.toList())
+                            )
+                            .artistAlbumNameList(
+                                    artist.getArtistAlbums().stream()
+                                            .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                                            .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
+                                            .collect(Collectors.toList())
+                            ).build();
                 })
                 .toList();
+    }
+
+    @Override
+    public Boolean isFollowedArtist(Long id) {
+        Long userId = jwtHelper.getIdUserRequesting();
+        return artistUserFollowRepository.existsByUserIdAndArtistId(userId, id);
     }
 
     @Override
@@ -298,5 +342,20 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
                     }
                 })
                 .toList();
+    }
+
+    // Helpers
+    public Long totalNumberOfListeners(Long artistId) {
+        List<Song> songs = songRepository.findByArtistId(artistId).stream()
+                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .toList();
+        if (songs.isEmpty()) {
+            return 0L;
+        }
+        List<Long> songIds = songs.stream().map(Song::getId).collect(Collectors.toList());
+        return userSongCountRepository.countDistinctListenersBySongIds(songIds);
+    }
+    public Long totalNumberOfUserFollowers(Long artistId ) {
+        return artistUserFollowRepository.countDistinctUsersByArtistId(artistId);
     }
 }

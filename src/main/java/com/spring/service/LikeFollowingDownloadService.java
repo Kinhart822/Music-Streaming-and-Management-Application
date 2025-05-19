@@ -16,6 +16,7 @@ public interface LikeFollowingDownloadService {
     // Favorite Artists
     ApiResponse userFollowingArtist(Long id);
     ApiResponse userUnfollowingArtist(Long id);
+    Boolean isFollowedArtist(Long id);
     List<ArtistPresentation> getCurrentUserFollowedArtists();
 
     // Download Songs

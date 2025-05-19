@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,16 +69,28 @@ public class UserSongCountServiceImpl implements UserSongCountService {
         Long currentUserId = jwtHelper.getIdUserRequesting();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+        // Lấy tất cả lịch sử người dùng hiện tại
         return historyListenRepository.findAll().stream()
                 .filter(hs -> hs.getUser() != null && hs.getUser().getId().equals(currentUserId))
+                // Nhóm theo songId, lấy bản ghi có thời gian mới nhất
+                .collect(Collectors.toMap(
+                        hs -> hs.getSong().getId(), // key: songId
+                        hs -> hs,                   // value: bản ghi ban đầu
+                        (hs1, hs2) -> hs1.getDateTime().isAfter(hs2.getDateTime()) ? hs1 : hs2 // lấy bản mới hơn
+                ))
+                .values().stream()
+                // Sắp xếp lại theo thời gian mới nhất trước
+                .sorted((a, b) -> b.getDateTime().compareTo(a.getDateTime()))
                 .map(hs -> {
                     String formattedDate = hs.getDateTime().format(formatter);
-                    String message = "🎧 Played \"" + hs.getSong().getTitle() + "\" on " + formattedDate;
+                    String message = "🎧 Last played on " + formattedDate;
                     return HistoryListenResponse.builder()
                             .imageUrl(hs.getSong().getImageUrl())
+                            .songName(hs.getSong().getTitle())
                             .message(message)
                             .build();
                 })
                 .toList();
+
     }
 }
