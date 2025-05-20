@@ -45,7 +45,12 @@ import vn.edu.usth.msma.ui.screen.auth.register.RegisterScreen
 import vn.edu.usth.msma.ui.screen.auth.register.RegisterViewModel
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordScreen
 import vn.edu.usth.msma.ui.screen.auth.reset.ResetPasswordViewModel
-import vn.edu.usth.msma.ui.screen.home.HomeNavigation
+import vn.edu.usth.msma.ui.screen.home.HomeScreen
+import vn.edu.usth.msma.ui.screen.home.HomeViewModel
+import vn.edu.usth.msma.ui.screen.home.songs.Top10TrendingScreen
+import vn.edu.usth.msma.ui.screen.home.songs.Top10TrendingViewModel
+import vn.edu.usth.msma.ui.screen.home.songs.Top15DownloadScreen
+import vn.edu.usth.msma.ui.screen.home.songs.Top15DownloadedViewModel
 import vn.edu.usth.msma.ui.screen.library.LibraryScreen
 import vn.edu.usth.msma.ui.screen.library.LibraryViewModel
 import vn.edu.usth.msma.ui.screen.library.songs.FavoriteSongsScreen
@@ -121,6 +126,8 @@ fun AppNavigation(
     val isInEditProfileScreen = currentRoute == ScreenRoute.EditProfile.route
     val isInChangePasswordScreen = currentRoute == ScreenRoute.ChangePasswordScreen.route
     val isInViewHistoryListenScreen = currentRoute == ScreenRoute.ViewHistoryListen.route
+    val isInTop10TrendingScreen = currentRoute == ScreenRoute.Top10TrendingSongs.route
+    val isInTop15DownloadedScreen = currentRoute == ScreenRoute.Top15DownloadedSongs.route
 
     // Handle navigation based on isLoggedIn
     LaunchedEffect(isLoggedIn, currentBackStackEntry) {
@@ -164,7 +171,8 @@ fun AppNavigation(
                         currentRoute?.contains("songDetails") == false &&
                         !isInNotificationScreen && !isInViewProfileScreen &&
                         !isInEditProfileScreen && !isInChangePasswordScreen &&
-                        !isInViewHistoryListenScreen
+                        !isInViewHistoryListenScreen && !isInTop10TrendingScreen &&
+                        !isInTop15DownloadedScreen
                     ) {
                         MiniPlayerScreen(
                             musicPlayerViewModel,
@@ -183,7 +191,8 @@ fun AppNavigation(
                         !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen &&
                         !isInEditProfileScreen && !isInChangePasswordScreen &&
                         !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
-                        !isInAlbumScreen && !isInPlaylistScreen
+                        !isInAlbumScreen && !isInPlaylistScreen && !isInTop10TrendingScreen &&
+                        !isInTop15DownloadedScreen
                     ) {
                         BottomNavigationBar(navController = navController)
                     }
@@ -206,7 +215,8 @@ fun AppNavigation(
                     modifier = modifier
                 ) {
                     composable(ScreenRoute.Home.route) {
-                        HomeNavigation()
+                        val homeViewModel: HomeViewModel = hiltViewModel()
+                        HomeScreen(homeViewModel, navController)
                     }
                     composable(ScreenRoute.Search.route) {
                         val searchViewModel: SearchViewModel = hiltViewModel()
@@ -224,7 +234,14 @@ fun AppNavigation(
                         val favoriteSongsViewModel: FavoriteSongsViewModel = hiltViewModel()
                         FavoriteSongsScreen(favoriteSongsViewModel, navController)
                     }
-
+                    composable(ScreenRoute.Top10TrendingSongs.route) {
+                        val top10TrendingViewModel: Top10TrendingViewModel = hiltViewModel()
+                        Top10TrendingScreen(top10TrendingViewModel, navController)
+                    }
+                    composable(ScreenRoute.Top15DownloadedSongs.route) {
+                        val top15DownloadedViewModel: Top15DownloadedViewModel = hiltViewModel()
+                        Top15DownloadScreen(top15DownloadedViewModel, navController)
+                    }
                     composable(
                         route = ScreenRoute.ArtistDetails.route,
                         arguments = listOf(

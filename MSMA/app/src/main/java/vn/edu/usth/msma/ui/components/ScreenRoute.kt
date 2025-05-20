@@ -42,6 +42,8 @@ sealed class ScreenRoute(val route: String) {
     }
 
     object FavoriteSongs : ScreenRoute("favorite_songs")
+    object Top10TrendingSongs : ScreenRoute("top10_trending")
+    object Top15DownloadedSongs : ScreenRoute("top15_downloaded")
 
     object ArtistDetails : ScreenRoute("artist/{artistDetailsJson}") {
         fun createRoute(artistDetailsJson: String): String {

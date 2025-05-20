@@ -176,6 +176,8 @@ fun MainScreen(
     val isInArtistProfileScreen = currentRoute == ScreenRoute.ArtistDetails.route
     val isInPlaylistScreen = currentRoute == ScreenRoute.PlaylistDetails.route
     val isInAlbumScreen = currentRoute == ScreenRoute.AlbumDetails.route
+    val isInTop15DownloadedScreen = currentRoute == ScreenRoute.Top15DownloadedSongs.route
+    val isInTop10TrendingScreen = currentRoute == ScreenRoute.Top10TrendingSongs.route
 
     Scaffold(
         topBar = {
@@ -186,7 +188,8 @@ fun MainScreen(
                         && !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                         && !isInEditProfileScreen && !isInChangePasswordScreen &&
                         !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
-                        !isInPlaylistScreen && !isInAlbumScreen
+                        !isInPlaylistScreen && !isInAlbumScreen && !isInTop10TrendingScreen &&
+                        !isInTop15DownloadedScreen
                     ) {
                         {
                             navController.navigate(ScreenRoute.NotificationScreen.route)
@@ -195,7 +198,7 @@ fun MainScreen(
                     onBackClick = if (currentRoute.contains("genre") == true ||
                         isInNotificationScreen || isInViewProfileScreen || isInEditProfileScreen ||
                         isInChangePasswordScreen || isInViewHistoryListenScreen || isInFavoriteSongsScreen || isInArtistProfileScreen ||
-                        isInPlaylistScreen || isInAlbumScreen
+                        isInPlaylistScreen || isInAlbumScreen || isInTop10TrendingScreen || isInTop15DownloadedScreen
                     ) {
                         { navController.popBackStack() }
                     } else null
@@ -207,7 +210,8 @@ fun MainScreen(
                 if (!isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                     && !isInEditProfileScreen && !isInChangePasswordScreen &&
                     !isInViewHistoryListenScreen && !isInFavoriteSongsScreen && !isInArtistProfileScreen &&
-                    !isInPlaylistScreen && !isInAlbumScreen
+                    !isInPlaylistScreen && !isInAlbumScreen && !isInTop10TrendingScreen &&
+                    !isInTop15DownloadedScreen
                 ) {
                     BottomNavigationBar(navController)
                 }

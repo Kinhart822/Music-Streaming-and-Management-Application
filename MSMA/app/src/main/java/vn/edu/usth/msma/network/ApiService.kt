@@ -44,6 +44,10 @@ class ApiService @Inject constructor(
         apiClient.getAuthenticatedClient().create(PlaylistApi::class.java)
     }
 
+    private val _homeApi: HomeApi by lazy {
+        apiClient.getAuthenticatedClient().create(HomeApi::class.java)
+    }
+
     fun getUnAuthApi(): AuthApi = _unAuthApi
 
     fun getAuthApi(): AuthApi = _authApi
@@ -61,4 +65,6 @@ class ApiService @Inject constructor(
     fun getAlbumApi(): AlbumApi = _albumApi
 
     fun getPlaylistApi(): PlaylistApi = _playlistApi
+
+    fun getHomeApi(): HomeApi = _homeApi
 }
