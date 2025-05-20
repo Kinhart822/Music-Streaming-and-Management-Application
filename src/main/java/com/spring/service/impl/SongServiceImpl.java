@@ -697,7 +697,7 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public List<SongResponse> getTrendingSongs() {
+    public List<SongResponse> getTop10TrendingSongs() {
         List<Object[]> topSongs = userSongCountRepository.findTopSongsByListenCount(10, 0);
 
         List<Song> songs = topSongs.stream()
@@ -714,16 +714,12 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
-    public List<SongResponse> getTop15BestSongEachGenre(Long genreId) {
-        List<GenreSong> genreSongs = genreSongRepository.findAllByGenreId(genreId);
-
-        List<Song> songs = genreSongs.stream()
-                .map(gs -> gs.getGenreSongId().getSong())
-                .distinct()
+    public List<SongResponse> getTop15MostDownloadSong() {
+        List<Song> songs = songRepository.findAll().stream()
                 .sorted((s1, s2) -> {
                     Long count1 = userSongDownloadRepository.countDistinctUsersBySongId(s1.getId());
                     Long count2 = userSongDownloadRepository.countDistinctUsersBySongId(s2.getId());
-                    return count2.compareTo(count1); // Sắp giảm dần
+                    return count2.compareTo(count1);
                 })
                 .limit(15)
                 .toList();

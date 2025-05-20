@@ -55,9 +55,6 @@ public class Album {
     @OneToMany(mappedBy = "artistAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistAlbum> artistAlbums = new ArrayList<>();
 
-    @OneToMany(mappedBy = "userAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserAlbum> userAlbums;
-
     @OneToMany(mappedBy = "userSavedAlbumId.album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSavedAlbum> userSavedAlbums;
 }

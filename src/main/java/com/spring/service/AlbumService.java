@@ -6,6 +6,7 @@ import com.spring.dto.request.music.AlbumRequest;
 import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.PlaylistResponse;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ public interface AlbumService {
     List<AlbumResponse> getAllAcceptedAlbumsByArtistId(Long id);
     Boolean isSavedAlbum(Long id);
     List<AlbumResponse> getCurrentUserSavedAlbums();
+    List<AlbumResponse> getRecentCurrentUserSavedAlbums();
 
     ApiResponse addSongToAlbum(AddSongRequest addSongRequest);
     ApiResponse addListSongToAlbum(AddSongRequest addSongRequest);

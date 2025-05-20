@@ -34,8 +34,8 @@ public interface SongService {
 
     List<SongResponse> getAcceptedSongsByArtistId();
     List<SongResponse> getAllAcceptedSongs();
-    List<SongResponse> getTrendingSongs();
-    List<SongResponse> getTop15BestSongEachGenre(Long genreId);
+    List<SongResponse> getTop10TrendingSongs();
+    List<SongResponse> getTop15MostDownloadSong();
 
     // Upload Song Process
     ApiResponse createDraftSong(SongUploadRequest songUploadRequest);

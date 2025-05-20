@@ -13,9 +13,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.*;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -106,12 +107,6 @@ public class User implements Serializable, UserDetails {
 
     @OneToMany(mappedBy = "userSongCountId.user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSongCount> userSongCounts;
-
-    @OneToMany(mappedBy = "userPlaylistId.user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserPlaylist> userPlaylists;
-
-    @OneToMany(mappedBy = "userAlbumId.user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserAlbum> userAlbums;
 
     @OneToMany(mappedBy = "userSavedPlaylistId.user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSavedPlaylist> userSavedPlaylists;

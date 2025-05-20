@@ -215,8 +215,8 @@ public class PlaylistServiceImpl implements PlaylistService {
             User user = userRepository.findById(id)
                     .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-            return user.getUserPlaylists().stream()
-                    .map(up -> convertToPlaylistResponse(up.getUserPlaylistId().getPlaylist()))
+            return user.getUserSavedPlaylists().stream()
+                    .map(up -> convertToPlaylistResponse(up.getUserSavedPlaylistId().getPlaylist()))
                     .collect(Collectors.toList());
 
         } else if ("ARTIST".equalsIgnoreCase(role)) {
@@ -278,6 +278,29 @@ public class PlaylistServiceImpl implements PlaylistService {
 
         return playlists.stream()
                 .map(this::convertToPlaylistResponse)
+                .toList();
+    }
+
+    @Override
+    public List<PlaylistResponse> getRecentCurrentUserSavedPlaylists() {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        List<Playlist> playlists = playlistRepository.findByUser(user);
+        if (playlists.isEmpty()) {
+            playlists = playlistRepository.findAll();
+            return playlists.stream()
+                    .map(this::convertToPlaylistResponse)
+                    .sorted((p1, p2) -> p2.getReleaseDate().compareTo(p1.getReleaseDate()))
+                    .limit(2)
+                    .toList();
+        }
+
+        return playlists.stream()
+                .map(this::convertToPlaylistResponse)
+                .sorted((p1, p2) -> p2.getReleaseDate().compareTo(p1.getReleaseDate()))
+                .limit(2)
                 .toList();
     }
 

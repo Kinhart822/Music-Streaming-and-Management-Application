@@ -12,7 +12,7 @@ public interface UserSavedAlbumRepository extends JpaRepository<UserSavedAlbum, 
     @Query("""
                 SELECT CASE WHEN COUNT(usa) > 0 THEN true ELSE false END
                 FROM UserSavedAlbum usa
-                WHERE usa.userSavedAlbumId.album.id = :playlistId AND usa.userSavedAlbumId.user.id = :userId
+                WHERE usa.userSavedAlbumId.album.id = :albumId AND usa.userSavedAlbumId.user.id = :userId
             """)
     boolean existsByUserIdAndAlbumId(@Param("userId") Long userId, @Param("albumId") Long albumId);
 }

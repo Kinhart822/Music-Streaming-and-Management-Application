@@ -7,6 +7,7 @@ import com.spring.dto.request.music.AlbumRequest;
 import com.spring.dto.request.music.RemoveSongRequest;
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.PlaylistResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
@@ -269,6 +270,29 @@ public class AlbumServiceImpl implements AlbumService {
 
         return albums.stream()
                 .map(this::convertToAlbumResponse)
+                .toList();
+    }
+
+    @Override
+    public List<AlbumResponse> getRecentCurrentUserSavedAlbums() {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+
+        List<Album> albums = albumRepository.findByUser(user);
+        if (albums.isEmpty()) {
+            albums = albumRepository.findAll();
+            return albums.stream()
+                    .map(this::convertToAlbumResponse)
+                    .sorted((p1, p2) -> p2.getReleaseDate().compareTo(p1.getReleaseDate()))
+                    .limit(2)
+                    .toList();
+        }
+
+        return albums.stream()
+                .map(this::convertToAlbumResponse)
+                .sorted((p1, p2) -> p2.getReleaseDate().compareTo(p1.getReleaseDate()))
+                .limit(2)
                 .toList();
     }
 

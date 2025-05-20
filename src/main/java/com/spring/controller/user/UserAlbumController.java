@@ -2,6 +2,7 @@ package com.spring.controller.user;
 
 import com.spring.dto.response.AlbumResponse;
 import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.PlaylistResponse;
 import com.spring.service.AlbumService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,21 +26,6 @@ public class UserAlbumController {
         return ResponseEntity.ok(albumService.userUnSaveAlbum(id));
     }
 
-//    @PostMapping("/create")
-//    public ResponseEntity<AlbumResponse> createAlbum(@ModelAttribute @Valid AlbumRequest request) {
-//        return ResponseEntity.ok(albumService.createAlbum(request));
-//    }
-//
-//    @PutMapping("/update/{id}")
-//    public ResponseEntity<AlbumResponse> updateAlbum(@PathVariable Long id, @ModelAttribute @Valid AlbumRequest request) {
-//        return ResponseEntity.ok(albumService.updateAlbum(id, request));
-//    }
-//
-//    @DeleteMapping("/delete/{id}")
-//    public ResponseEntity<ApiResponse> deleteAlbum(@PathVariable Long id) {
-//        return ResponseEntity.ok(albumService.deleteAlbum(id));
-//    }
-
     @GetMapping("/info/{id}")
     public ResponseEntity<AlbumResponse> getAlbum(@PathVariable Long id) {
         return ResponseEntity.ok(albumService.getAlbumById(id));
@@ -53,6 +39,11 @@ public class UserAlbumController {
     @GetMapping("/saved-albums")
     public ResponseEntity<List<AlbumResponse>> getAllUserSavedAlbums() {
         return ResponseEntity.ok(albumService.getCurrentUserSavedAlbums());
+    }
+
+    @GetMapping("/recent-albums")
+    public ResponseEntity<List<AlbumResponse>> getRecentAlbums() {
+        return ResponseEntity.ok(albumService.getRecentCurrentUserSavedAlbums());
     }
 
     @GetMapping("/saved-album-check/{id}")

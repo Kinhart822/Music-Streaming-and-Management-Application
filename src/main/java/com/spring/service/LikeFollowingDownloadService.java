@@ -13,11 +13,12 @@ public interface LikeFollowingDownloadService {
     Boolean isFavoriteSong(Long id);
     List<SongResponse> getCurrentUserLikedSongs();
 
-    // Favorite Artists
+    // Followed Artists
     ApiResponse userFollowingArtist(Long id);
     ApiResponse userUnfollowingArtist(Long id);
     Boolean isFollowedArtist(Long id);
     List<ArtistPresentation> getCurrentUserFollowedArtists();
+    List<ArtistPresentation> getRecentFollowedArtistsOfUser();
 
     // Download Songs
     ApiResponse userDownloadSong(Long id);

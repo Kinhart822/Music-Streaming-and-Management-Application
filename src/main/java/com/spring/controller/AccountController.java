@@ -6,11 +6,9 @@ import com.spring.dto.request.account.*;
 import com.spring.dto.response.*;
 import com.spring.entities.Notification;
 import com.spring.exceptions.BusinessException;
+import com.spring.repository.PlaylistRepository;
 import com.spring.security.JwtHelper;
-import com.spring.service.AccountService;
-import com.spring.service.GenreService;
-import com.spring.service.SongService;
-import com.spring.service.UserSongCountService;
+import com.spring.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +31,7 @@ public class AccountController {
     private final SongService songService;
     private final GenreService genreService;
     private final UserSongCountService userSongCountService;
+    private final LikeFollowingDownloadService likeFollowingDownloadService;
 
     /*
         TODO: Reset Password
@@ -218,18 +216,28 @@ public class AccountController {
         return ResponseEntity.ok(songService.getCountListen(songId));
     }
 
-    @GetMapping("/song/trending")
-    public ResponseEntity<List<SongResponse>> getTrendingSongs() {
-        return ResponseEntity.ok(songService.getTrendingSongs());
+    @GetMapping("/song/top10/trending")
+    public ResponseEntity<List<SongResponse>> getTop10TrendingSongs() {
+        return ResponseEntity.ok(songService.getTop10TrendingSongs());
     }
 
-    @GetMapping("/song/top15/{genreId}")
-    public ResponseEntity<List<SongResponse>> getTop15BestSongEachGenre(@PathVariable Long genreId) {
-        return ResponseEntity.ok(songService.getTop15BestSongEachGenre(genreId));
+    @GetMapping("/song/top15/download")
+    public ResponseEntity<List<SongResponse>> getTop15BestSong() {
+        return ResponseEntity.ok(songService.getTop15MostDownloadSong());
     }
 
     @GetMapping("/viewHistoryListen")
     public ResponseEntity<List<HistoryListenResponse>> viewHistoryListen() {
         return ResponseEntity.ok(userSongCountService.getAllHistoryListenByCurrentUser());
+    }
+
+    @GetMapping("/recentListening")
+    public ResponseEntity<List<HistoryListenResponse>> recentListening() {
+        return ResponseEntity.ok(userSongCountService.getAllRecentListeningCurrentUser());
+    }
+
+    @GetMapping("/recentViewArtist")
+    public ResponseEntity<List<ArtistPresentation>> getRecentFollowedArtistsOfUser() {
+        return ResponseEntity.ok(likeFollowingDownloadService.getRecentFollowedArtistsOfUser());
     }
 }

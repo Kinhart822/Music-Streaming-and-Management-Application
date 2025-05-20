@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -133,75 +134,30 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
         }
 
         return artists.stream()
-                .map(artist -> {
-                    String formattedDate = artist.getBirthDay() != null
-                            ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                            : null;
+                .map(this::convertToArtistPresentation)
+                .toList();
+    }
 
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-                    String formattedCreatedDate = artist.getCreatedDate() != null
-                            ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
-                            : null;
-                    String formattedLastModifiedDate = artist.getLastModifiedDate() != null
-                            ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
-                            : null;
+    @Override
+    public List<ArtistPresentation> getRecentFollowedArtistsOfUser() {
+        Long userId = jwtHelper.getIdUserRequesting();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
 
-                    return ArtistPresentation.builder()
-                            .id(artist.getId())
-                            .avatar(artist.getAvatar() != null ? artist.getAvatar() : "")
-                            .firstName(artist.getFirstName() != null ? artist.getFirstName() : "")
-                            .lastName(artist.getLastName() != null ? artist.getLastName() : "")
-                            .artistName(artist.getArtistName() != null ? artist.getArtistName() : "")
-                            .email(artist.getEmail())
-                            .gender(artist.getGender() != null ? artist.getGender().toString() : "")
-                            .birthDay(formattedDate)
-                            .phone(artist.getPhoneNumber() != null ? artist.getPhoneNumber() : "")
-                            .status(artist.getStatus())
-                            .createdBy(artist.getCreatedBy())
-                            .lastModifiedBy(artist.getLastModifiedBy())
-                            .createdDate(formattedCreatedDate)
-                            .lastModifiedDate(formattedLastModifiedDate)
-                            .description(artist.getDescription() != null ? artist.getDescription() : "")
-                            .image(artist.getImageUrl() != null ? artist.getImageUrl() : "")
-                            .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
-                            .userType(artist.getUserType())
-                            .artistSongIds(
-                                    artist.getArtistSongs().stream()
-                                            .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
-                                            .map(artistSong -> artistSong.getArtistSongId().getSong().getId())
-                                            .collect(Collectors.toList())
-                            )
-                            .artistSongNameList(
-                                    artist.getArtistSongs().stream()
-                                            .filter(artistSong -> artistSong.getArtistSongId().getArtist().getId().equals(artist.getId()))
-                                            .map(artistSong -> artistSong.getArtistSongId().getSong().getTitle())
-                                            .collect(Collectors.toList())
-                            )
-                            .artistPlaylistIds(
-                                    artist.getArtistPlaylists().stream()
-                                            .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
-                                            .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getId())
-                                            .collect(Collectors.toList())
-                            )
-                            .artistPlaylistNameList(
-                                    artist.getArtistPlaylists().stream()
-                                            .filter(artistSong -> artistSong.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
-                                            .map(artistSong -> artistSong.getArtistPlaylistId().getPlaylist().getPlaylistName())
-                                            .collect(Collectors.toList())
-                            )
-                            .artistAlbumIds(
-                                    artist.getArtistAlbums().stream()
-                                            .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
-                                            .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getId())
-                                            .collect(Collectors.toList())
-                            )
-                            .artistAlbumNameList(
-                                    artist.getArtistAlbums().stream()
-                                            .filter(artistSong -> artistSong.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
-                                            .map(artistSong -> artistSong.getArtistAlbumId().getAlbum().getAlbumName())
-                                            .collect(Collectors.toList())
-                            ).build();
-                })
+        List<Artist> artists = artistRepository.findByUser(user);
+        if (artists.isEmpty()) {
+            artistRepository.findAll();
+            return artists.stream()
+                    .map(this::convertToArtistPresentation)
+                    .sorted((p1, p2) -> p2.getCreatedDate().compareTo(p1.getCreatedDate()))
+                    .limit(1)
+                    .toList();
+        }
+
+        return artists.stream()
+                .map(this::convertToArtistPresentation)
+                .sorted((p1, p2) -> p2.getCreatedDate().compareTo(p1.getCreatedDate()))
+                .limit(1)
                 .toList();
     }
 
@@ -345,6 +301,67 @@ public class LikeFollowingDownloadServiceImpl implements LikeFollowingDownloadSe
     }
 
     // Helpers
+    private ArtistPresentation convertToArtistPresentation(Artist artist) {
+        String formattedBirthDay = artist.getBirthDay() != null
+                ? artist.getBirthDay().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String formattedCreatedDate = artist.getCreatedDate() != null
+                ? formatter.format(artist.getCreatedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
+        String formattedLastModifiedDate = artist.getLastModifiedDate() != null
+                ? formatter.format(artist.getLastModifiedDate().atZone(ZoneId.of("Asia/Ho_Chi_Minh")))
+                : null;
+
+        return ArtistPresentation.builder()
+                .id(artist.getId())
+                .avatar(Optional.ofNullable(artist.getAvatar()).orElse(""))
+                .firstName(Optional.ofNullable(artist.getFirstName()).orElse(""))
+                .lastName(Optional.ofNullable(artist.getLastName()).orElse(""))
+                .artistName(Optional.ofNullable(artist.getArtistName()).orElse(""))
+                .email(artist.getEmail())
+                .gender(artist.getGender() != null ? artist.getGender().toString() : "")
+                .birthDay(formattedBirthDay)
+                .phone(Optional.ofNullable(artist.getPhoneNumber()).orElse(""))
+                .status(artist.getStatus())
+                .createdBy(artist.getCreatedBy())
+                .lastModifiedBy(artist.getLastModifiedBy())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
+                .description(Optional.ofNullable(artist.getDescription()).orElse(""))
+                .image(Optional.ofNullable(artist.getImageUrl()).orElse(""))
+                .numberOfFollowers(totalNumberOfUserFollowers(artist.getId()))
+                .userType(artist.getUserType())
+                .artistSongIds(artist.getArtistSongs().stream()
+                        .filter(as -> as.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                        .map(as -> as.getArtistSongId().getSong().getId())
+                        .collect(Collectors.toList()))
+                .artistSongNameList(artist.getArtistSongs().stream()
+                        .filter(as -> as.getArtistSongId().getArtist().getId().equals(artist.getId()))
+                        .map(as -> as.getArtistSongId().getSong().getTitle())
+                        .collect(Collectors.toList()))
+                .artistPlaylistIds(artist.getArtistPlaylists().stream()
+                        .filter(ap -> ap.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                        .map(ap -> ap.getArtistPlaylistId().getPlaylist().getId())
+                        .collect(Collectors.toList()))
+                .artistPlaylistNameList(artist.getArtistPlaylists().stream()
+                        .filter(ap -> ap.getArtistPlaylistId().getArtist().getId().equals(artist.getId()))
+                        .map(ap -> ap.getArtistPlaylistId().getPlaylist().getPlaylistName())
+                        .collect(Collectors.toList()))
+                .artistAlbumIds(artist.getArtistAlbums().stream()
+                        .filter(aa -> aa.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                        .map(aa -> aa.getArtistAlbumId().getAlbum().getId())
+                        .collect(Collectors.toList()))
+                .artistAlbumNameList(artist.getArtistAlbums().stream()
+                        .filter(aa -> aa.getArtistAlbumId().getArtist().getId().equals(artist.getId()))
+                        .map(aa -> aa.getArtistAlbumId().getAlbum().getAlbumName())
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+
     public Long totalNumberOfListeners(Long artistId) {
         List<Song> songs = songRepository.findByArtistId(artistId).stream()
                 .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
