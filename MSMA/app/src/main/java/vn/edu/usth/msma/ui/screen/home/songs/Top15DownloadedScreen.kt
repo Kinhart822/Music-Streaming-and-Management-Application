@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -58,42 +59,23 @@ fun Top15DownloadScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            Text(
-                text = "Top 15 Download Songs",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            if (isTop15Loading) {
-                LoadingScreen(message = "Loading download songs...")
-            } else if (top15DownloadSongs.isEmpty()) {
-                Text(
-                    text = "No download songs found",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                )
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    items(top15DownloadSongs) { song ->
-                        SongItem(
-                            song = song,
-                            onSongClick = {
-                                val songJson = Gson().toJson(song) ?: return@SongItem
-                                navController.navigate(
-                                    ScreenRoute.SongDetails.createRoute(songJson, true)
-                                )
-                            }
-                        )
-                    }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(top15DownloadSongs) { song ->
+                    SongItem(
+                        song = song,
+                        onSongClick = {
+                            val songJson = Gson().toJson(song) ?: return@SongItem
+                            navController.navigate(
+                                ScreenRoute.SongDetails.createRoute(songJson, false)
+                            )
+                        }
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
-import vn.edu.usth.msma.ui.components.HomeAnimation
 import vn.edu.usth.msma.ui.components.LoadingScreen
 import vn.edu.usth.msma.ui.components.ScreenRoute
 import vn.edu.usth.msma.ui.components.SongItem
@@ -59,42 +59,23 @@ fun Top10TrendingScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            Text(
-                text = "Top 10 Trending Songs",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            if (isTop10Loading) {
-                LoadingScreen(message = "Loading trending songs...")
-            } else if (top10TrendingSongs.isEmpty()) {
-                Text(
-                    text = "No trending songs found",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                )
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    items(top10TrendingSongs) { song ->
-                        SongItem(
-                            song = song,
-                            onSongClick = {
-                                val songJson = Gson().toJson(song) ?: return@SongItem
-                                navController.navigate(
-                                    ScreenRoute.SongDetails.createRoute(songJson, true)
-                                )
-                            }
-                        )
-                    }
+            LazyColumn (
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(top10TrendingSongs) { song ->
+                    SongItem(
+                        song = song,
+                        onSongClick = {
+                            val songJson = Gson().toJson(song) ?: return@SongItem
+                            navController.navigate(
+                                ScreenRoute.SongDetails.createRoute(songJson, false)
+                            )
+                        }
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

@@ -10,10 +10,10 @@ import vn.edu.usth.msma.data.dto.response.profile.ArtistPresentation
 
 interface HomeApi {
     // Card
-    @GET("/song/top10/trending")
+    @GET("/api/v1/account/song/top10/trending")
     suspend fun getTop10TrendingSongs(): Response<List<SongResponse>>
 
-    @GET("/song/top15/download")
+    @GET("/api/v1/account/song/top15/download")
     suspend fun getTop15DownloadedSongs(): Response<List<SongResponse>>
 
     @GET("/api/v1/user/playlist/recent-playlists")

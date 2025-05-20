@@ -28,10 +28,11 @@ fun ArtistItem(artist: Artist, onArtistClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
             .clickable(onClick = onArtistClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

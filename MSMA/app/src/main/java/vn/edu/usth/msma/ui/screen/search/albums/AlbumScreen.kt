@@ -3,35 +3,48 @@ package vn.edu.usth.msma.ui.screen.search.albums
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.gson.Gson
+import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.Album
 import vn.edu.usth.msma.ui.components.ScreenRoute
 import vn.edu.usth.msma.ui.components.SongItem
@@ -50,6 +63,9 @@ fun AlbumScreen(
     val songs by viewModel.songs.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isSaved by viewModel.isSaved.collectAsState()
+    var showDescriptionSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(album) {
         viewModel.loadAlbum(album)
@@ -62,7 +78,6 @@ fun AlbumScreen(
                 is Event.SavingAlbumEvent, is Event.UnSavingAlbumEvent -> {
                     viewModel.refreshAlbum(album)
                 }
-
                 else -> {}
             }
         }
@@ -121,7 +136,7 @@ fun AlbumScreen(
                                         .padding(top = 10.dp),
                                     onError = {
                                         Log.e(
-                                            "PlaylistScreen",
+                                            "AlbumScreen",
                                             "Failed to load background image for ${albumState?.albumName}"
                                         )
                                     }
@@ -129,7 +144,7 @@ fun AlbumScreen(
                             }
                         }
 
-                        // Playlist Info
+                        // Album Info
                         item {
                             Column(
                                 modifier = Modifier
@@ -143,6 +158,35 @@ fun AlbumScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = formatAlbumTimeLength(albumState?.albumTimeLength),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = albumState?.releaseDate ?: "Unknown",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Show Description",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.clickable { showDescriptionSheet = true }
+                                    )
+                                }
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Button(
                                     onClick = {
@@ -192,6 +236,74 @@ fun AlbumScreen(
                 }
             }
         }
+    }
 
+    // Modal Bottom Sheet for Description
+    if (showDescriptionSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showDescriptionSheet = false },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Album Description",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = albumState?.description ?: "No description available",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            sheetState.hide()
+                            showDescriptionSheet = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text("Close")
+                }
+            }
+        }
+    }
+}
+
+fun formatAlbumTimeLength(albumTimeLength: Float?): String {
+    if (albumTimeLength == null || albumTimeLength <= 0f) return "0 min"
+    val totalSeconds = albumTimeLength.toInt()
+    val hours = totalSeconds / 3600
+    val remainingSeconds = totalSeconds % 3600
+    val minutes = remainingSeconds / 60
+    val seconds = remainingSeconds % 60
+    return when {
+        hours > 0 -> {
+            val parts = mutableListOf<String>()
+            if (hours > 0) parts.add("$hours hr")
+            if (minutes > 0) parts.add("$minutes min")
+            if (seconds > 0) parts.add("$seconds sec")
+            parts.joinToString(" ")
+        }
+        minutes > 0 -> {
+            if (seconds > 0) "$minutes min $seconds sec" else "$minutes min"
+        }
+        seconds > 0 -> "$seconds sec"
+        else -> "0 min"
     }
 }

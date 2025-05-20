@@ -161,6 +161,8 @@ fun MainScreen(
         currentRoute == ScreenRoute.ChangePasswordScreen.route -> "Change Password"
         currentRoute == ScreenRoute.ViewHistoryListen.route -> "History Listen"
         currentRoute == ScreenRoute.FavoriteSongs.route -> "Favourite Songs"
+        currentRoute == ScreenRoute.Top10TrendingSongs.route -> "Top 10 Trending Songs"
+        currentRoute == ScreenRoute.Top15DownloadedSongs.route -> "Top 15 Downloaded Songs"
 
         else -> "Home"
     }

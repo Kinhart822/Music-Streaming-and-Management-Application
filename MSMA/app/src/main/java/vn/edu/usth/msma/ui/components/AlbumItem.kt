@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import vn.edu.usth.msma.data.Album
@@ -28,10 +29,11 @@ fun AlbumItem(album: Album, onAlbumClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
             .clickable(onClick = onAlbumClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

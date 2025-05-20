@@ -2,6 +2,7 @@ package vn.edu.usth.msma.repository
 
 import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.data.dto.response.management.ContentItem
+import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
 import vn.edu.usth.msma.data.dto.response.management.SongResponse
 import vn.edu.usth.msma.utils.helpers.toSong
 
@@ -17,6 +18,10 @@ class SongRepository {
     }
 
     fun updateSongResponseList(newSongItems: List<SongResponse>) {
+        songs = newSongItems.map { it.toSong() }
+    }
+
+    fun updateHistoryListenResponseList(newSongItems: List<HistoryListenResponse>) {
         songs = newSongItems.map { it.toSong() }
     }
 

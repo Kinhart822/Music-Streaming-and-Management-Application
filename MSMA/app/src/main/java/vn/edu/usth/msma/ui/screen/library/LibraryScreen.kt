@@ -171,6 +171,7 @@ fun LibraryScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
             // Title
             Text(
                 text = "Your Library",
@@ -276,7 +277,7 @@ fun LibraryScreen(
                                                 onSongClick = {
                                                     val songJson = Gson().toJson(item.song) ?: return@SongItem
                                                     navController.navigate(
-                                                        ScreenRoute.SongDetails.createRoute(songJson, true)
+                                                        ScreenRoute.SongDetails.createRoute(songJson, false)
                                                     )
                                                 }
                                             )

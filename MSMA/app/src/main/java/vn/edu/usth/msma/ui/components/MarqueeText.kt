@@ -3,19 +3,13 @@ package vn.edu.usth.msma.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.delay
 
@@ -23,31 +17,40 @@ import kotlinx.coroutines.delay
 fun MarqueeText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = Color.White.copy(alpha = 0.7f)
+    color: Color = Color.White.copy(alpha = 0.7f),
+    scrollSpeed: Float = 100f // pixels per second
 ) {
-    var offsetX by remember { mutableStateOf(0f) }
-    val textWidth = remember { mutableStateOf(0f) }
-    val containerWidth = remember { mutableStateOf(0f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var textWidth by remember { mutableFloatStateOf(0f) }
+    var containerWidth by remember { mutableFloatStateOf(0f) }
     var isReversed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(textWidth.value, containerWidth.value) {
-        if (textWidth.value > containerWidth.value) {
+    LaunchedEffect(textWidth, containerWidth) {
+        if (textWidth > containerWidth) {
             while (true) {
+                val frameTimeMillis = 16L
+                val distance = scrollSpeed * frameTimeMillis / 1000f
+
                 if (!isReversed) {
-                    offsetX -= 1f
-                    if (offsetX <= -textWidth.value) {
+                    offsetX -= distance
+                    if (offsetX <= -(textWidth - containerWidth)) {
+                        offsetX = -(textWidth - containerWidth)
                         isReversed = true
-                        delay(1000)
+                        delay(500)
                     }
                 } else {
-                    offsetX += 1f
+                    offsetX += distance
                     if (offsetX >= 0f) {
+                        offsetX = 0f
                         isReversed = false
-                        delay(1000)
+                        delay(500)
                     }
                 }
-                delay(16) // ~60fps
+
+                delay(frameTimeMillis)
             }
+        } else {
+            offsetX = 0f
         }
     }
 
@@ -55,7 +58,7 @@ fun MarqueeText(
         modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
-                containerWidth.value = coordinates.size.width.toFloat()
+                containerWidth = coordinates.size.width.toFloat()
             }
     ) {
         Text(
@@ -63,10 +66,12 @@ fun MarqueeText(
             style = MaterialTheme.typography.bodyMedium,
             color = color,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
             modifier = Modifier
                 .offset { IntOffset(offsetX.toInt(), 0) }
                 .onGloballyPositioned { coordinates ->
-                    textWidth.value = coordinates.size.width.toFloat()
+                    textWidth = coordinates.size.width.toFloat()
                 }
         )
     }

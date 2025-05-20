@@ -272,7 +272,7 @@ fun ContentItemView(
                     .clickable {
                         val songJson = Gson().toJson(content)
                         navController.navigate(
-                            ScreenRoute.SongDetails.createRoute(songJson, true)
+                            ScreenRoute.SongDetails.createRoute(songJson, false)
                         )
                     },
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

@@ -171,8 +171,7 @@ fun AppNavigation(
                         currentRoute?.contains("songDetails") == false &&
                         !isInNotificationScreen && !isInViewProfileScreen &&
                         !isInEditProfileScreen && !isInChangePasswordScreen &&
-                        !isInViewHistoryListenScreen && !isInTop10TrendingScreen &&
-                        !isInTop15DownloadedScreen
+                        !isInViewHistoryListenScreen
                     ) {
                         MiniPlayerScreen(
                             musicPlayerViewModel,
