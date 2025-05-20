@@ -9,195 +9,209 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import vn.edu.usth.msma.data.Album
+import vn.edu.usth.msma.data.Artist
+import vn.edu.usth.msma.data.Playlist
 import vn.edu.usth.msma.data.Song
 import vn.edu.usth.msma.network.ApiService
+import vn.edu.usth.msma.repository.AlbumRepository
+import vn.edu.usth.msma.repository.ArtistRepository
+import vn.edu.usth.msma.repository.PlaylistRepository
 import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.utils.eventbus.Event
 import vn.edu.usth.msma.utils.eventbus.EventBus
+import vn.edu.usth.msma.utils.helpers.toAlbum
+import vn.edu.usth.msma.utils.helpers.toArtist
+import vn.edu.usth.msma.utils.helpers.toPlaylist
 import vn.edu.usth.msma.utils.helpers.toSong
 import javax.inject.Inject
 
 // Sealed class for library items
 sealed class LibraryItem {
-    data class SongItem(val song: Song) : LibraryItem()
-    data class ArtistItem(val id: String, val name: String, val imageUrl: String) : LibraryItem()
-    data class PlaylistItem(val id: String, val name: String, val imageUrl: String) : LibraryItem()
-    data class AlbumItem(val id: String, val name: String, val imageUrl: String, val artistName: String) : LibraryItem()
+    data class SongData(val song: Song) : LibraryItem()
+    data class ArtistData(val artist: Artist) : LibraryItem()
+    data class PlaylistData(val playlist: Playlist) : LibraryItem()
+    data class AlbumData(val album: Album) : LibraryItem()
 }
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val songRepository: SongRepository
+    private val songRepository: SongRepository,
+    private val artistRepository: ArtistRepository,
+    private val playlistRepository: PlaylistRepository,
+    private val albumRepository: AlbumRepository
 ) : ViewModel() {
 
+    private val _favoriteSongs = MutableStateFlow<List<Song>>(emptyList())
+    val favoriteSongs: StateFlow<List<Song>> = _favoriteSongs.asStateFlow()
+
+    private val _followedArtists = MutableStateFlow<List<Artist>>(emptyList())
+    val followedArtists: StateFlow<List<Artist>> = _followedArtists.asStateFlow()
+
+    private val _savedPlaylists = MutableStateFlow<List<Playlist>>(emptyList())
+    val savedPlaylists: StateFlow<List<Playlist>> = _savedPlaylists.asStateFlow()
+
+    private val _savedAlbums = MutableStateFlow<List<Album>>(emptyList())
+    val savedAlbums: StateFlow<List<Album>> = _savedAlbums.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<LibraryItem>>(emptyList())
+    val searchResults: StateFlow<List<LibraryItem>> = _searchResults.asStateFlow()
+
+    private val _isSongsLoading = MutableStateFlow(false)
+    val isSongsLoading: StateFlow<Boolean> = _isSongsLoading.asStateFlow()
+
+    private val _isArtistsLoading = MutableStateFlow(false)
+    val isArtistsLoading: StateFlow<Boolean> = _isArtistsLoading.asStateFlow()
+
+    private val _isPlaylistsLoading = MutableStateFlow(false)
+    val isPlaylistsLoading: StateFlow<Boolean> = _isPlaylistsLoading.asStateFlow()
+
+    private val _isAlbumsLoading = MutableStateFlow(false)
+    val isAlbumsLoading: StateFlow<Boolean> = _isAlbumsLoading.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     init {
+        // Initialize data on ViewModel creation
+        loadFavoriteSongs()
+        loadFollowedArtists()
+        loadSavedPlaylists()
+        loadSavedAlbums()
+
+        // Collect EventBus events
         viewModelScope.launch {
             try {
                 EventBus.events.collect { event ->
                     when (event) {
                         is Event.ProfileUpdatedEvent -> {
-                            Log.d("LibraryViewModel", "Profile updated event received")
-                        }
-                        is Event.SessionExpiredEvent -> {
-                            Log.d("LibraryViewModel", "Session expired event received")
-                            _favoriteSongs.value = emptyList()
-                            _artists.value = emptyList()
-                            _playlists.value = emptyList()
-                            _albums.value = emptyList()
-                            _searchResults.value = emptyList()
-                            songRepository.clearAllSongs()
+                            Log.d("LibraryViewModel", "Profile updated")
                         }
                         is Event.SongFavouriteUpdateEvent -> {
-                            Log.d("LibraryViewModel", "Song favorite update event received")
+                            Log.d("LibraryViewModel", "Song favorite updated")
                             refreshFavoriteSongs()
                         }
                         is Event.InitializeDataLibrary -> {
-                            Log.d("LibraryViewModel", "Initialize Library Data")
+                            Log.d("LibraryViewModel", "Initializing library data")
                             loadFavoriteSongs()
-                            loadArtists()
-                            loadPlaylists()
-                            loadAlbums()
+                            loadFollowedArtists()
+                            loadSavedPlaylists()
+                            loadSavedAlbums()
                         }
                         else -> {}
                     }
                 }
             } catch (e: Exception) {
-                Log.e("LibraryViewModel", "Error in EventBus collection", e)
+                Log.e("LibraryViewModel", "Error collecting EventBus events", e)
             }
         }
     }
-
-    private val _favoriteSongs = MutableStateFlow<List<Song>>(emptyList())
-    val favoriteSongs: StateFlow<List<Song>> = _favoriteSongs.asStateFlow()
-
-    private val _artists = MutableStateFlow<List<LibraryItem.ArtistItem>>(emptyList())
-    val artists: StateFlow<List<LibraryItem.ArtistItem>> = _artists.asStateFlow()
-
-    private val _playlists = MutableStateFlow<List<LibraryItem.PlaylistItem>>(emptyList())
-    val playlists: StateFlow<List<LibraryItem.PlaylistItem>> = _playlists.asStateFlow()
-
-    private val _albums = MutableStateFlow<List<LibraryItem.AlbumItem>>(emptyList())
-    val albums: StateFlow<List<LibraryItem.AlbumItem>> = _albums.asStateFlow()
-
-    private val _searchResults = MutableStateFlow<List<LibraryItem>>(emptyList())
-    val searchResults: StateFlow<List<LibraryItem>> = _searchResults.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private var originalSongs = listOf<Song>()
-    private var originalArtists = listOf<LibraryItem.ArtistItem>()
-    private var originalPlaylists = listOf<LibraryItem.PlaylistItem>()
-    private var originalAlbums = listOf<LibraryItem.AlbumItem>()
 
     fun loadFavoriteSongs() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                Log.d("LibraryViewModel", "Starting to load favorite songs")
-                _isLoading.value = true
+                _isSongsLoading.value = true
+                _errorMessage.value = null
 
                 val response = apiService.getSongApi().getLikedSongs()
                 if (response.isSuccessful) {
-                    val songs = response.body()?.mapNotNull { songResponse ->
-                        try {
-                            songResponse.toSong()
-                        } catch (e: Exception) {
-                            Log.e("LibraryViewModel", "Error mapping song: $songResponse", e)
-                            null
-                        }
-                    } ?: emptyList()
+                    val songs = response.body()?.mapNotNull { it.toSong() } ?: emptyList()
                     _favoriteSongs.value = songs
-                    originalSongs = songs
                     songRepository.updateSongs(songs)
                     Log.d("LibraryViewModel", "Loaded ${songs.size} favorite songs")
                 } else {
-                    Log.e(
-                        "LibraryViewModel",
-                        "Failed to load favorite songs: ${response.code()} - ${response.message()}"
-                    )
+                    Log.e("LibraryViewModel", "Failed to load favorite songs: ${response.code()}")
                     _favoriteSongs.value = emptyList()
-                    songRepository.clearAllSongs()
+                    _errorMessage.value = "Failed to load favorite songs: ${response.message()}"
                 }
             } catch (e: Exception) {
-                Log.e("LibraryViewModel", "Exception while loading favorite songs", e)
+                Log.e("LibraryViewModel", "Error loading favorite songs", e)
                 _favoriteSongs.value = emptyList()
-                songRepository.clearAllSongs()
+                _errorMessage.value = "Error loading favorite songs: ${e.message}"
             } finally {
-                _isLoading.value = false
-                Log.d("LibraryViewModel", "Finished loading favorite songs")
+                _isSongsLoading.value = false
             }
         }
     }
 
-    fun loadArtists() {
+    fun loadFollowedArtists() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _isLoading.value = true
-                // Simulate API call with hardcoded data
-                val tempArtists = listOf(
-                    LibraryItem.ArtistItem("artist1", "Taylor Swift", ""),
-                    LibraryItem.ArtistItem("artist2", "Ed Sheeran", ""),
-                    LibraryItem.ArtistItem("artist3", "Billie Eilish", ""),
-                    LibraryItem.ArtistItem("artist4", "Drake", ""),
-                    LibraryItem.ArtistItem("artist5", "Beyoncé", "")
-                )
-                _artists.value = tempArtists
-                originalArtists = tempArtists
-                Log.d("LibraryViewModel", "Loaded ${tempArtists.size} artists")
+                _isArtistsLoading.value = true
+                _errorMessage.value = null
+
+                val response = apiService.getArtistApi().getFollowedArtists()
+                if (response.isSuccessful) {
+                    val artists = response.body()?.mapNotNull { it.toArtist() } ?: emptyList()
+                    _followedArtists.value = artists
+                    artistRepository.updateArtists(artists)
+                    Log.d("LibraryViewModel", "Loaded ${artists.size} followed artists")
+                } else {
+                    Log.e("LibraryViewModel", "Failed to load followed artists: ${response.code()}")
+                    _followedArtists.value = emptyList()
+                    _errorMessage.value = "Failed to load followed artists: ${response.message()}"
+                }
             } catch (e: Exception) {
-                Log.e("LibraryViewModel", "Error loading artists", e)
-                _artists.value = emptyList()
+                Log.e("LibraryViewModel", "Error loading followed artists", e)
+                _followedArtists.value = emptyList()
+                _errorMessage.value = "Error loading followed artists: ${e.message}"
             } finally {
-                _isLoading.value = false
+                _isArtistsLoading.value = false
             }
         }
     }
 
-    fun loadPlaylists() {
+    fun loadSavedPlaylists() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _isLoading.value = true
-                // Simulate API call with hardcoded data
-                val tempPlaylists = listOf(
-                    LibraryItem.PlaylistItem("playlist1", "Chill Hits", ""),
-                    LibraryItem.PlaylistItem("playlist2", "Workout Mix", ""),
-                    LibraryItem.PlaylistItem("playlist3", "Road Trip Songs", ""),
-                    LibraryItem.PlaylistItem("playlist4", "Study Playlist", ""),
-                    LibraryItem.PlaylistItem("playlist5", "Party Anthems", "")
-                )
-                _playlists.value = tempPlaylists
-                originalPlaylists = tempPlaylists
-                Log.d("LibraryViewModel", "Loaded ${tempPlaylists.size} playlists")
+                _isPlaylistsLoading.value = true
+                _errorMessage.value = null
+
+                val response = apiService.getPlaylistApi().getAllUserSavedPlaylists()
+                if (response.isSuccessful) {
+                    val playlists = response.body()?.mapNotNull { it.toPlaylist() } ?: emptyList()
+                    _savedPlaylists.value = playlists
+                    playlistRepository.updatePlaylists(playlists)
+                    Log.d("LibraryViewModel", "Loaded ${playlists.size} saved playlists")
+                } else {
+                    Log.e("LibraryViewModel", "Failed to load saved playlists: ${response.code()}")
+                    _savedPlaylists.value = emptyList()
+                    _errorMessage.value = "Failed to load saved playlists: ${response.message()}"
+                }
             } catch (e: Exception) {
-                Log.e("LibraryViewModel", "Error loading playlists", e)
-                _playlists.value = emptyList()
+                Log.e("LibraryViewModel", "Error loading saved playlists", e)
+                _savedPlaylists.value = emptyList()
+                _errorMessage.value = "Error loading saved playlists: ${e.message}"
             } finally {
-                _isLoading.value = false
+                _isPlaylistsLoading.value = false
             }
         }
     }
 
-    fun loadAlbums() {
+    fun loadSavedAlbums() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _isLoading.value = true
-                // Simulate API call with hardcoded data
-                val tempAlbums = listOf(
-                    LibraryItem.AlbumItem("album1", "Folklore", "", "Taylor Swift"),
-                    LibraryItem.AlbumItem("album2", "Divide", "", "Ed Sheeran"),
-                    LibraryItem.AlbumItem("album3", "When We All Fall Asleep", "", "Billie Eilish"),
-                    LibraryItem.AlbumItem("album4", "Views", "", "Drake"),
-                    LibraryItem.AlbumItem("album5", "Lemonade", "", "Beyoncé")
-                )
-                _albums.value = tempAlbums
-                originalAlbums = tempAlbums
-                Log.d("LibraryViewModel", "Loaded ${tempAlbums.size} albums")
+                _isAlbumsLoading.value = true
+                _errorMessage.value = null
+
+                val response = apiService.getAlbumApi().getAllUserSavedAlbums()
+                if (response.isSuccessful) {
+                    val albums = response.body()?.mapNotNull { it.toAlbum() } ?: emptyList()
+                    _savedAlbums.value = albums
+                    albumRepository.updateAlbums(albums)
+                    Log.d("LibraryViewModel", "Loaded ${albums.size} saved albums")
+                } else {
+                    Log.e("LibraryViewModel", "Failed to load saved albums: ${response.code()}")
+                    _savedAlbums.value = emptyList()
+                    _errorMessage.value = "Failed to load saved albums: ${response.message()}"
+                }
             } catch (e: Exception) {
-                Log.e("LibraryViewModel", "Error loading albums", e)
-                _albums.value = emptyList()
+                Log.e("LibraryViewModel", "Error loading saved albums", e)
+                _savedAlbums.value = emptyList()
+                _errorMessage.value = "Error loading saved albums: ${e.message}"
             } finally {
-                _isLoading.value = false
+                _isAlbumsLoading.value = false
             }
         }
     }
@@ -208,75 +222,92 @@ class LibraryViewModel @Inject constructor(
             return
         }
 
-        val results = mutableListOf<LibraryItem>()
-        // Search songs
-        results.addAll(
-            originalSongs
-                .filter {
-                    it.title.contains(query, ignoreCase = true) ||
-                            it.artistNameList?.any { artist -> artist.contains(query, ignoreCase = true) } == true
-                }
-                .map { LibraryItem.SongItem(it) }
-        )
-        // Search artists
-        results.addAll(
-            originalArtists
-                .filter { it.name.contains(query, ignoreCase = true) }
-        )
-        // Search playlists
-        results.addAll(
-            originalPlaylists
-                .filter { it.name.contains(query, ignoreCase = true) }
-        )
-        // Search albums
-        results.addAll(
-            originalAlbums
-                .filter { it.name.contains(query, ignoreCase = true) || it.artistName.contains(query, ignoreCase = true) }
-        )
+        viewModelScope.launch(Dispatchers.IO) {
+            val results = mutableListOf<LibraryItem>()
+            // Search songs
+            results.addAll(
+                _favoriteSongs.value
+                    .filter {
+                        it.title.contains(query, ignoreCase = true) ||
+                                it.artistNameList?.any { artist -> artist.contains(query, ignoreCase = true) } == true
+                    }
+                    .map { LibraryItem.SongData(it) }
+            )
+            // Search artists
+            results.addAll(
+                _followedArtists.value
+                    .filter { it.artistName?.contains(query, ignoreCase = true) ?: false }
+                    .map { LibraryItem.ArtistData(it) }
+            )
+            // Search playlists
+            results.addAll(
+                _savedPlaylists.value
+                    .filter {
+                        it.playlistName.contains(query, ignoreCase = true) ||
+                                it.artistNameList?.any { artist -> artist.contains(query, ignoreCase = true) } == true
+                    }
+                    .map { LibraryItem.PlaylistData(it) }
+            )
+            // Search albums
+            results.addAll(
+                _savedAlbums.value
+                    .filter {
+                        it.albumName.contains(query, ignoreCase = true) ||
+                                it.artistNameList?.any { artist -> artist.contains(query, ignoreCase = true) } == true
+                    }
+                    .map { LibraryItem.AlbumData(it) }
+            )
 
-        _searchResults.value = results
+            _searchResults.value = results
+        }
     }
 
     fun applyFilter(filter: String) {
-        val currentResults = _searchResults.value
-        _searchResults.value = when (filter) {
-            "Sort by Title" -> currentResults.sortedWith { item1, item2 ->
-                val name1 = when (item1) {
-                    is LibraryItem.SongItem -> item1.song.title
-                    is LibraryItem.ArtistItem -> item1.name
-                    is LibraryItem.PlaylistItem -> item1.name
-                    is LibraryItem.AlbumItem -> item1.name
+        viewModelScope.launch {
+            val currentResults = _searchResults.value
+            _searchResults.value = when (filter) {
+                "Sort by Title" -> currentResults.sortedWith { item1, item2 ->
+                    val name1 = when (item1) {
+                        is LibraryItem.SongData -> item1.song.title
+                        is LibraryItem.ArtistData -> item1.artist.artistName
+                        is LibraryItem.PlaylistData -> item1.playlist.playlistName
+                        is LibraryItem.AlbumData -> item1.album.albumName
+                    } ?: ""
+                    val name2 = when (item2) {
+                        is LibraryItem.SongData -> item2.song.title
+                        is LibraryItem.ArtistData -> item2.artist.artistName
+                        is LibraryItem.PlaylistData -> item2.playlist.playlistName
+                        is LibraryItem.AlbumData -> item2.album.albumName
+                    } ?: ""
+                    name1.compareTo(name2, ignoreCase = true)
                 }
-                val name2 = when (item2) {
-                    is LibraryItem.SongItem -> item2.song.title
-                    is LibraryItem.ArtistItem -> item2.name
-                    is LibraryItem.PlaylistItem -> item2.name
-                    is LibraryItem.AlbumItem -> item2.name
+                "Sort by Artist" -> currentResults.sortedWith { item1, item2 ->
+                    val artist1 = when (item1) {
+                        is LibraryItem.SongData -> item1.song.artistNameList?.joinToString() ?: ""
+                        is LibraryItem.ArtistData -> item1.artist.artistName
+                        is LibraryItem.PlaylistData -> item1.playlist.artistNameList?.joinToString() ?: ""
+                        is LibraryItem.AlbumData -> item1.album.artistNameList?.joinToString() ?: ""
+                    } ?: ""
+                    val artist2 = when (item2) {
+                        is LibraryItem.SongData -> item2.song.artistNameList?.joinToString() ?: ""
+                        is LibraryItem.ArtistData -> item2.artist.artistName
+                        is LibraryItem.PlaylistData -> item2.playlist.artistNameList?.joinToString() ?: ""
+                        is LibraryItem.AlbumData -> item2.album.artistNameList?.joinToString() ?: ""
+                    } ?: ""
+                    artist1.compareTo(artist2, ignoreCase = true)
                 }
-                name1.compareTo(name2, ignoreCase = true)
+                else -> currentResults
             }
-            "Sort by Artist" -> currentResults.sortedWith { item1, item2 ->
-                val artist1 = when (item1) {
-                    is LibraryItem.SongItem -> item1.song.artistNameList?.joinToString() ?: ""
-                    is LibraryItem.ArtistItem -> item1.name
-                    is LibraryItem.PlaylistItem -> item1.name // Treat playlist name as artist for sorting
-                    is LibraryItem.AlbumItem -> item1.artistName
-                }
-                val artist2 = when (item2) {
-                    is LibraryItem.SongItem -> item2.song.artistNameList?.joinToString() ?: ""
-                    is LibraryItem.ArtistItem -> item2.name
-                    is LibraryItem.PlaylistItem -> item2.name
-                    is LibraryItem.AlbumItem -> item2.artistName
-                }
-                artist1.compareTo(artist2, ignoreCase = true)
-            }
-            else -> currentResults // Recently Added (default order)
         }
     }
 
     fun refreshFavoriteSongs() {
         Log.d("LibraryViewModel", "Refreshing favorite songs")
         loadFavoriteSongs()
+    }
+
+    fun clearErrorMessage() {
+        _errorMessage.value = null
     }
 
     override fun onCleared() {

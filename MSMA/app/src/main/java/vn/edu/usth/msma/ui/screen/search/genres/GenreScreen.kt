@@ -68,10 +68,10 @@ fun GenreScreen(
         }
     }
 
-    DisposableEffect(context) {
+    DisposableEffect(Unit) {
         musicPlayerViewModel.registerMusicEventReceiver(context)
         onDispose {
-            musicPlayerViewModel.unregisterMusicEventReceiver(context)
+            musicPlayerViewModel.unregisterMusicEventReceiver()
         }
     }
 

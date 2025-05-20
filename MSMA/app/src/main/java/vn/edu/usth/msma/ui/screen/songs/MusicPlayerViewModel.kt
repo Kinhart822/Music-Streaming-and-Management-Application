@@ -1,5 +1,6 @@
 package vn.edu.usth.msma.ui.screen.songs
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -51,6 +52,8 @@ class MusicPlayerViewModel @Inject constructor(
     val isShuffleEnabled: StateFlow<Boolean> = _isShuffleEnabled.asStateFlow()
 
     private var musicEventReceiver: BroadcastReceiver? = null
+    @SuppressLint("StaticFieldLeak")
+    private var receiverContext: Context? = null
 
     val progress: Float
         get() = if (duration.longValue > 0) currentPosition.longValue.toFloat() / duration.longValue else 0f
@@ -62,6 +65,7 @@ class MusicPlayerViewModel @Inject constructor(
         }
 
         Log.d("MusicPlayerViewModel", "Registering new BroadcastReceiver")
+        receiverContext = context
         musicEventReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 when (intent.action) {
@@ -159,12 +163,14 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
 
-    fun unregisterMusicEventReceiver(context: Context) {
+    fun unregisterMusicEventReceiver() {
         try {
-            musicEventReceiver?.let {
-                context.unregisterReceiver(it)
-                musicEventReceiver = null
+            musicEventReceiver?.let { receiver ->
+                receiverContext?.unregisterReceiver(receiver)
+                Log.d("MusicPlayerViewModel", "BroadcastReceiver unregistered")
             }
+            musicEventReceiver = null
+            receiverContext = null
         } catch (e: Exception) {
             Log.e("MusicPlayerViewModel", "Error unregistering receiver", e)
         }
@@ -316,6 +322,8 @@ class MusicPlayerViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // Cleanup resources
+        // Unregister the receiver when the ViewModel is cleared
+        unregisterMusicEventReceiver()
+        Log.d("MusicPlayerViewModel", "ViewModel cleared, resources cleaned up")
     }
 }

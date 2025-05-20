@@ -20,7 +20,7 @@ class ApiClient @Inject constructor(
     private val customAuthenticator: CustomAuthenticator
 ) {
     private val TAG = "ApiClient"
-    private val BASE_URL: String = IP.KINHART822.getIp().also {
+    private val BASE_URL: String = IP.KINHART822_ZEN8LABS.getIp().also {
         Log.d(TAG, "Using BASE_URL: $it")
     }
     private var authenticatedRetrofit: Retrofit? = null

@@ -105,8 +105,9 @@ fun MiniPlayerScreen(
     }
 
     DisposableEffect(Unit) {
+        musicPlayerViewModel.registerMusicEventReceiver(context)
         onDispose {
-            musicPlayerViewModel.unregisterMusicEventReceiver(context)
+            musicPlayerViewModel.unregisterMusicEventReceiver()
         }
     }
 

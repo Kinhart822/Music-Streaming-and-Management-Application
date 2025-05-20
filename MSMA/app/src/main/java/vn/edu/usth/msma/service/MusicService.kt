@@ -553,6 +553,9 @@ class MusicService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("FROM_NOTIFICATION", true)
             putExtra("SONG_ID", currentSongId)
+            putExtra("SONG_TITLE", currentSongTitle)
+            putExtra("SONG_ARTIST", currentSongArtist)
+            putExtra("SONG_IMAGE", currentSongImage)
         }
         val pendingContentIntent = PendingIntent.getActivity(
             this, 0, contentIntent,

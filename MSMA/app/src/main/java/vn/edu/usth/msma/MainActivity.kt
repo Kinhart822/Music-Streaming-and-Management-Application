@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -14,19 +16,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import vn.edu.usth.msma.data.PreferencesManager
 import vn.edu.usth.msma.navigation.MainScreen
 import vn.edu.usth.msma.network.ApiClient
 import vn.edu.usth.msma.network.CustomAuthenticator
+import vn.edu.usth.msma.repository.SongRepository
 import vn.edu.usth.msma.service.MusicService
+import vn.edu.usth.msma.ui.components.ScreenRoute
 import vn.edu.usth.msma.ui.screen.SplashScreen
+import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
 import vn.edu.usth.msma.ui.theme.MSMATheme
 import vn.edu.usth.msma.utils.eventbus.Event.*
 import vn.edu.usth.msma.utils.eventbus.EventBus
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -38,11 +50,15 @@ class MainActivity : ComponentActivity() {
     lateinit var apiClient: ApiClient
 
     @Inject
+    lateinit var songRepository: SongRepository
+
+    @Inject
     lateinit var customAuthenticator: CustomAuthenticator
 
     private var showSplash by mutableStateOf(true)
     private val tag: String = javaClass.simpleName
 
+    @SuppressLint("ObsoleteSdkInt")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(tag, "onCreate called")
@@ -57,6 +73,13 @@ class MainActivity : ComponentActivity() {
                     // Clear miniplayer state if service is not running
                     preferencesManager.setMiniPlayerVisible(false)
                 }
+            }
+        }
+
+        // Request notification permission for API 33+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
             }
         }
 

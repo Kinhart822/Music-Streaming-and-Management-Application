@@ -1,6 +1,5 @@
 package vn.edu.usth.msma.ui.screen.library
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,7 +35,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -55,22 +58,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import vn.edu.usth.msma.R
+import vn.edu.usth.msma.data.Album
+import vn.edu.usth.msma.data.Artist
+import vn.edu.usth.msma.data.Playlist
 import vn.edu.usth.msma.data.Song
+import vn.edu.usth.msma.ui.components.AlbumItem
+import vn.edu.usth.msma.ui.components.ArtistItem
+import vn.edu.usth.msma.ui.components.LoadingScreen
+import vn.edu.usth.msma.ui.components.PlaylistItem
 import vn.edu.usth.msma.ui.components.ScreenRoute
 import vn.edu.usth.msma.ui.components.SongItem
 import vn.edu.usth.msma.ui.screen.songs.MusicPlayerViewModel
@@ -86,12 +93,17 @@ fun LibraryScreen(
     val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
     val context = LocalContext.current
     val favoriteSongs by viewModel.favoriteSongs.collectAsState()
-    val artists by viewModel.artists.collectAsState()
-    val playlists by viewModel.playlists.collectAsState()
-    val albums by viewModel.albums.collectAsState()
+    val artists by viewModel.followedArtists.collectAsState()
+    val playlists by viewModel.savedPlaylists.collectAsState()
+    val albums by viewModel.savedAlbums.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val isSongsLoading by viewModel.isSongsLoading.collectAsState()
+    val isArtistsLoading by viewModel.isArtistsLoading.collectAsState()
+    val isPlaylistsLoading by viewModel.isPlaylistsLoading.collectAsState()
+    val isAlbumsLoading by viewModel.isAlbumsLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val tabs = listOf("All", "Artists", "Playlists", "Albums")
     val pagerState = rememberPagerState(
@@ -100,16 +112,24 @@ fun LibraryScreen(
         pageCount = { tabs.size }
     )
     var searchQuery by remember { mutableStateOf("") }
-    var isSearchFocused by remember { mutableStateOf(false) }
-    var selectedFilter by remember { mutableStateOf("Sort by Recently Added") }
-    val filters = listOf("Sort by Recently Added", "Sort by Title", "Sort by Artist")
+    var selectedFilter by remember { mutableStateOf("Sort by Title") }
+    val filters = listOf("Sort by Title", "Sort by Artist")
     val interactionSource = remember { MutableInteractionSource() }
     val focusManager = LocalFocusManager.current
 
-    DisposableEffect(context) {
+    // Handle error messages
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearErrorMessage()
+        }
+    }
+
+    // Initialize data and register receivers
+    DisposableEffect(Unit) {
         musicPlayerViewModel.registerMusicEventReceiver(context)
         onDispose {
-            musicPlayerViewModel.unregisterMusicEventReceiver(context)
+            musicPlayerViewModel.unregisterMusicEventReceiver()
         }
     }
 
@@ -120,232 +140,263 @@ fun LibraryScreen(
         }
     }
 
+    // Load data based on tab
     LaunchedEffect(pagerState.currentPage) {
         when (pagerState.currentPage) {
             0 -> {
                 viewModel.loadFavoriteSongs()
-                viewModel.loadArtists()
-                viewModel.loadPlaylists()
-                viewModel.loadAlbums()
+                viewModel.loadFollowedArtists()
+                viewModel.loadSavedPlaylists()
+                viewModel.loadSavedAlbums()
             }
-            1 -> viewModel.loadArtists()
-            2 -> viewModel.loadPlaylists()
-            3 -> viewModel.loadAlbums()
+            1 -> viewModel.loadFollowedArtists()
+            2 -> viewModel.loadSavedPlaylists()
+            3 -> viewModel.loadSavedAlbums()
         }
     }
 
+    // Trigger search
     LaunchedEffect(searchQuery) {
         viewModel.searchContent(searchQuery)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
-    ) {
-        // Title
-        Text(
-            text = "Your Library",
-            fontSize = 21.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        // Search bar with Cancel button and Filter
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Search in Your Library") },
-                leadingIcon = {
-                    var lastClickTime by remember { mutableStateOf(0L) }
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search icon",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.clickable {
-                            val currentTime = System.currentTimeMillis()
-                            val timeSinceLastClick = currentTime - lastClickTime
-
-                            if (timeSinceLastClick < 500) { // double click detected
-                                searchQuery = ""
-                                isSearchFocused = false
-                                viewModel.searchContent("")
-                                focusManager.clearFocus()
-                            } else {
-                                isSearchFocused = true
-                            }
-
-                            lastClickTime = currentTime
-                        }
-                    )
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(bottom = 16.dp),
-                singleLine = true,
-                interactionSource = interactionSource,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = { viewModel.searchContent(searchQuery) }
-                ),
-                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
+            // Title
+            Text(
+                text = "Your Library",
+                fontSize = 21.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            if (searchQuery.isNotEmpty()) {
-                Spacer(modifier = Modifier.width(8.dp))
-                FilterButton(
-                    selectedFilter = selectedFilter,
-                    filters = filters,
-                    onFilterSelected = { filter ->
-                        selectedFilter = filter
-                        viewModel.applyFilter(filter)
-                    }
-                )
-            }
-        }
-
-        // Content
-        if (searchQuery.isNotEmpty()) {
-            // Search Results
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (isLoading) {
-                    Text(
-                        text = "Searching...",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 18.sp,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                } else if (searchResults.isEmpty()) {
-                    Text(
-                        text = "No results found",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 18.sp,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(searchResults) { item ->
-                            when (item) {
-                                is LibraryItem.SongItem -> {
-                                    SongItem(
-                                        song = item.song,
-                                        onSongClick = {
-                                            val songJson = Gson().toJson(item.song)
-                                            navController.navigate(
-                                                ScreenRoute.SongDetails.createRoute(songJson, true)
-                                            )
-                                        }
-                                    )
-                                }
-                                is LibraryItem.ArtistItem -> {
-                                    CategoryItem(
-                                        title = item.name,
-                                        subtitle = "Artist",
-                                        imageUrl = item.imageUrl,
-                                        onClick = {
-//                                            navController.navigate(ScreenRoute.ArtistProfile.createRoute(item.id))
-                                        }
-                                    )
-                                }
-                                is LibraryItem.PlaylistItem -> {
-                                    CategoryItem(
-                                        title = item.name,
-                                        subtitle = "Playlist",
-                                        imageUrl = item.imageUrl,
-                                        onClick = {
-//                                            navController.navigate(ScreenRoute.Playlist.createRoute(item.id))
-                                        }
-                                    )
-                                }
-                                is LibraryItem.AlbumItem -> {
-                                    CategoryItem(
-                                        title = item.name,
-                                        subtitle = "Album • ${item.artistName}",
-                                        imageUrl = item.imageUrl,
-                                        onClick = {
-//                                            navController.navigate(ScreenRoute.Album.createRoute(item.id))
-                                        }
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                }
-            }
-        } else {
-            // Tabs
-            ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
+            // Search bar with Clear button and Filter
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                edgePadding = 0.dp,
-                divider = {},
-                containerColor = Color.Transparent,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                        color = MaterialTheme.colorScheme.primary
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search in Your Library") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search icon",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = {
+                                searchQuery = ""
+                                focusManager.clearFocus()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear search",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = 16.dp),
+                    singleLine = true,
+                    interactionSource = interactionSource,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            viewModel.searchContent(searchQuery)
+                            focusManager.clearFocus()
+                        }
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                if (searchQuery.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilterButton(
+                        selectedFilter = selectedFilter,
+                        filters = filters,
+                        onFilterSelected = { filter ->
+                            selectedFilter = filter
+                            viewModel.applyFilter(filter)
+                        }
                     )
                 }
-            ) {
-                tabs.forEachIndexed { index, tab ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        text = {
-                            Text(
-                                text = tab,
-                                color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 14.sp
+            }
+
+            // Content
+            if (searchQuery.isNotEmpty()) {
+                // Search Results
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when {
+                        isSongsLoading || isArtistsLoading || isPlaylistsLoading || isAlbumsLoading -> {
+                            LoadingScreen(
+                                message = "Searching your library...",
+                                animationRes = R.raw.home_loading
                             )
                         }
-                    )
-                }
-            }
-
-            // Pager content
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                when (page) {
-                    0 -> AllTab(
-                        favoriteSongs = favoriteSongs,
-                        artists = artists,
-                        playlists = playlists,
-                        albums = albums,
-                        onCategoryClick = { category ->
-                            when (category) {
-                                "Favourite Songs" -> navController.navigate(ScreenRoute.FavoriteSongs.route)
-                                "Artists" -> coroutineScope.launch { pagerState.animateScrollToPage(1) }
-                                "Playlists" -> coroutineScope.launch { pagerState.animateScrollToPage(2) }
-                                "Albums" -> coroutineScope.launch { pagerState.animateScrollToPage(3) }
+                        searchResults.isEmpty() -> {
+                            Text(
+                                text = "No results found",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 18.sp,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                items(searchResults) { item ->
+                                    when (item) {
+                                        is LibraryItem.SongData -> {
+                                            SongItem(
+                                                song = item.song,
+                                                onSongClick = {
+                                                    val songJson = Gson().toJson(item.song) ?: return@SongItem
+                                                    navController.navigate(
+                                                        ScreenRoute.SongDetails.createRoute(songJson, true)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                        is LibraryItem.ArtistData -> {
+                                            ArtistItem(
+                                                artist = item.artist,
+                                                onArtistClick = {
+                                                    val artistJson = Gson().toJson(item.artist) ?: return@ArtistItem
+                                                    navController.navigate(
+                                                        ScreenRoute.ArtistDetails.createRoute(artistJson)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                        is LibraryItem.PlaylistData -> {
+                                            PlaylistItem(
+                                                playlist = item.playlist,
+                                                onPlayerClick = {
+                                                    val playlistJson = Gson().toJson(item.playlist) ?: return@PlaylistItem
+                                                    navController.navigate(
+                                                        ScreenRoute.PlaylistDetails.createRoute(playlistJson)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                        is LibraryItem.AlbumData -> {
+                                            AlbumItem(
+                                                album = item.album,
+                                                onAlbumClick = {
+                                                    val albumJson = Gson().toJson(item.album) ?: return@AlbumItem
+                                                    navController.navigate(
+                                                        ScreenRoute.AlbumDetails.createRoute(albumJson)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
                             }
                         }
-                    )
-                    1 -> ArtistsTab(artists = artists, navController = navController)
-                    2 -> PlaylistsTab(playlists = playlists, navController = navController)
-                    3 -> AlbumsTab(albums = albums, navController = navController)
+                    }
+                }
+            } else {
+                // Tabs
+                ScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier.fillMaxWidth(),
+                    edgePadding = 0.dp,
+                    divider = {},
+                    containerColor = Color.Transparent,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        Tab(
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            },
+                            text = {
+                                Text(
+                                    text = tab,
+                                    color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // Pager content
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    when (page) {
+                        0 -> AllTab(
+                            favoriteSongs = favoriteSongs,
+                            artists = artists,
+                            playlists = playlists,
+                            albums = albums,
+                            isSongsLoading = isSongsLoading,
+                            isArtistsLoading = isArtistsLoading,
+                            isPlaylistsLoading = isPlaylistsLoading,
+                            isAlbumsLoading = isAlbumsLoading,
+                            onCategoryClick = { category ->
+                                when (category) {
+                                    "Favourite Songs" -> navController.navigate(ScreenRoute.FavoriteSongs.route)
+                                    "Artists" -> coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                                    "Playlists" -> coroutineScope.launch { pagerState.animateScrollToPage(2) }
+                                    "Albums" -> coroutineScope.launch { pagerState.animateScrollToPage(3) }
+                                }
+                            },
+                            navController = navController
+                        )
+                        1 -> ArtistsTab(
+                            artists = artists,
+                            isLoading = isArtistsLoading,
+                            navController = navController
+                        )
+                        2 -> PlaylistsTab(
+                            playlists = playlists,
+                            isLoading = isPlaylistsLoading,
+                            navController = navController
+                        )
+                        3 -> AlbumsTab(
+                            albums = albums,
+                            isLoading = isAlbumsLoading,
+                            navController = navController
+                        )
+                    }
                 }
             }
         }
@@ -355,241 +406,203 @@ fun LibraryScreen(
 @Composable
 fun AllTab(
     favoriteSongs: List<Song>,
-    artists: List<LibraryItem.ArtistItem>,
-    playlists: List<LibraryItem.PlaylistItem>,
-    albums: List<LibraryItem.AlbumItem>,
-    onCategoryClick: (String) -> Unit
+    artists: List<Artist>,
+    playlists: List<Playlist>,
+    albums: List<Album>,
+    isSongsLoading: Boolean,
+    isArtistsLoading: Boolean,
+    isPlaylistsLoading: Boolean,
+    isAlbumsLoading: Boolean,
+    onCategoryClick: (String) -> Unit,
+    navController: NavHostController
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp)
-    ) {
-        // Liked Songs Card
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 8.dp)
-                    .clickable { onCategoryClick("Favourite Songs") },
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isSongsLoading || isArtistsLoading || isPlaylistsLoading || isAlbumsLoading) {
+            LoadingScreen(
+                message = "Loading your library...",
+                animationRes = R.raw.home_loading
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.liked_song),
-                        contentDescription = "Liked Songs",
+                // Liked Songs Card
+                item {
+                    Card(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 8.dp)
+                            .clickable { onCategoryClick("Favourite Songs") },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.liked_song),
+                                contentDescription = "Liked Songs",
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Liked Songs",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+
+                // Artists Section
+                item {
                     Text(
-                        text = "Liked Songs",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Artists",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-            }
-        }
-
-        // Artists Section
-        item {
-            Text(
-                text = "Artists",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-        if (artists.isEmpty()) {
-            item {
-                Text(
-                    text = "No artists found",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                )
-            }
-        } else {
-            items(artists.take(3)) { artist ->
-                CategoryItem(
-                    title = artist.name,
-                    subtitle = "Artist",
-                    imageUrl = artist.imageUrl,
-                    onClick = {
-//                        navController.navigate(ScreenRoute.ArtistProfile.createRoute(artist.id))
-                    }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            if (artists.size > 3) {
-                item {
-                    TextButton(
-                        onClick = { onCategoryClick("Artists") },
-                        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                    ) {
+                if (artists.isEmpty()) {
+                    item {
                         Text(
-                            text = "See more..",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "No artists found",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
                         )
                     }
-                }
-            }
-        }
-
-        // Playlists Section
-        item {
-            Text(
-                text = "Playlists",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-        if (playlists.isEmpty()) {
-            item {
-                Text(
-                    text = "No playlists found",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                )
-            }
-        } else {
-            items(playlists.take(3)) { playlist ->
-                CategoryItem(
-                    title = playlist.name,
-                    subtitle = "Playlist",
-                    imageUrl = playlist.imageUrl,
-                    onClick = {
-//                        navController.navigate(ScreenRoute.Playlist.createRoute(playlist.id))
+                } else {
+                    items(artists.take(3)) { artist ->
+                        ArtistItem(
+                            artist = artist,
+                            onArtistClick = {
+                                val artistJson = Gson().toJson(artist) ?: return@ArtistItem
+                                navController.navigate(
+                                    ScreenRoute.ArtistDetails.createRoute(artistJson)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            if (playlists.size > 3) {
+                    if (artists.size > 3) {
+                        item {
+                            TextButton(
+                                onClick = { onCategoryClick("Artists") },
+                                modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
+                            ) {
+                                Text(
+                                    text = "See more..",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Playlists Section
                 item {
-                    TextButton(
-                        onClick = { onCategoryClick("Playlists") },
-                        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                    ) {
+                    Text(
+                        text = "Playlists",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+                if (playlists.isEmpty()) {
+                    item {
                         Text(
-                            text = "See more..",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "No playlists found",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
                         )
                     }
-                }
-            }
-        }
-
-        // Albums Section
-        item {
-            Text(
-                text = "Albums",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-        if (albums.isEmpty()) {
-            item {
-                Text(
-                    text = "No albums found",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                )
-            }
-        } else {
-            items(albums.take(3)) { album ->
-                CategoryItem(
-                    title = album.name,
-                    subtitle = "Album • ${album.artistName}",
-                    imageUrl = album.imageUrl,
-                    onClick = {
-//                        navController.navigate(ScreenRoute.Album.createRoute(album.id))
+                } else {
+                    items(playlists.take(3)) { playlist ->
+                        PlaylistItem(
+                            playlist = playlist,
+                            onPlayerClick = {
+                                val playlistJson = Gson().toJson(playlist) ?: return@PlaylistItem
+                                navController.navigate(
+                                    ScreenRoute.PlaylistDetails.createRoute(playlistJson)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            if (albums.size > 3) {
+                    if (playlists.size > 3) {
+                        item {
+                            TextButton(
+                                onClick = { onCategoryClick("Playlists") },
+                                modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
+                            ) {
+                                Text(
+                                    text = "See more..",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Albums Section
                 item {
-                    TextButton(
-                        onClick = { onCategoryClick("Albums") },
-                        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
-                    ) {
+                    Text(
+                        text = "Albums",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+                if (albums.isEmpty()) {
+                    item {
                         Text(
-                            text = "See more..",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "No albums found",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
                         )
                     }
+                } else {
+                    items(albums.take(3)) { album ->
+                        AlbumItem(
+                            album = album,
+                            onAlbumClick = {
+                                val albumJson = Gson().toJson(album) ?: return@AlbumItem
+                                navController.navigate(
+                                    ScreenRoute.AlbumDetails.createRoute(albumJson)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    if (albums.size > 3) {
+                        item {
+                            TextButton(
+                                onClick = { onCategoryClick("Albums") },
+                                modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
+                            ) {
+                                Text(
+                                    text = "See more..",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun CategoryItem(
-    title: String,
-    subtitle: String,
-    imageUrl: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = title,
-                modifier = Modifier
-                    .size(48.dp)
-                    .aspectRatio(1f)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop,
-                onError = { Log.e("LibraryScreen", "Failed to load image for $title") }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
         }
     }
@@ -630,30 +643,44 @@ fun FilterButton(
 }
 
 @Composable
-fun ArtistsTab(artists: List<LibraryItem.ArtistItem>, navController: NavHostController) {
+fun ArtistsTab(
+    artists: List<Artist>,
+    isLoading: Boolean,
+    navController: NavHostController
+) {
     Box(modifier = Modifier.fillMaxSize()) {
-        if (artists.isEmpty()) {
-            Text(
-                text = "No artists found",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(artists) { artist ->
-                    CategoryItem(
-                        title = artist.name,
-                        subtitle = "Artist",
-                        imageUrl = artist.imageUrl,
-                        onClick = {
-//                            navController.navigate(ScreenRoute.ArtistProfile.createRoute(artist.id))
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+        when {
+            isLoading -> {
+                LoadingScreen(
+                    message = "Loading artists...",
+                    animationRes = R.raw.home_loading
+                )
+            }
+            artists.isEmpty() -> {
+                Text(
+                    text = "No artists found",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 18.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(artists) { artist ->
+                        ArtistItem(
+                            artist = artist,
+                            onArtistClick = {
+                                val artistJson = Gson().toJson(artist) ?: return@ArtistItem
+                                navController.navigate(
+                                    ScreenRoute.ArtistDetails.createRoute(artistJson)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
@@ -661,30 +688,44 @@ fun ArtistsTab(artists: List<LibraryItem.ArtistItem>, navController: NavHostCont
 }
 
 @Composable
-fun PlaylistsTab(playlists: List<LibraryItem.PlaylistItem>, navController: NavHostController) {
+fun PlaylistsTab(
+    playlists: List<Playlist>,
+    isLoading: Boolean,
+    navController: NavHostController
+) {
     Box(modifier = Modifier.fillMaxSize()) {
-        if (playlists.isEmpty()) {
-            Text(
-                text = "No playlists found",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(playlists) { playlist ->
-                    CategoryItem(
-                        title = playlist.name,
-                        subtitle = "Playlist",
-                        imageUrl = playlist.imageUrl,
-                        onClick = {
-//                            navController.navigate(ScreenRoute.PlaylistDetails.createRoute(playlist.id))
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+        when {
+            isLoading -> {
+                LoadingScreen(
+                    message = "Loading playlists...",
+                    animationRes = R.raw.home_loading
+                )
+            }
+            playlists.isEmpty() -> {
+                Text(
+                    text = "No playlists found",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 18.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(playlists) { playlist ->
+                        PlaylistItem(
+                            playlist = playlist,
+                            onPlayerClick = {
+                                val playlistJson = Gson().toJson(playlist) ?: return@PlaylistItem
+                                navController.navigate(
+                                    ScreenRoute.PlaylistDetails.createRoute(playlistJson)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
@@ -692,30 +733,44 @@ fun PlaylistsTab(playlists: List<LibraryItem.PlaylistItem>, navController: NavHo
 }
 
 @Composable
-fun AlbumsTab(albums: List<LibraryItem.AlbumItem>, navController: NavHostController) {
+fun AlbumsTab(
+    albums: List<Album>,
+    isLoading: Boolean,
+    navController: NavHostController
+) {
     Box(modifier = Modifier.fillMaxSize()) {
-        if (albums.isEmpty()) {
-            Text(
-                text = "No albums found",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(albums) { album ->
-                    CategoryItem(
-                        title = album.name,
-                        subtitle = "Album • ${album.artistName}",
-                        imageUrl = album.imageUrl,
-                        onClick = {
-//                            navController.navigate(ScreenRoute.Album.createRoute(album.id))
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+        when {
+            isLoading -> {
+                LoadingScreen(
+                    message = "Loading albums...",
+                    animationRes = R.raw.home_loading
+                )
+            }
+            albums.isEmpty() -> {
+                Text(
+                    text = "No albums found",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 18.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(albums) { album ->
+                        AlbumItem(
+                            album = album,
+                            onAlbumClick = {
+                                val albumJson = Gson().toJson(album) ?: return@AlbumItem
+                                navController.navigate(
+                                    ScreenRoute.AlbumDetails.createRoute(albumJson)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
