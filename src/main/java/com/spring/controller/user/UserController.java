@@ -18,7 +18,7 @@ public class UserController {
     private final AlbumService albumService;
     private final UserSongCountService userSongCountService;
 
-    @GetMapping("/viewUserProfile")
+    @GetMapping("/viewUserProfile/{id}")
     public ResponseEntity<UserPresentation> viewAnotherUserProfile(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.viewUserProfile(id));
     }

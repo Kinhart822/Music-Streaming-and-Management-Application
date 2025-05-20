@@ -6,36 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserAlbumController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserAlbumController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserLikeFollowingDownloadController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserLikeFollowingDownloadController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserPlaylistController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/user/UserPlaylistController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/AlbumResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/AlbumResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ArtistPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/ArtistPresentation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/HistoryListenResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/HistoryListenResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/PlaylistResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/PlaylistResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/response/SearchArtistPresentation.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/Artist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/Artist.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/AlbumRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/AlbumRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistUserFollowRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/ArtistUserFollowRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/HistoryListenRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/HistoryListenRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/PlaylistRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/PlaylistRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/SongRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/SongRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserSavedAlbumRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserSavedAlbumRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserSavedPlaylistRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserSavedPlaylistRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/AccountService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/AccountService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/AlbumService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/AlbumService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/LikeFollowingDownloadService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/LikeFollowingDownloadService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/PlaylistService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/PlaylistService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/SongService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/SongService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AccountServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AlbumServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AlbumServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/LikeFollowingDownloadServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/LikeFollowingDownloadServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/PlaylistServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/PlaylistServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SearchServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SearchServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/UserSongCountServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/UserSongCountServiceImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -203,7 +174,7 @@
       <workItem from="1747022101745" duration="26304000" />
       <workItem from="1747277072186" duration="4770000" />
       <workItem from="1747365014865" duration="12795000" />
-      <workItem from="1747573627033" duration="32709000" />
+      <workItem from="1747573627033" duration="41182000" />
     </task>
     <servers />
   </component>
