@@ -1,4 +1,4 @@
-# Music Genre Classification based Lyrics
+# Music Genre Classification based on Lyrics
 
 ## ABSTRACT
 This branch gives a whole overview of the system, a tool designed to classify songs into genres based on their lyrics. I identify key features that represent different musical styles and categorize songs into five genres: Rock, Hip-Hop, Jazz, Country, and Pop. To achieve accurate classification, I explore two methods for embedding lyrical data before training the model:
@@ -159,9 +159,9 @@ Each of these models was trained and evaluated to determine the best-performing 
 
 The results are summarized in the table, where I compare the performance of models using both **TF-IDF vectors** and **Word2Vec embeddings**. I observe that **TF-IDF** provides better classification results. This may be attributed to the nature of the task, the order of words in the lyrics is less important than their presence. Since **TF-IDF** focuses on word frequency and importance rather than semantic relationships, it proves to be a more effective representation for genre classification.
 
-Among the models, **Random Forest** performed better than the other algorithms with an overall accuracy of 63% accuracy. **SVM** comes close second with 61% accuracy. While both **Logistic Regression** and **Naive Bayes (Multinomial Naive Bayes)** have the same accuracy which 60%, **Decision Tree** provide a poor performance which is 48% accuracy
+Among the models, **Random Forest** performed better than the other algorithms with an overall accuracy of 63%. **SVM** comes close second with 61% accuracy. While both **Logistic Regression** and **Naive Bayes (Multinomial Naive Bayes)** have the same accuracy which 60%, **Decision Tree** provide a poor performance which is 48% accuracy
 
-=> Reason why I choose Random Forest to be the classification model for this task: 
+=> Reason why I chose Random Forest to be the classification model for this task: 
 
 * Ability to handle noisy data effectively. Song lyrics often contain high levels of noise due to the repetition of common words and phrases. Additionally, certain words—such as "love",  "baby",  "heart",  and "known"—appear frequently across multiple genres, making it harder for a model to differentiate between them.
 * Unlike a single Decision Tree, which tends to overfit the data, Random Forest trains multiple decision trees on different subsets of the dataset. By averaging the predictions of these trees, Random Forest reduces overfitting and improves generalization, handling noisy text data like lyrics. This ensemble approach allows it to capture patterns that other models might miss, leading to its higher accuracy compared to Logistic Regression, Naïve Bayes, Decision Trees, and even SVM. 
@@ -172,7 +172,7 @@ Finally, I used `from sklearn.metrics import classification_report` to generate 
 
 ## Conclusion
 
-From the models that we developed and the experiments that we conducted we can say that the **Random Forest Model** performed significantly well compared to the other models. However, one major drawback of **Random Forest** is its high training time. Similarly, **SVM** also performed well but required a significant amount of training time, making it less efficient for large-scale applications. Additionally, as observed in the confusion matrix, while **Hip-Hop** was classified accurately, other genres were occasionally mislabeled due to similarities in lyrical content.
+From the models that I developed and the experiments that I conducted, I can say that the **Random Forest Model** performed significantly well compared to the other models. However, one major drawback of **Random Forest** is its high training time. Similarly, **SVM** also performed well but required a significant amount of training time, making it less efficient for large-scale applications. Additionally, as observed in the confusion matrix, while **Hip-Hop** was classified accurately, other genres were occasionally mislabeled due to similarities in lyrical content.
 
 Due to time constraints, I was only able to experiment with basic word embeddings such as **TF-IDF** and **Word2Vec** for music genre classification based on lyrics. However, there are several areas for improvement, such as:
 
