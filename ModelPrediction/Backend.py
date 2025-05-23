@@ -46,6 +46,7 @@ vectorizer_tfidf_similarity = TfidfVectorizer(use_idf=True)
 tfidf_matrix = None
 lyrics_hash = None
 process_pool = None  # ProcessPoolExecutor
+whisper_model = None  # Global Whisper model
 
 # Load spaCy English model
 nlp = spacy.load('en_core_web_sm')
@@ -61,7 +62,7 @@ logging.basicConfig(level=logging.INFO)
 # Lifespan event handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global vectorizer_tfidf, rf_model_train, tfidf_matrix, lyrics_hash, process_pool
+    global vectorizer_tfidf, rf_model_train, tfidf_matrix, lyrics_hash, process_pool, whisper_model
     logging.info("Starting up: Loading models and TF-IDF matrix...")
     # Log ffmpeg version
     try:
@@ -84,6 +85,24 @@ async def lifespan(app: FastAPI):
     except FileNotFoundError:
         lyrics_hash = None
 
+    # Load Whisper model
+    try:
+        logging.info("Loading Whisper model 'medium.en'...")
+        whisper_model = whisper.load_model("medium.en")
+        logging.info("Whisper model loaded successfully.")
+    except RuntimeError as e:
+        if "checksum does not match" in str(e):
+            logging.warning("Whisper model checksum mismatch. Clearing cache and retrying...")
+            cache_dir = os.path.expanduser("~/.cache/whisper")
+            if os.path.exists(cache_dir):
+                shutil.rmtree(cache_dir, ignore_errors=True)
+                logging.info(f"Cleared Whisper cache at {cache_dir}")
+            whisper_model = whisper.load_model("medium.en")
+            logging.info("Whisper model loaded successfully after cache clear.")
+        else:
+            logging.error(f"Failed to load Whisper model: {e}")
+            raise e
+
     # Initialize ProcessPoolExecutor
     max_workers = multiprocessing.cpu_count()  # Use the number of CPU cores
     process_pool = ProcessPoolExecutor(max_workers=max_workers)
@@ -95,6 +114,7 @@ async def lifespan(app: FastAPI):
     logging.info("Shutting down: Cleaning up resources...")
     shutil.rmtree("temp", ignore_errors=True)
     process_pool.shutdown(wait=True)
+    whisper_model = None  # Clear model reference
     logging.info("Shutdown complete.")
 
 
@@ -131,10 +151,27 @@ def safe_decode(output_bytes):
 
 # Define module-level functions for ProcessPoolExecutor
 def run_whisper_transcription(audio_path):
-    """Run Whisper transcription in a separate process."""
+    """Run Whisper transcription in a separate process using a global model or load if necessary."""
+    global whisper_model
     try:
-        model = whisper.load_model("medium.en")
-        result = model.transcribe(audio_path, fp16=False)
+        # Check if the model is available; if not, load it (for a new worker process)
+        if whisper_model is None:
+            logging.info("Whisper model not found in process. Loading 'medium.en'...")
+            try:
+                whisper_model = whisper.load_model("medium.en")
+                logging.info("Whisper model loaded successfully in process.")
+            except RuntimeError as e:
+                if "checksum does not match" in str(e):
+                    logging.warning("Whisper model checksum mismatch. Clearing cache and retrying...")
+                    cache_dir = os.path.expanduser("~/.cache/whisper")
+                    if os.path.exists(cache_dir):
+                        shutil.rmtree(cache_dir, ignore_errors=True)
+                        logging.info(f"Cleared Whisper cache at {cache_dir}")
+                    whisper_model = whisper.load_model("medium.en")
+                    logging.info("Whisper model loaded successfully after cache clear.")
+                else:
+                    raise e
+        result = whisper_model.transcribe(audio_path, fp16=False)
         lyrics = result["text"]
         if not lyrics.strip():
             logging.warning(f"Transcription produced empty lyrics: {audio_path}")
@@ -361,7 +398,6 @@ async def remove_silence(input_audio, output_audio, silence_threshold="-30dB", m
         return None
 
 
-# Rest of the code remains unchanged
 def load_remove(path_to_load):
     remove_list = set()
     with open(path_to_load, "r", encoding="utf-8") as file:
