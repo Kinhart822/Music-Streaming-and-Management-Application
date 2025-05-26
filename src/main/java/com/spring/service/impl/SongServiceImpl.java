@@ -1,19 +1,25 @@
 package com.spring.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spring.constants.*;
-import com.spring.dto.response.*;
-import org.springframework.context.event.EventListener;
+import com.spring.constants.ApiResponseCode;
+import com.spring.constants.CommonStatus;
+import com.spring.constants.SongStatus;
+import com.spring.constants.UserType;
 import com.spring.dto.SongUploadedEvent;
 import com.spring.dto.request.music.AdminAddSongRequest;
 import com.spring.dto.request.music.EditSongRequest;
 import com.spring.dto.request.music.SongUploadRequest;
+import com.spring.dto.response.ApiResponse;
+import com.spring.dto.response.FastApiResponse;
+import com.spring.dto.response.SongResponse;
+import com.spring.dto.response.SongUploadResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
 import com.spring.security.JwtHelper;
 import com.spring.service.CloudinaryService;
 import com.spring.service.FastApiService;
+import com.spring.service.NotificationService;
 import com.spring.service.SongService;
 import com.spring.utils.JavaFileToMultipartFile;
 import jakarta.annotation.PostConstruct;
@@ -22,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +69,7 @@ public class SongServiceImpl implements SongService {
     private final FastApiService fastApiService;
     private final JwtHelper jwtHelper;
     private final CloudinaryService cloudinaryService;
+    private final NotificationService notificationService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private static final Logger log = LoggerFactory.getLogger(SongServiceImpl.class);
 
@@ -237,6 +245,13 @@ public class SongServiceImpl implements SongService {
         }
     }
 
+    public void sendRejectedNotification(Song song, String reason) {
+        for (ArtistSong artistSong : song.getArtistSongs()) {
+            Long artistId = artistSong.getArtistSongId().getArtist().getId();
+            notificationService.notifyArtistSongRejected(artistId, song.getTitle(), reason);
+        }
+    }
+
     // TODO: Main function
     @Override
     public ApiResponse createDraftSong(SongUploadRequest songUploadRequest) {
@@ -370,6 +385,7 @@ public class SongServiceImpl implements SongService {
                         log.warn("❌ {}", message);
                         song.setSongStatus(SongStatus.DECLINED);
                         songRepository.save(song);
+                        sendRejectedNotification(song, "Song failed, your %s song match another song!" + song.getTitle());
                         return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
                     }
                 }
@@ -381,6 +397,7 @@ public class SongServiceImpl implements SongService {
                     log.warn("❌ {}", message);
                     song.setSongStatus(SongStatus.DECLINED);
                     songRepository.save(song);
+                    sendRejectedNotification(song, "Song failed, your %s song match another song!" + song.getTitle());
                     return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
                 }
 
@@ -395,10 +412,11 @@ public class SongServiceImpl implements SongService {
                             fastApiService.checkSimilarityBetweenLyricsAndAudio(song.getLyrics(), transcribedLyrics).getBody()
                     );
                     if (Boolean.TRUE.equals(checkResult.getIsNotMatch())) {
-                        message = "Song [" + song.getId() + "]: Lyrics and audio do not match.";
+                        message = "Song [" + song.getId() + "]: Lyrics ";
                         log.warn("⚠️ {}", message);
                         song.setSongStatus(SongStatus.DECLINED);
                         songRepository.save(song);
+                        sendRejectedNotification(song, "Song failed, your %s song's lyrics and audio do not match. Please try again!" + song.getTitle());
                         return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
                     }
                 }
@@ -419,6 +437,7 @@ public class SongServiceImpl implements SongService {
                         log.warn("⚠️ {}", message);
                         song.setSongStatus(SongStatus.DECLINED);
                         songRepository.save(song);
+                        sendRejectedNotification(song, "Song failed, your %s song match another song!" + song.getTitle());
                         return CompletableFuture.completedFuture(ApiResponse.ok("🎶 Processing failed", message));
                     }
                 }
@@ -464,6 +483,13 @@ public class SongServiceImpl implements SongService {
             song.setCountListener(0L);
             song.setLastModifiedDate(now);
             songRepository.save(song);
+            for (ArtistSong artistSong : song.getArtistSongs()) {
+                Long artistId = artistSong.getArtistSongId().getArtist().getId();
+                notificationService.notifyArtistSongAccepted(artistId, song.getTitle());
+                for (Long userId : artistUserFollowRepository.findByArtistId(artistId)) {
+                    notificationService.notifyUserNewSong(userId, artistId, song.getTitle());
+                }
+            }
             return ApiResponse.ok("Song accepted!");
         }
     }
@@ -482,6 +508,10 @@ public class SongServiceImpl implements SongService {
             song.setSongStatus(SongStatus.DECLINED);
             song.setLastModifiedDate(now);
             songRepository.save(song);
+            for (ArtistSong artistSong : song.getArtistSongs()) {
+                Long artistId = artistSong.getArtistSongId().getArtist().getId();
+                notificationService.notifyArtistSongDeclined(artistId, song.getTitle());
+            }
             return ApiResponse.ok("Song declined!");
         }
     }
@@ -635,7 +665,8 @@ public class SongServiceImpl implements SongService {
         return songs.stream()
                 .filter(p -> p.getSongStatus().equals(SongStatus.ACCEPTED))
                 .map(this::convertToSongResponse)
-                .collect(Collectors.toList());    }
+                .collect(Collectors.toList());
+    }
 
     @Override
     public List<SongResponse> getAllAcceptedSongsByAlbumId(Long albumId) {
@@ -666,7 +697,17 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public Long getNumberOfListener(Long songId) {
-        return userSongCountRepository.countDistinctUsersBySongId(songId);
+        Long numberOfListener = userSongCountRepository.countDistinctUsersBySongId(songId);
+        Song song = songRepository.findById(songId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        if (numberOfListener >= 10) {
+            for (ArtistSong artistSong : song.getArtistSongs()) {
+                Long artistId = artistSong.getArtistSongId().getArtist().getId();
+                notificationService.notifyArtistSongMilestone(artistId, song.getTitle(), 10L, "followers");
+            }
+        }
+
+        return numberOfListener;
     }
 
     @Override
@@ -693,7 +734,17 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public Long getNumberOfDownload(Long songId) {
-        return userSongDownloadRepository.countDistinctUsersBySongId(songId);
+        Long numberOfDownload = userSongDownloadRepository.countDistinctUsersBySongId(songId);
+        Song song = songRepository.findById(songId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+        if (numberOfDownload >= 10) {
+            for (ArtistSong artistSong : song.getArtistSongs()) {
+                Long artistId = artistSong.getArtistSongId().getArtist().getId();
+                notificationService.notifyArtistSongMilestone(artistId, song.getTitle(), 10L, "downloaded");
+            }
+        }
+
+        return numberOfDownload;
     }
 
     @Override
@@ -792,7 +843,7 @@ public class SongServiceImpl implements SongService {
     @Override
     public Long totalSongsByArtist() {
         Long artistId = jwtHelper.getIdUserRequesting();
-        return songRepository.findByArtistId(artistId).stream().count();
+        return (long) songRepository.findByArtistId(artistId).size();
     }
 
     @Override

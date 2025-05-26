@@ -10,8 +10,8 @@ import java.util.List;
 
 @Repository
 public interface ArtistUserFollowRepository extends JpaRepository<ArtistUserFollow, ArtistUserFollowId> {
-    @Query("SELECT asg.artistPlaylistId.playlist FROM ArtistPlaylist asg WHERE asg.artistPlaylistId.artist.id = :artistId")
-    List<Playlist> findByArtistId(@Param("artistId") Long artistId);
+    @Query("SELECT asg.artistUserFollowId.user.id FROM ArtistUserFollow asg WHERE asg.artistUserFollowId.artist.id = :artistId")
+    List<Long> findByArtistId(@Param("artistId") Long artistId);
 
     @Query("SELECT COUNT(DISTINCT usc.artistUserFollowId.user.id) FROM ArtistUserFollow usc WHERE usc.artistUserFollowId.artist.id = :artistId AND usc.artistUserFollowId.user.userType = 'USER'")
     Long countDistinctUsersByArtistId(@Param("artistId") Long artistId);

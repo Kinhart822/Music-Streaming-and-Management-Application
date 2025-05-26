@@ -22,7 +22,7 @@ public interface AccountService {
 
     Map<String, Boolean> checkOtp(CheckOtpRequest request);
 
-    List<Notification> findAllNotifications();
+    List<NotificationResponse> findAllNotifications();
 
     Long countArtists();
 

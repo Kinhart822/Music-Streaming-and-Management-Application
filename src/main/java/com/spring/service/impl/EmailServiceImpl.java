@@ -4,7 +4,6 @@ import com.spring.dto.response.Otp;
 import com.spring.entities.User;
 import com.spring.service.EmailService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

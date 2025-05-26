@@ -135,7 +135,7 @@ public class AccountController {
         TODO: Notification
      */
     @GetMapping("/notification")
-    public ResponseEntity<List<Notification>> findAllNotifications() {
+    public ResponseEntity<List<NotificationResponse>> findAllNotifications() {
         return ResponseEntity.ok(accountService.findAllNotifications());
     }
 

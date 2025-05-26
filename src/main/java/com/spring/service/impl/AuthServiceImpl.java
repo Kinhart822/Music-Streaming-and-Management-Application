@@ -6,6 +6,7 @@ import com.spring.dto.response.ApiResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.*;
 import com.spring.repository.RefreshTokenRepository;
+import com.spring.repository.UserNotificationTokenDeviceRepository;
 import com.spring.security.JwtUtil;
 import com.spring.service.AuthService;
 import com.spring.service.UserService;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserNotificationTokenDeviceRepository userNotificationTokenDeviceRepository;
 
     //TODO: Sign-in AND refresh
     @Override
@@ -52,9 +54,20 @@ public class AuthServiceImpl implements AuthService {
 
         User user = (User) userDetails;
         Map<String, String> response = new HashMap<>();
-        response.put("email", user.getEmail().toString());
+        response.put("email", user.getEmail());
         response.put(USER_TYPE, user.getUserType().toString());
         response.put(ACCESS_TOKEN_KEY, jwtUtil.generateAccessToken(userDetails));
+
+        // Save Device Token
+        if (!userNotificationTokenDeviceRepository.existsByUserId(user.getId())) {
+            if (user.getUserType() == UserType.USER) {
+                UserNotificationsTokenDevice tokenDevice = UserNotificationsTokenDevice.builder()
+                        .deviceToken(signInRequest.getDeviceToken())
+                        .user(user)
+                        .build();
+                userNotificationTokenDeviceRepository.save(tokenDevice);
+            }
+        }
 
         // Nếu user đã có refresh token, không cấp lại
         if (refreshTokenRepository.existsByUserAndStatus(user, CommonStatus.ACTIVE.getStatus())) {

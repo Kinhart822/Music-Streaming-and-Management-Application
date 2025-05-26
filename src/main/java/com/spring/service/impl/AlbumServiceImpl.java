@@ -14,6 +14,7 @@ import com.spring.repository.*;
 import com.spring.security.JwtHelper;
 import com.spring.service.AlbumService;
 import com.spring.service.CloudinaryService;
+import com.spring.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,8 @@ public class AlbumServiceImpl implements AlbumService {
     private final JwtHelper jwtHelper;
     private final CloudinaryService cloudinaryService;
     private final UserSavedAlbumRepository userSavedAlbumRepository;
+    private final ArtistUserFollowRepository artistUserFollowRepository;
+    private final NotificationService notificationService;
 
     @Override
     public AlbumResponse createAlbum(AlbumRequest request) {
@@ -481,6 +484,13 @@ public class AlbumServiceImpl implements AlbumService {
         album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.ACCEPTED);
         album.setLastModifiedDate(now);
         albumRepository.save(album);
+        for (ArtistAlbum artistAlbum : album.getArtistAlbums()) {
+            Long artistId = artistAlbum.getArtistAlbumId().getArtist().getId();
+            notificationService.notifyArtistAlbumAccepted(artistId, album.getAlbumName());
+            for (Long userId : artistUserFollowRepository.findByArtistId(artistId)) {
+                notificationService.notifyUserNewAlbum(userId, artistId, album.getAlbumName());
+            }
+        }
         return ApiResponse.ok("Playlist accepted!");
     }
 
@@ -499,6 +509,10 @@ public class AlbumServiceImpl implements AlbumService {
         album.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.DECLINED);
         album.setLastModifiedDate(now);
         albumRepository.save(album);
+        for (ArtistAlbum artistAlbum : album.getArtistAlbums()) {
+            Long artistId = artistAlbum.getArtistAlbumId().getArtist().getId();
+            notificationService.notifyArtistAlbumDeclined(artistId, album.getAlbumName());
+        }
         return ApiResponse.ok("Playlist declined!");
     }
 

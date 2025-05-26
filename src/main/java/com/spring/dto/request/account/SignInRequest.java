@@ -14,4 +14,7 @@ public class SignInRequest {
     @NotBlank
     @Size(min = 6, message = "Password must be at least 6 characters long and not blank")
     private String password;
+
+    @NotBlank
+    private String deviceToken;
 }

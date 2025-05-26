@@ -1,5 +1,6 @@
 package com.spring.entities;
 
+import com.spring.constants.TargetNotifications;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -29,6 +30,10 @@ public class Notification implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(name = "target_notifications")
+    @Enumerated(EnumType.STRING)
+    private TargetNotifications targetNotifications;  // ALL, Artist, User
 
     @CreatedDate
     @Column(updatable = false)

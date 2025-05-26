@@ -18,12 +18,14 @@ import com.spring.service.EmailService;
 import com.spring.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.text.RandomStringGenerator;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +39,6 @@ public class AccountServiceImpl implements AccountService {
     private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
     private final SongRepository songRepository;
-    private final UserSongCountRepository userSongCountRepository;
     private final ArtistUserFollowRepository artistUserFollowRepository;
     private final JwtHelper jwtHelper;
     private final PasswordEncoder passwordEncoder;
@@ -195,12 +196,27 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<Notification> findAllNotifications() {
+    public List<NotificationResponse> findAllNotifications() {
         Long userId = jwtHelper.getIdUserRequesting();
-        return notificationRepository.findAllByUserOrderByCreatedDateDesc(userRepository
-                .findById(userId)
-                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND.setDescription(String.format("User not found with id: %d", userId)))));
+        List<Notification> notifications = notificationRepository.findAllByUserOrderByCreatedDateDesc(
+                userRepository.findById(userId)
+                        .orElseThrow(() -> new BusinessException(
+                                ApiResponseCode.ENTITY_NOT_FOUND.setDescription(String.format("User not found with id: %d", userId)))
+                        )
+        );
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+        return notifications.stream()
+                .map(notification -> NotificationResponse.builder()
+                        .title(notification.getTitle())
+                        .content(notification.getContent())
+                        .createdDate(formatter.format(notification.getCreatedDate()))
+                        .build())
+                .collect(Collectors.toList());
     }
+
 
     @Override
     public Long countArtists() {
@@ -972,13 +988,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private void handleUserDeletion(User user) {
-        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
-        Instant now = dueDateInVietnam.toInstant();
-
-        user.setStatus(CommonStatus.DELETED.getStatus());
-        user.setLastModifiedBy(user.getId());
-        user.setLastModifiedDate(now);
-        userRepository.save(user); // Chỉ cập nhật trạng thái
+        userRepository.delete(user);
     }
 
     private void handleArtistDeletion(User user) {
@@ -999,19 +1009,6 @@ public class AccountServiceImpl implements AccountService {
         user.setLastModifiedBy(user.getId());
         user.setLastModifiedDate(now);
         userRepository.save(user);
-    }
-
-    @Scheduled(fixedRate = 5000)
-    public void deleteUsersMarkedAsDeleted() {
-        ZonedDateTime dueDateInVietnam = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusSeconds(60);
-        Instant now = dueDateInVietnam.toInstant();
-
-        Instant tenMinutesAgo = now.minus(Duration.ofMinutes(10));
-        List<User> usersToDelete = userRepository.findAllByStatusAndLastModifiedDateBefore(
-                CommonStatus.DELETED.getStatus(), tenMinutesAgo
-        );
-
-        userRepository.deleteAll(usersToDelete);
     }
 
     @Override

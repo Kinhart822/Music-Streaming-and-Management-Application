@@ -176,7 +176,7 @@ public class UserSongCountServiceImpl implements UserSongCountService {
                             .message(message)
                             .build();
                 })
-                .limit(3)
+                .limit(5)
                 .toList();
     }
 

@@ -12,6 +12,7 @@ import com.spring.exceptions.BusinessException;
 import com.spring.repository.*;
 import com.spring.security.JwtHelper;
 import com.spring.service.CloudinaryService;
+import com.spring.service.NotificationService;
 import com.spring.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,12 @@ public class PlaylistServiceImpl implements PlaylistService {
     private final UserSavedPlaylistRepository userSavedPlaylistRepository;
     private final ArtistRepository artistRepository;
     private final ArtistPlaylistRepository artistPlaylistRepository;
+    private final ArtistUserFollowRepository artistUserFollowRepository;
     private final SongRepository songRepository;
     private final UserRepository userRepository;
     private final JwtHelper jwtHelper;
     private final CloudinaryService cloudinaryService;
+    private final NotificationService notificationService;
 
     @Override
     public PlaylistResponse createPlaylist(PlaylistRequest request) {
@@ -491,6 +494,13 @@ public class PlaylistServiceImpl implements PlaylistService {
         playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.ACCEPTED);
         playlist.setLastModifiedDate(now);
         playlistRepository.save(playlist);
+        for (ArtistPlaylist artistPlaylist : playlist.getArtistPlaylists()) {
+            Long artistId = artistPlaylist.getArtistPlaylistId().getArtist().getId();
+            notificationService.notifyArtistPlaylistAccepted(artistId, playlist.getPlaylistName());
+            for (Long userId : artistUserFollowRepository.findByArtistId(artistId)) {
+                notificationService.notifyUserNewPlaylist(userId, artistId, playlist.getPlaylistName());
+            }
+        }
         return ApiResponse.ok("Playlist accepted!");
     }
 
@@ -509,6 +519,10 @@ public class PlaylistServiceImpl implements PlaylistService {
         playlist.setPlaylistAndAlbumStatus(PlaylistAndAlbumStatus.DECLINED);
         playlist.setLastModifiedDate(now);
         playlistRepository.save(playlist);
+        for (ArtistPlaylist artistPlaylist : playlist.getArtistPlaylists()) {
+            Long artistId = artistPlaylist.getArtistPlaylistId().getArtist().getId();
+            notificationService.notifyArtistPlaylistDeclined(artistId, playlist.getPlaylistName());
+        }
         return ApiResponse.ok("Playlist declined!");
     }
 
@@ -723,6 +737,6 @@ public class PlaylistServiceImpl implements PlaylistService {
     @Override
     public Long totalArtistPlaylists() {
         Long artistId = jwtHelper.getIdUserRequesting();
-        return playlistRepository.findByArtistId(artistId).stream().count();
+        return (long) playlistRepository.findByArtistId(artistId).size();
     }
 }
