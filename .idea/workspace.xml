@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="" />
+    <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment=" Done user realtime notifications only artist left">
+      <change afterPath="$PROJECT_DIR$/src/main/resources/musicnotifications-9b666-firebase-adminsdk-fbsvc-423cd59fe5.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -181,8 +184,17 @@
       <workItem from="1748102781140" duration="1000" />
       <workItem from="1748192916034" duration="85000" />
       <workItem from="1748193442571" duration="12000" />
-      <workItem from="1748235432014" duration="11772000" />
+      <workItem from="1748235432014" duration="12086000" />
     </task>
+    <task id="LOCAL-00001" summary=" Done user realtime notifications only artist left">
+      <option name="closed" value="true" />
+      <created>1748255910480</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1748255910480</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -198,6 +210,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value=" Done user realtime notifications only artist left" />
+    <option name="LAST_COMMIT_MESSAGE" value=" Done user realtime notifications only artist left" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
