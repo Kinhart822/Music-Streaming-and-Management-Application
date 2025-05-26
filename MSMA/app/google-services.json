@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616877216067",
+    "project_id": "musicnotifications-9b666",
+    "storage_bucket": "musicnotifications-9b666.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616877216067:android:bbc0cdc0dc8673e9679ff6",
+        "android_client_info": {
+          "package_name": "vn.edu.usth.msma"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARMohRHs9J-4E5cr7VsFzsZZBkMiCqOlM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

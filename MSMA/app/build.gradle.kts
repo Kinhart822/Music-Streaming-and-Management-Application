@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -125,6 +126,11 @@ dependencies {
     // Compose UI testing
     androidTestImplementation(platform(libs.androidx.compose.bom.v20250401))
     androidTestImplementation(libs.ui.test.junit4)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.analytics.ktx)
 
     // Additional
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

@@ -668,7 +668,7 @@ fun ArtistsTab(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 8.dp)
                 ) {
                     items(artists) { artist ->
                         ArtistItem(
@@ -713,7 +713,7 @@ fun PlaylistsTab(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 8.dp)
                 ) {
                     items(playlists) { playlist ->
                         PlaylistItem(
@@ -758,7 +758,7 @@ fun AlbumsTab(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 8.dp)
                 ) {
                     items(albums) { album ->
                         AlbumItem(

@@ -43,6 +43,7 @@ class PreferencesManager @Inject constructor(
         private val LAST_LOGIN_EMAIL = stringPreferencesKey("last_login_email")
         private val MINI_PLAYER_VISIBLE = booleanPreferencesKey("mini_player_visible")
         private val FAVORITE_SONGS = stringPreferencesKey("favorite_songs")
+        private val FCM_TOKEN_KEY = stringPreferencesKey("fcm_token")
     }
 
     // Cache for user-specific DataStores and their scopes
@@ -125,6 +126,79 @@ class PreferencesManager @Inject constructor(
         userDataStores.remove(safeEmail)
     }
 
+    suspend fun saveLastLoginEmail(email: String) {
+        appDataStore.edit { preferences ->
+            preferences[LAST_LOGIN_EMAIL] = email
+        }
+    }
+
+    suspend fun clearLastLoginEmail() {
+        appDataStore.edit { preferences ->
+            preferences.remove(LAST_LOGIN_EMAIL)
+        }
+    }
+
+    fun getLastLoginEmail(): Flow<String?> {
+        return appDataStore.data.map { preferences ->
+            preferences[LAST_LOGIN_EMAIL]
+        }
+    }
+
+    // Additional functions
+    val isMiniPlayerVisibleFlow: Flow<Boolean> = appDataStore.data.map { preferences ->
+        preferences[MINI_PLAYER_VISIBLE] == true
+    }
+
+    suspend fun setMiniPlayerVisible(visible: Boolean) {
+        appDataStore.edit { preferences ->
+            preferences[MINI_PLAYER_VISIBLE] = visible
+        }
+    }
+
+    suspend fun saveFcmToken(token: String) {
+        appDataStore.edit { preferences ->
+            preferences[FCM_TOKEN_KEY] = token
+        }
+    }
+
+    fun getFcmToken(): Flow<String?> {
+        return appDataStore.data.map { preferences ->
+            preferences[FCM_TOKEN_KEY]
+        }
+    }
+
+    suspend fun addToFavorites(songId: Long) {
+        appDataStore.edit { preferences ->
+            val currentFavorites = preferences[FAVORITE_SONGS]?.split(",")?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+            val newFavorites = currentFavorites + songId.toString()
+            preferences[FAVORITE_SONGS] = newFavorites.joinToString(",")
+        }
+        broadcastFavoriteChange(songId, true)
+    }
+
+    suspend fun removeFromFavorites(songId: Long) {
+        appDataStore.edit { preferences ->
+            val currentFavorites = preferences[FAVORITE_SONGS]?.split(",")?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+            val newFavorites = currentFavorites - songId.toString()
+            preferences[FAVORITE_SONGS] = newFavorites.joinToString(",")
+        }
+        broadcastFavoriteChange(songId, false)
+    }
+
+    private suspend fun broadcastFavoriteChange(songId: Long, isFavorite: Boolean) {
+        val intent = Intent("MUSIC_EVENT").apply {
+            putExtra("ACTION", if (isFavorite) "ADDED_TO_FAVORITES" else "REMOVED_FROM_FAVORITES")
+            putExtra("SONG_ID", songId)
+        }
+        context.sendBroadcast(intent)
+    }
+
+    suspend fun clearAll() {
+        val email = appDataStore.data.first()[CURRENT_USER_EMAIL_PREF]
+        email?.let { clearUserData(it) }
+        clearCurrentUser()
+    }
+
     // Logout: Clear all data except LAST_LOGIN_EMAIL
     @SuppressLint("ObsoleteSdkInt")
     suspend fun logout() {
@@ -192,65 +266,5 @@ class PreferencesManager @Inject constructor(
         // Cancel all scopes and clear the map
         userDataStores.values.forEach { it.scope.cancel() }
         userDataStores.clear()
-    }
-
-    suspend fun saveLastLoginEmail(email: String) {
-        appDataStore.edit { preferences ->
-            preferences[LAST_LOGIN_EMAIL] = email
-        }
-    }
-
-    suspend fun clearLastLoginEmail() {
-        appDataStore.edit { preferences ->
-            preferences.remove(LAST_LOGIN_EMAIL)
-        }
-    }
-
-    fun getLastLoginEmail(): Flow<String?> {
-        return appDataStore.data.map { preferences ->
-            preferences[LAST_LOGIN_EMAIL]
-        }
-    }
-
-    val isMiniPlayerVisibleFlow: Flow<Boolean> = appDataStore.data.map { preferences ->
-        preferences[MINI_PLAYER_VISIBLE] == true
-    }
-
-    suspend fun setMiniPlayerVisible(visible: Boolean) {
-        appDataStore.edit { preferences ->
-            preferences[MINI_PLAYER_VISIBLE] = visible
-        }
-    }
-
-    suspend fun addToFavorites(songId: Long) {
-        appDataStore.edit { preferences ->
-            val currentFavorites = preferences[FAVORITE_SONGS]?.split(",")?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
-            val newFavorites = currentFavorites + songId.toString()
-            preferences[FAVORITE_SONGS] = newFavorites.joinToString(",")
-        }
-        broadcastFavoriteChange(songId, true)
-    }
-
-    suspend fun removeFromFavorites(songId: Long) {
-        appDataStore.edit { preferences ->
-            val currentFavorites = preferences[FAVORITE_SONGS]?.split(",")?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
-            val newFavorites = currentFavorites - songId.toString()
-            preferences[FAVORITE_SONGS] = newFavorites.joinToString(",")
-        }
-        broadcastFavoriteChange(songId, false)
-    }
-
-    private suspend fun broadcastFavoriteChange(songId: Long, isFavorite: Boolean) {
-        val intent = Intent("MUSIC_EVENT").apply {
-            putExtra("ACTION", if (isFavorite) "ADDED_TO_FAVORITES" else "REMOVED_FROM_FAVORITES")
-            putExtra("SONG_ID", songId)
-        }
-        context.sendBroadcast(intent)
-    }
-
-    suspend fun clearAll() {
-        val email = appDataStore.data.first()[CURRENT_USER_EMAIL_PREF]
-        email?.let { clearUserData(it) }
-        clearCurrentUser()
     }
 }

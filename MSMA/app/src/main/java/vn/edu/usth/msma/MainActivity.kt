@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(tag, "onCreate called")
+
+        val userId = "123" // Replace with actual user ID from your auth system
+        FirebaseMessaging.getInstance().subscribeToTopic("user_$userId")
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    println("Subscribed to topic: user_$userId")
+                } else {
+                    println("Failed to subscribe to topic: user_$userId")
+                }
+            }
 
         // Check if there's a running music service and clear mini player if not
         lifecycleScope.launch {

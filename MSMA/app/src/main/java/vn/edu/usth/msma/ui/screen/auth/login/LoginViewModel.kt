@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vn.edu.usth.msma.data.PreferencesManager
@@ -82,10 +83,21 @@ class LoginViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true, loginError = null) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val response = apiService.getUnAuthApi().signIn(SignInRequest(email, password))
+                // Fetch FCM token
+                val fcmToken = preferencesManager.getFcmToken().first() ?: run {
+                    Log.w("LoginViewModel", "FCM token not available")
+                    null
+                }
+
+                val response = apiService.getUnAuthApi().signIn(
+                    SignInRequest(
+                        email, password,
+                        fcmToken.toString()
+                    )
+                )
                 if (response.isSuccessful && response.body() != null) {
                     val loginResponse = response.body()!!
-                    
+
                     // Save email if remember me is checked
                     if (_state.value.rememberMe) {
                         preferencesManager.saveLastLoginEmail(email)
@@ -100,11 +112,13 @@ class LoginViewModel @Inject constructor(
                     preferencesManager.saveIsLoggedIn(email, true)
                     preferencesManager.setCurrentUser(email)
 
-                    _state.update { it.copy(
-                        isLoading = false,
-                        isLoggedIn = true,
-                        loginError = null
-                    ) }
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isLoggedIn = true,
+                            loginError = null
+                        )
+                    }
                 } else {
                     val errorMessage = response.errorBody()?.string()?.let {
                         try {
@@ -114,7 +128,7 @@ class LoginViewModel @Inject constructor(
                             "Login failed"
                         }
                     } ?: "Login failed"
-                    
+
                     _state.update {
                         it.copy(
                             isLoading = false,

@@ -44,6 +44,15 @@
             android:foregroundServiceType="mediaPlayback"
             tools:ignore="ForegroundServicePermission" />
 
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name=".service.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".service.MusicActionReceiver"
             android:exported="false">
@@ -53,8 +62,6 @@
                 <action android:name="vn.edu.usth.msma.ACTION_PREVIOUS" />
                 <action android:name="vn.edu.usth.msma.ACTION_NEXT" />
                 <action android:name="vn.edu.usth.msma.ACTION_CLOSE" />
-<!--                <action android:name="vn.edu.usth.msma.ACTION_MINIMIZE" />-->
-<!--                <action android:name="vn.edu.usth.msma.ACTION_EXPAND" />-->
             </intent-filter>
         </receiver>
     </application>

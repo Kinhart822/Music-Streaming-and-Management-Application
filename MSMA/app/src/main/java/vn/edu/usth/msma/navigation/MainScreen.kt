@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,9 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -29,6 +32,7 @@ import vn.edu.usth.msma.data.Artist
 import vn.edu.usth.msma.data.Playlist
 import vn.edu.usth.msma.data.dto.response.management.GenreResponse
 import vn.edu.usth.msma.ui.components.ScreenRoute
+import vn.edu.usth.msma.ui.screen.notification.NotificationViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -36,6 +40,7 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun TopBar(
     screenTitle: String?,
+    hasUnreadNotifications: Boolean,
     onNotificationClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null
 ) {
@@ -70,7 +75,11 @@ fun TopBar(
             onNotificationClick?.let {
                 IconButton(onClick = it) {
                     Icon(
-                        imageVector = Icons.Filled.Notifications,
+                        imageVector = if (hasUnreadNotifications) {
+                            Icons.Filled.NotificationsActive
+                        } else {
+                            Icons.Filled.Notifications
+                        },
                         contentDescription = "Notifications",
                         modifier = Modifier.size(30.dp),
                         tint = MaterialTheme.colorScheme.onPrimary
@@ -87,6 +96,10 @@ fun MainScreen(
     isLoggedIn: Boolean,
     context: Context
 ) {
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
+    val notificationState = notificationViewModel.state.collectAsState().value
+    val hasUnreadNotifications = notificationState.unreadCount > 0
+
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = currentBackStackEntry?.destination?.route
 
@@ -186,6 +199,7 @@ fun MainScreen(
             if (showTopAndBottomBar) {
                 TopBar(
                     screenTitle = screenTitle,
+                    hasUnreadNotifications = hasUnreadNotifications,
                     onNotificationClick = if (currentRoute.startsWith(ScreenRoute.Genre.route) == false
                         && !isInNotificationScreen && !isInGenreScreen && !isInViewProfileScreen
                         && !isInEditProfileScreen && !isInChangePasswordScreen &&
@@ -194,7 +208,9 @@ fun MainScreen(
                         !isInTop15DownloadedScreen
                     ) {
                         {
+                            // Navigate to NotificationScreen and reset unread count
                             navController.navigate(ScreenRoute.NotificationScreen.route)
+                            notificationViewModel.resetUnreadCount()
                         }
                     } else null,
                     onBackClick = if (currentRoute.contains("genre") == true ||

@@ -11,16 +11,17 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Query
-import vn.edu.usth.msma.data.dto.request.profile.ChangePasswordRequest
 import vn.edu.usth.msma.data.dto.request.auth.CheckOtpRequest
 import vn.edu.usth.msma.data.dto.request.auth.NewPasswordRequest
 import vn.edu.usth.msma.data.dto.request.auth.SendOtpRequest
 import vn.edu.usth.msma.data.dto.request.auth.SignUpRequest
-import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
+import vn.edu.usth.msma.data.dto.request.profile.ChangePasswordRequest
 import vn.edu.usth.msma.data.dto.response.auth.ApiResponse
 import vn.edu.usth.msma.data.dto.response.auth.EmailExistenceResponse
 import vn.edu.usth.msma.data.dto.response.auth.OtpCheckResultResponse
 import vn.edu.usth.msma.data.dto.response.auth.OtpDueDateResponse
+import vn.edu.usth.msma.data.dto.response.management.HistoryListenResponse
+import vn.edu.usth.msma.data.dto.response.management.NotificationResponse
 import vn.edu.usth.msma.data.dto.response.profile.UserPresentation
 
 interface AccountApi {
@@ -62,4 +63,7 @@ interface AccountApi {
 
     @GET("/api/v1/account/viewHistoryListen")
     suspend fun viewHistoryListen(): Response<List<HistoryListenResponse>>
+
+    @GET("/api/v1/account/notification")
+    suspend fun getAllUserNotifications(): Response<List<NotificationResponse>>
 }
