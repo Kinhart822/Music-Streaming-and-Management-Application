@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -82,7 +83,11 @@ fun TopBar(
                         },
                         contentDescription = "Notifications",
                         modifier = Modifier.size(30.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        tint = if (hasUnreadNotifications) {
+                            Color(0xFFFFD700)
+                        } else {
+                            MaterialTheme.colorScheme.onPrimary
+                        }
                     )
                 }
             }
