@@ -1,4 +1,5 @@
-import { fetchWithRefresh } from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const menu = document.querySelector('.menu');
@@ -18,35 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileGender = document.getElementById('profile-gender');
     const profileDob = document.getElementById('profile-dob');
     const profilePhone = document.getElementById('profile-phone');
-
-    // Create notification element
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
+    const notificationList = document.querySelector('.notification-list');
 
     // Get current user email from sessionStorage
     const getCurrentUserEmail = () => {
@@ -63,6 +36,117 @@ document.addEventListener('DOMContentLoaded', () => {
     const setSidebarCollapsedState = (isCollapsed) => {
         const email = getCurrentUserEmail();
         localStorage.setItem(`sidebarCollapsed_${email}`, isCollapsed);
+    };
+
+    // Get cached notifications
+    const getCachedNotifications = () => {
+        const email = getCurrentUserEmail();
+        return JSON.parse(localStorage.getItem(`notifications_${email}`)) || { notifications: [], lastRead: null };
+    };
+
+    // Set cached notifications
+    const setCachedNotifications = (notifications, lastRead) => {
+        const email = getCurrentUserEmail();
+        localStorage.setItem(`notifications_${email}`, JSON.stringify({ notifications, lastRead }));
+    };
+
+    // Update notification dropdown
+    const updateNotificationDropdown = (notifications) => {
+        if (!notificationList) return;
+        notificationList.innerHTML = '';
+        if (notifications.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No notifications available';
+            notificationList.appendChild(li);
+            bell.classList.remove('active');
+            return;
+        }
+        notifications.forEach((notification, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <i class="ri-notification-3-line"></i>
+                <span>${notification.title}: ${notification.content}</span>
+                <small>${formatDate(notification.createdDate)}</small>
+            `;
+            notificationList.appendChild(li);
+        });
+        // Update bell icon based on unread notifications
+        const cached = getCachedNotifications();
+        const hasUnread = notifications.some(n => !cached.lastRead || new Date(n.createdDate) > new Date(cached.lastRead));
+        bell.classList.toggle('active', hasUnread);
+    };
+
+    // Format date for display
+    const formatDate = (dateString) => {
+        try {
+            // Split dateString into date and time parts
+            const [datePart, timePart] = dateString.split(' ');
+            const [day, month, year] = datePart.split('/');
+            const [hours, minutes] = timePart.split(':');
+
+            // Create a Date object (months are 0-based in JavaScript, so subtract 1)
+            const date = new Date(year, month - 1, day, hours, minutes);
+
+            // Validate date
+            if (isNaN(date.getTime())) {
+                throw new Error('Invalid date');
+            }
+
+            const now = new Date();
+            const diffInSeconds = (now - date) / 1000;
+
+            if (diffInSeconds < 60) return `${Math.floor(diffInSeconds)}s ago`;
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        } catch (error) {
+            console.error('Error parsing date:', error);
+            return 'Invalid date';
+        }
+    };
+    // Fetch notifications from API
+    const loadNotifications = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/notification', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to fetch notifications: ${response.status} - ${errorText}`);
+            }
+
+            let notifications = await response.json();
+            console.log('Fetched notifications:', notifications);
+
+            // Sort notifications by createdDate (descending)
+            notifications = notifications.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+
+            // Update dropdown
+            updateNotificationDropdown(notifications);
+
+            // Cache notifications
+            const cached = getCachedNotifications();
+            setCachedNotifications(notifications, cached.lastRead);
+
+            // Show a toast notification for the latest notification
+            if (notifications.length > 0) {
+                const latestNotification = notifications[0];
+                showNotification(`${latestNotification.title}: ${latestNotification.content}`);
+            }
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+            showNotification('Failed to load notifications. Using cached data.', true);
+            const cached = getCachedNotifications();
+            updateNotificationDropdown(cached.notifications);
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                sessionStorage.clear();
+                window.location.href = '../../../auth/login_register.html';
+            }
+        }
     };
 
     // Get user profile from localStorage
@@ -165,13 +249,27 @@ document.addEventListener('DOMContentLoaded', () => {
             updateProfileModal(savedProfile);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
 
-    // Load profile on a page load
-    loadProfile();
+    // Handle notificationsUpdate event
+    window.addEventListener('notificationsUpdate', (event) => {
+        console.log('Received notificationsUpdate event:', event.detail);
+        const newNotification = event.detail;
+        const cached = getCachedNotifications();
+        // Add new notification to the top of the list
+        cached.notifications.unshift(newNotification);
+        // Sort notifications by createdDate (descending)
+        cached.notifications = cached.notifications.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+        // Update cache
+        setCachedNotifications(cached.notifications, cached.lastRead);
+        // Update dropdown
+        updateNotificationDropdown(cached.notifications);
+        // Show toast notification
+        showNotification(`${newNotification.title}: ${newNotification.content}`);
+    });
 
     // Listen for profile updates
     window.addEventListener('profileUpdated', (event) => {
@@ -189,6 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProfileModal(mappedProfileData);
         setCachedProfile(mappedProfileData);
     });
+
+    // Load profile and notifications on page load
+    loadProfile();
+    loadNotifications();
 
     // Event listeners
     if (logoImg) {
@@ -212,6 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
             notificationDropdown?.classList.toggle('active');
             profileModal?.classList.remove('active');
             event.stopPropagation();
+            // Mark notifications as read
+            const cached = getCachedNotifications();
+            if (cached.notifications.length > 0) {
+                const lastNotificationDate = cached.notifications[0].createdDate; // Assuming sorted by date descending
+                setCachedNotifications(cached.notifications, lastNotificationDate);
+                bell.classList.remove('active');
+            }
         };
     }
 

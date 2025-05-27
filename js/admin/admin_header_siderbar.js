@@ -1,5 +1,3 @@
-import {fetchWithRefresh} from '/js/api/refresh.js';
-
 document.addEventListener('DOMContentLoaded', () => {
     // Profile elements
     const profile = document.querySelector('.profile');

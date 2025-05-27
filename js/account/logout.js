@@ -1,5 +1,5 @@
 // Import fetchWithRefresh from Refresh.js
-import { fetchWithRefresh } from '/js/api/refresh.js';
+import { fetchWithRefresh } from '../refresh.js';
 
 /**
  * Handle user logout by sending a request to the server and clearing sessionStorage

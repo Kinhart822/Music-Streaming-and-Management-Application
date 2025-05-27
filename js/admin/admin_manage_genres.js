@@ -1,4 +1,6 @@
-import { fetchWithRefresh } from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
+import {showConfirmModal} from "../confirmation.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -36,82 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalPages = 1;
     let totalElements = 0;
     let editId = null;
-
-    // Create notification element
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
-
-    // Create confirmation modal
-    const createConfirmModal = () => {
-        const modal = document.createElement('div');
-        modal.id = 'confirm-action-modal';
-        modal.className = 'modal';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <span class="close">×</span>
-                <h3 id="confirm-action-title">Confirm Action</h3>
-                <p id="confirm-action-message">Are you sure?</p>
-                <div class="button-group">
-                    <button id="confirm-action-btn">Confirm</button>
-                    <button class="cancel">Cancel</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        return modal;
-    };
-
-    // Show confirmation modal
-    const showConfirmModal = (title, message, onConfirm) => {
-        const confirmModal = document.getElementById('confirm-action-modal') || createConfirmModal();
-        const titleEl = confirmModal.querySelector('#confirm-action-title');
-        const messageEl = confirmModal.querySelector('#confirm-action-message');
-        const confirmBtn = confirmModal.querySelector('#confirm-action-btn');
-        const cancelBtn = confirmModal.querySelector('.cancel');
-        const closeBtn = confirmModal.querySelector('.close');
-
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        confirmModal.style.display = 'flex';
-
-        const closeModal = () => {
-            confirmModal.style.display = 'none';
-        };
-
-        confirmBtn.onclick = async () => {
-            await onConfirm();
-            closeModal();
-        };
-
-        cancelBtn.onclick = closeModal;
-        closeBtn.onclick = closeModal;
-    };
 
     // Utility Functions
     const debounce = (func, delay) => {
@@ -184,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             paginationDiv.innerHTML = '';
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
@@ -201,8 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to create genre: ${response.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             throw new Error(`Failed to create genre: ${error.message}`);
         }
@@ -220,8 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to update genre: ${response.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             throw new Error(`Failed to update genre: ${error.message}`);
         }
@@ -553,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showNotification(`Failed to ${genreForm.dataset.mode === 'edit' ? 'update' : 'create'} genre: ${error.message}`, true);
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
-                        window.location.href = '../auth/login_register.html';
+                        window.location.href = '../../../auth/login_register.html';
                     }
                 }
             }
@@ -602,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showNotification(`Failed to delete genre: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
+                                window.location.href = '../../../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -636,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('Failed to initialize. Please try again.', true);
         if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
             sessionStorage.clear();
-            window.location.href = '../auth/login_register.html';
+            window.location.href = '../../../auth/login_register.html';
         }
     });
 });

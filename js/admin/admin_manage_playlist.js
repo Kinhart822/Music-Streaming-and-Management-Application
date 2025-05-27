@@ -1,4 +1,6 @@
-import {fetchWithRefresh} from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
+import {showConfirmModal} from "../confirmation.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -19,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const songsContainer = document.getElementById('playlist-songs');
     const selectedSongsList = document.getElementById('selected-songs-list');
     const artistSearchInput = document.getElementById('artist-search');
-    const additionalArtistsContainer = document.getElementById('playlist-additional_artists');
+    const artistsContainer = document.getElementById('playlist-artists');
     const selectedArtistsList = document.getElementById('selected-artists-list');
     const artistsError = document.getElementById('artists-error');
     const imageInput = document.getElementById('playlist-image');
@@ -39,99 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let playlists = [];
     let selectedSongs = [];
     let selectedArtists = [];
-    let editPlaylistId = null;
     let currentPage = 1;
     let rowsPerPage = parseInt(rowsPerPageInput?.value) || 10;
     let currentFilterStatus = 'all';
-    let currentSort = 'name-asc';
+    let currentSort = 'title-asc';
     let searchQuery = '';
     let totalPages = 1;
     let totalElements = 0;
 
-    // Create notification element
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
-
-    // Create confirmation modal
-    const createConfirmModal = () => {
-        const modal = document.createElement('div');
-        modal.id = 'confirm-action-modal';
-        modal.className = 'modal';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <span class="close">×</span>
-                <h3 id="confirm-action-title">Confirm Action</h3>
-                <p id="confirm-action-message">Are you sure?</p>
-                <div class="button-group">
-                    <button id="confirm-action-btn">Confirm</button>
-                    <button class="cancel">Cancel</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        return modal;
-    };
-
-    // Show confirmation modal
-    const showConfirmModal = (title, message, onConfirm) => {
-        const confirmModal = document.getElementById('confirm-action-modal') || createConfirmModal();
-        const titleEl = confirmModal.querySelector('#confirm-action-title');
-        const messageEl = confirmModal.querySelector('#confirm-action-message');
-        const confirmBtn = confirmModal.querySelector('#confirm-action-btn');
-        const cancelBtn = confirmModal.querySelector('.cancel');
-        const closeBtn = confirmModal.querySelector('.close');
-
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        confirmModal.style.display = 'flex';
-
-        const closeModal = () => {
-            confirmModal.style.display = 'none';
-        };
-
-        confirmBtn.onclick = async () => {
-            await onConfirm();
-            closeModal();
-        };
-
-        cancelBtn.onclick = closeModal;
-        closeBtn.onclick = closeModal;
-    };
-
     // Utility Functions
-    const formatDuration = (seconds) => {
-        if (!seconds || isNaN(seconds)) return '0:00';
-        const minutes = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-    };
-
     const debounce = (func, delay) => {
         let timeoutId;
         return (...args) => {
@@ -140,10 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
+    const formatDuration = (seconds) => {
+        if (!seconds || isNaN(seconds)) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
     const mapSortToApi = (sort) => {
         switch (sort) {
-            case 'name-asc': return { orderBy: 'title', order: 'asc' };
-            case 'name-desc': return { orderBy: 'title', order: 'desc' };
+            case 'title-asc': return { orderBy: 'title', order: 'asc' };
+            case 'title-desc': return { orderBy: 'title', order: 'desc' };
             case 'date-asc': return { orderBy: 'releaseDate', order: 'asc' };
             case 'date-desc': return { orderBy: 'releaseDate', order: 'desc' };
             default: return { orderBy: 'title', order: 'asc' };
@@ -153,15 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Functions
     const fetchSongs = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/song/allAcceptedSong', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/song/allAcceptedSong', {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch songs: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to fetch songs: ${response.status}`);
 
             const data = await response.json();
             songs = data.map(song => ({
@@ -193,40 +115,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
 
     const fetchArtists = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/otherArtists', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/allActiveArtists', {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch artists: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to fetch artists: ${response.status}`);
 
             const data = await response.json();
             artists = data.map(artist => ({
                 id: artist.id,
                 name: artist.artistName?.trim() || 'Unknown'
             }));
-            if (additionalArtistsContainer && selectedArtistsList) {
+            if (artistsContainer && selectedArtistsList) {
                 populateArtists(selectedArtists);
             }
         } catch (error) {
             console.error('Error fetching artists:', error);
             showNotification('Failed to load artists.', true);
-            if (additionalArtistsContainer) {
-                additionalArtistsContainer.innerHTML = '<div class="no-artists-text">Failed to load artists.</div>';
+            if (artistsContainer) {
+                artistsContainer.innerHTML = '<div class="no-artists-text">Failed to load artists.</div>';
             }
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
@@ -243,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/artistPlaylists', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/playlists', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -258,9 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            console.log('API Response:', data); // Debug log
-
-            // Check if data.playlists exists and is an array
             if (!data || !Array.isArray(data.playlists)) {
                 throw new Error('Invalid API response: playlists is not an array');
             }
@@ -283,19 +199,19 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTable();
         } catch (error) {
             console.error('Error fetching playlists:', error);
-            showNotification('Unable to load playlists. Please try again later or contact support.', true);
+            showNotification('Unable to load playlists. Please try again.', true);
             playlistTableBody.innerHTML = `<tr><td colspan="9"><span class="no-playlists">Unable to load playlists. Please try again later or contact support.</span></td></tr>`;
             paginationDiv.innerHTML = '';
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
 
     const createPlaylist = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/playlist/create', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/playlist/create', {
                 method: 'POST',
                 body: formData
             });
@@ -305,62 +221,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to create playlist: ${response.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             throw new Error(`Failed to create playlist: ${error.message}`);
         }
     };
 
-    const updatePlaylist = async (id, formData) => {
-        try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/playlist/update/${id}`, {
-                method: 'PUT',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to update playlist: ${response.status} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            throw new Error(`Failed to update playlist: ${error.message}`);
-        }
-    };
-
     const publishPlaylist = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/playlist/upload/${id}`, {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/playlist/publish/${id}`, {
                 method: 'POST',
-                headers: {'Accept': 'application/json'}
+                headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to publish playlist: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to publish playlist: ${response.status}`);
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             throw new Error(`Failed to publish playlist: ${error.message}`);
         }
     };
 
-    const deletePlaylist = async (id) => {
+    const declinePlaylist = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/playlist/delete/${id}`, {
-                method: 'DELETE',
-                headers: {'Accept': 'application/json'}
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/playlist/decline/${id}`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to delete playlist: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to decline playlist: ${response.status}`);
+
+            return await response.json();
+        } catch (error) {
+            throw new Error(`Failed to decline playlist: ${error.message}`);
+        }
+    };
+
+    const deletePlaylist = async (id) => {
+        try {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/playlist/delete/${id}`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Failed to delete playlist: ${response.status}`);
         } catch (error) {
             throw new Error(`Failed to delete playlist: ${error.message}`);
         }
@@ -462,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const populateArtists = (preSelectedArtistIds = []) => {
-        if (!additionalArtistsContainer || !artistSearchInput) return;
+        if (!artistsContainer || !artistSearchInput) return;
         if (preSelectedArtistIds.length && !selectedArtists.length) {
             selectedArtists = [...preSelectedArtistIds];
         }
@@ -472,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? artists.filter(artist => artist.name.toLowerCase().includes(query))
             : artists;
 
-        additionalArtistsContainer.innerHTML = filteredArtists.length
+        artistsContainer.innerHTML = filteredArtists.length
             ? filteredArtists.reduce((html, artist, i) => {
                 if (i % 2 === 0) html += '<div class="artist-row">';
                 html += `
@@ -488,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, '')
             : '<div class="no-artists-text">No artists available</div>';
 
-        additionalArtistsContainer.querySelectorAll('.artist-item[data-artist-id]').forEach(item => {
+        artistsContainer.querySelectorAll('.artist-item[data-artist-id]').forEach(item => {
             item.addEventListener('dblclick', () => {
                 const artistId = Number(item.dataset.artistId);
                 selectedArtists = selectedArtists.includes(artistId)
@@ -522,41 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (songsError) songsError.style.display = 'none';
         if (artistsError) artistsError.style.display = 'none';
         if (imageError) imageError.style.display = 'none';
-        editPlaylistId = null;
-        fetchSongs();
-        fetchArtists();
-    };
-
-    const populateEditForm = (playlist) => {
-        if (!playlistForm || !addPlaylistForm) {
-            showNotification('Error: Form not found.', true);
-            return;
-        }
-        playlistForm.dataset.mode = 'edit';
-        formTitle.textContent = 'Edit Playlist';
-        titleInput.value = playlist.playlistName || '';
-        descriptionTextarea.value = playlist.description || '';
-        songSearchInput.value = '';
-        artistSearchInput.value = '';
-
-        selectedSongs = (playlist.songs || []).map(title => {
-            const song = songs.find(s => s.title === title);
-            return song ? song.id : null;
-        }).filter(id => id !== null);
-        selectedArtists = (playlist.artistNameList || []).map(name => {
-            const artist = artists.find(a => a.name === name);
-            return artist ? artist.id : null;
-        }).filter(id => id !== null);
-        imageInput.value = '';
-        imagePreview.style.display = playlist.imageUrl ? 'block' : 'none';
-        imagePreview.src = playlist.imageUrl || '';
-        currentImageDiv.textContent = playlist.imageUrl ? `Current image: ${playlist.imageUrl}` : '';
-        if (titleError) titleError.style.display = 'none';
-        if (songsError) songsError.style.display = 'none';
-        if (artistsError) artistsError.style.display = 'none';
-        if (imageError) imageError.style.display = 'none';
-        editPlaylistId = playlist.id;
-        addPlaylistForm.classList.add('active');
+        titleInput.required = true;
+        descriptionTextarea.required = true;
+        imageInput.required = true;
         fetchSongs();
         fetchArtists();
     };
@@ -564,11 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderTable = () => {
         if (!playlistTableBody || !paginationDiv) return;
 
-        let filteredPlaylists = currentFilterStatus !== 'all'
-            ? playlists.filter(p => p.status.toLowerCase() === currentFilterStatus)
-            : playlists;
+        const filteredPlaylists = currentFilterStatus === 'all'
+            ? playlists
+            : playlists.filter(playlist => playlist.status.toLowerCase() === currentFilterStatus);
 
-        playlistTableBody.innerHTML = filteredPlaylists.length > 0
+        playlistTableBody.innerHTML = filteredPlaylists.length
             ? filteredPlaylists.map(playlist => `
                 <tr>
                     <td class="image">
@@ -592,17 +464,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                     <td class="status ${playlist.status.toLowerCase()}">${playlist.status.charAt(0).toUpperCase() + playlist.status.slice(1)}</td>
                     <td>
-                        ${playlist.status === 'draft' || playlist.status === 'edited'
+                        ${playlist.status === 'pending'
                 ? `
                                 <button class="publish" data-id="${playlist.id}" title="Publish">Publish</button>
-                                <button class="edit" data-id="${playlist.id}" title="Edit">Edit</button>
+                                <button class="decline" data-id="${playlist.id}" title="Decline">Decline</button>
                                 <button class="delete" data-id="${playlist.id}" title="Delete">Delete</button>
                             `
-                : playlist.status === 'accepted' || playlist.status === 'declined'
-                    ? `
-                                <button class="edit" data-id="${playlist.id}" title="Edit">Edit</button>
-                                <button class="delete" data-id="${playlist.id}" title="Delete">Delete</button>
-                            `
+                : playlist.status === 'accepted'
+                    ? `<button class="delete" data-id="${playlist.id}" title="Delete">Delete</button>`
                     : 'None'
             }
                     </td>
@@ -628,8 +497,11 @@ document.addEventListener('DOMContentLoaded', () => {
         paginationDiv.appendChild(prevButton);
 
         const maxPagesToShow = 5;
-        const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
 
         if (startPage > 1) {
             const firstPage = document.createElement('span');
@@ -677,34 +549,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Event Listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            searchQuery = searchInput.value.trim();
+            currentPage = 1;
+            fetchPlaylists();
+        }, 300));
+    }
+
     if (imageInput) {
         imageInput.addEventListener('change', () => {
             const file = imageInput.files[0];
-            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
             if (file) {
-                if (!allowedImageTypes.includes(file.type)) {
-                    if (imageError) {
-                        imageError.textContent = 'Only image files (JPG, PNG, GIF, WEBP, BMP, TIFF, SVG) are allowed';
-                        imageError.style.display = 'block';
-                    }
-                    imagePreview.style.display = 'none';
+                if (!validTypes.includes(file.type)) {
+                    currentImageDiv.textContent = '';
                     imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                    imageError.textContent = 'Only JPG, PNG, GIF, WEBP, BMP, TIFF, or SVG files are allowed';
+                    imageError.style.display = 'block';
                 } else if (file.size > 5 * 1024 * 1024) {
-                    if (imageError) {
-                        imageError.textContent = 'Image file size exceeds 5MB';
-                        imageError.style.display = 'block';
-                    }
-                    imagePreview.style.display = 'none';
+                    currentImageDiv.textContent = '';
                     imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                    imageError.textContent = 'Image file size exceeds 5MB';
+                    imageError.style.display = 'block';
                 } else {
+                    currentImageDiv.textContent = `Selected: ${file.name}`;
                     imagePreview.src = URL.createObjectURL(file);
                     imagePreview.style.display = 'block';
-                    if (imageError) imageError.style.display = 'none';
+                    imageError.style.display = 'none';
                 }
             } else {
-                imagePreview.style.display = 'none';
+                currentImageDiv.textContent = '';
                 imagePreview.src = '';
-                if (imageError) imageError.style.display = 'none';
+                imagePreview.style.display = 'none';
+                imageError.style.display = 'none';
             }
         });
     }
@@ -724,13 +604,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addPlaylistBtn) {
         addPlaylistBtn.addEventListener('click', () => {
             resetForm('add');
-            if (addPlaylistForm) addPlaylistForm.classList.add('active');
+            addPlaylistForm.classList.add('active');
         });
     }
 
     if (cancelAddPlaylistBtn) {
         cancelAddPlaylistBtn.addEventListener('click', () => {
-            if (addPlaylistForm) addPlaylistForm.classList.remove('active');
+            addPlaylistForm.classList.remove('active');
             resetForm('add');
         });
     }
@@ -752,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (rowsPerPageInput) {
-        const updateRowsPerPage = debounce(() => {
+        rowsPerPageInput.addEventListener('input', debounce(() => {
             const value = parseInt(rowsPerPageInput.value);
             if (isNaN(value) || value < 1) {
                 rowsPerPageInput.value = rowsPerPage || 10;
@@ -764,15 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 rowsPerPage = value;
             }
-            currentPage = 1;
-            fetchPlaylists();
-        }, 300);
-        rowsPerPageInput.addEventListener('input', updateRowsPerPage);
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(() => {
-            searchQuery = searchInput.value.trim();
             currentPage = 1;
             fetchPlaylists();
         }, 300));
@@ -788,74 +659,80 @@ document.addEventListener('DOMContentLoaded', () => {
             if (artistsError) artistsError.style.display = 'none';
             if (imageError) imageError.style.display = 'none';
 
-            const title = titleInput?.value.trim() || '';
+            const title = titleInput.value.trim();
             if (!title) {
-                if (titleError) {
-                    titleError.textContent = 'Please enter a valid title';
-                    titleError.style.display = 'block';
-                }
+                titleError.textContent = 'Please enter a valid title';
+                titleError.style.display = 'block';
                 isValid = false;
             }
 
-            if (selectedSongs.length > 0) {
-                const invalidSongs = selectedSongs.filter(songId => {
-                    const song = songs.find(s => s.id === songId);
+            const description = descriptionTextarea.value.trim();
+            if (!description) {
+                titleError.textContent = 'Please enter a description';
+                titleError.style.display = 'block';
+                isValid = false;
+            }
+
+            if (selectedSongs.length === 0) {
+                songsError.textContent = 'Please select at least one accepted song';
+                songsError.style.display = 'block';
+                isValid = false;
+            } else {
+                const invalidSongs = selectedSongs.filter(id => {
+                    const song = songs.find(s => s.id === id);
                     return !song || song.status.toLowerCase() !== 'accepted';
                 });
-                if (invalidSongs.length) {
-                    if (songsError) {
-                        songsError.textContent = 'All selected songs must have Accepted status';
-                        songsError.style.display = 'block';
-                    }
+                if (invalidSongs.length > 0) {
+                    songsError.textContent = 'All selected songs must have Accepted status';
+                    songsError.style.display = 'block';
                     isValid = false;
                 }
             }
 
-            const image = imageInput?.files[0];
-            let imageName = editPlaylistId ? (playlists.find(p => p.id === editPlaylistId)?.imageUrl || '') : '';
-            if (image) {
-                if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'].includes(image.type)) {
-                    if (imageError) {
-                        imageError.textContent = 'Only image files (JPG, PNG, GIF, WEBP, BMP, TIFF, SVG) are allowed';
-                        imageError.style.display = 'block';
-                    }
+            if (selectedArtists.length === 0) {
+                artistsError.textContent = 'Please select at least one artist';
+                artistsError.style.display = 'block';
+                isValid = false;
+            }
+
+            const image = imageInput.files[0];
+            if (!image) {
+                imageError.textContent = 'Please select an image file';
+                imageError.style.display = 'block';
+                isValid = false;
+            } else {
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
+                if (!validTypes.includes(image.type)) {
+                    imageError.textContent = 'Only JPG, PNG, GIF, WEBP, BMP, TIFF, or SVG files are allowed';
+                    imageError.style.display = 'block';
                     isValid = false;
                 } else if (image.size > 5 * 1024 * 1024) {
-                    if (imageError) {
-                        imageError.textContent = 'Image file size exceeds 5MB';
-                        imageError.style.display = 'block';
-                    }
+                    imageError.textContent = 'Image file size exceeds 5MB';
+                    imageError.style.display = 'block';
                     isValid = false;
-                } else {
-                    imageName = image.name;
                 }
             }
 
             if (isValid) {
                 const formData = new FormData();
                 formData.append('playlistName', title);
-                formData.append('description', descriptionTextarea?.value.trim() || '');
+                formData.append('description', description);
                 selectedSongs.forEach(songId => formData.append('songIds', songId));
                 selectedArtists.forEach(artistId => formData.append('artistIds', artistId));
-                if (image) formData.append('image', image);
+                formData.append('image', image);
 
                 try {
-                    if (editPlaylistId) {
-                        await updatePlaylist(editPlaylistId, formData);
-                        showNotification(`Playlist "${title}" updated successfully.`);
-                    } else {
-                        await createPlaylist(formData);
-                        showNotification(`Playlist "${title}" created successfully.`);
-                    }
+                    await createPlaylist(formData);
+                    showNotification(`Playlist "${title}" created successfully.`);
                     if (addPlaylistForm) addPlaylistForm.classList.remove('active');
                     resetForm('add');
                     currentPage = 1;
                     await fetchPlaylists();
                 } catch (error) {
-                    showNotification(`Failed to ${editPlaylistId ? 'update' : 'save'} playlist: ${error.message}`, true);
+                    showNotification(`Failed to save playlist: ${error.message}`, true);
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
-                        window.location.href = '../auth/login_register.html';
+                        window.location.href = '../../../auth/login_register.html';
                     }
                 }
             }
@@ -864,17 +741,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (playlistTableBody) {
         playlistTableBody.addEventListener('click', async (e) => {
+            e.preventDefault();
             const id = Number(e.target.dataset.id);
             if (!id) return;
 
-            e.preventDefault();
             const playlist = playlists.find(p => p.id === id);
             if (!playlist) {
                 showNotification('Error: Playlist not found.', true);
                 return;
             }
 
-            if (e.target.classList.contains('view-songs') && contentModal && modalContentBody && modalTitle) {
+            if (e.target.classList.contains('view-songs')) {
+                const playlistSongs = songs.filter(song => playlist.songs.includes(song.title));
                 modalTitle.textContent = `Songs in ${playlist.playlistName}`;
                 modalContentBody.innerHTML = `
                     <table>
@@ -887,25 +765,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             </tr>
                         </thead>
                         <tbody>
-                            ${playlist.songs.length
-                    ? playlist.songs.map(title => {
-                        const song = songs.find(s => s.title === title) || {};
-                        return `
-                                        <tr>
-                                            <td>${title}</td>
-                                            <td>${song.genreNameList?.join(', ') || 'Unknown'}</td>
-                                            <td>${song.duration || '0:00'}</td>
-                                            <td class="status ${song.status?.toLowerCase() || 'draft'}">${(song.status || 'draft').charAt(0).toUpperCase() + (song.status || 'draft').slice(1)}</td>
-                                        </tr>
-                                    `;
-                    }).join('')
-                    : '<tr><td colspan="4">No songs found.</td></tr>'
-                }
+                            ${playlistSongs.length
+                    ? playlistSongs.map(song => `
+                                    <tr>
+                                        <td>${song.title || 'Unknown'}</td>
+                                        <td>${song.genreNameList.join(', ') || 'Unknown'}</td>
+                                        <td>${song.duration || '0:00'}</td>
+                                        <td class="status ${song.status?.toLowerCase() || 'draft'}">${(song.status || 'draft').charAt(0).toUpperCase() + (song.status || 'draft').slice(1)}</td>
+                                    </tr>
+                                `).join('')
+                    : '<tr><td colspan="4" class="no-songs-found-modal">No songs found.</td></tr>'}
                         </tbody>
                     </table>
                 `;
                 contentModal.style.display = 'flex';
-            } else if (e.target.classList.contains('view-description') && contentModal && modalContentBody && modalTitle) {
+            } else if (e.target.classList.contains('view-description')) {
                 modalTitle.textContent = `Description of ${playlist.playlistName}`;
                 modalContentBody.innerHTML = `
                     <textarea class="lyrics-content" readonly placeholder="No description available">${playlist.description || ''}</textarea>
@@ -920,13 +794,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             e.target.disabled = true;
                             e.target.textContent = 'Publishing...';
                             await publishPlaylist(id);
-                            showNotification(`Playlist "${playlist.playlistName}" published and status changed to Pending.`);
+                            showNotification(`Playlist "${playlist.playlistName}" published successfully.`);
                             await fetchPlaylists();
                         } catch (error) {
                             showNotification(`Failed to publish playlist: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
+                                window.location.href = '../../../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -934,8 +808,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 );
-            } else if (e.target.classList.contains('edit')) {
-                populateEditForm(playlist);
+            } else if (e.target.classList.contains('decline')) {
+                showConfirmModal(
+                    'Confirm Decline',
+                    `Are you sure you want to decline "${playlist.playlistName}"?`,
+                    async () => {
+                        try {
+                            e.target.disabled = true;
+                            e.target.textContent = 'Declining...';
+                            await declinePlaylist(id);
+                            showNotification(`Playlist "${playlist.playlistName}" declined successfully.`);
+                            await fetchPlaylists();
+                        } catch (error) {
+                            showNotification(`Failed to decline playlist: ${error.message}`, true);
+                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                                sessionStorage.clear();
+                                window.location.href = '../../../auth/login_register.html';
+                            }
+                        } finally {
+                            e.target.disabled = false;
+                            e.target.textContent = 'Decline';
+                        }
+                    }
+                );
             } else if (e.target.classList.contains('delete')) {
                 showConfirmModal(
                     'Confirm Delete',
@@ -951,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showNotification(`Failed to delete playlist: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
+                                window.location.href = '../../../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -963,14 +858,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (closeModal && contentModal && modalContentBody) {
+    if (closeModal && contentModal) {
         closeModal.addEventListener('click', () => {
             contentModal.style.display = 'none';
             modalContentBody.innerHTML = '';
         });
     }
 
-    if (contentModal && modalContentBody) {
+    if (contentModal) {
         window.addEventListener('click', (e) => {
             if (e.target === contentModal) {
                 contentModal.style.display = 'none';
@@ -980,16 +875,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize
-    Promise.all([fetchSongs(), fetchArtists(), fetchPlaylists()])
+    Promise.all([fetchPlaylists(), fetchSongs(), fetchArtists()])
         .then(() => {
-            if (playlistForm) resetForm('add');
+            resetForm('add');
         })
         .catch(error => {
             console.error('Initialization error:', error);
             showNotification('Failed to initialize. Please try again.', true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         });
 });

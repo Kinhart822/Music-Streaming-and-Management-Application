@@ -1,4 +1,6 @@
-import { fetchWithRefresh } from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
+import {showConfirmModal} from "../confirmation.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelAddAlbumBtn = document.getElementById('cancel-add-album');
     const titleInput = document.getElementById('album-title');
     const descriptionTextarea = document.getElementById('album-description');
+    const descriptionError = document.getElementById('description-error');
     const songSearchInput = document.getElementById('song-search');
     const songsContainer = document.getElementById('album-songs');
     const selectedSongsList = document.getElementById('selected-songs-list');
@@ -39,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let albums = [];
     let selectedSongs = [];
     let selectedArtists = [];
-    let editAlbumId = null;
     let currentPage = 1;
     let rowsPerPage = parseInt(rowsPerPageInput?.value) || 10;
     let currentFilterStatus = 'all';
@@ -47,82 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchQuery = '';
     let totalPages = 1;
     let totalElements = 0;
-
-    // Create notification element
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
-
-    // Create confirmation modal
-    const createConfirmModal = () => {
-        const modal = document.createElement('div');
-        modal.id = 'confirm-action-modal';
-        modal.className = 'modal';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <span class="close">×</span>
-                <h3 id="confirm-action-title">Confirm Action</h3>
-                <p id="confirm-action-message">Are you sure?</p>
-                <div class="button-group">
-                    <button id="confirm-action-btn">Confirm</button>
-                    <button class="cancel">Cancel</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        return modal;
-    };
-
-    // Show confirmation modal
-    const showConfirmModal = (title, message, onConfirm) => {
-        const confirmModal = document.getElementById('confirm-action-modal') || createConfirmModal();
-        const titleEl = confirmModal.querySelector('#confirm-action-title');
-        const messageEl = confirmModal.querySelector('#confirm-action-message');
-        const confirmBtn = confirmModal.querySelector('#confirm-action-btn');
-        const cancelBtn = confirmModal.querySelector('.cancel');
-        const closeBtn = confirmModal.querySelector('.close');
-
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        confirmModal.style.display = 'flex';
-
-        const closeModal = () => {
-            confirmModal.style.display = 'none';
-        };
-
-        confirmBtn.onclick = async () => {
-            await onConfirm();
-            closeModal();
-        };
-
-        cancelBtn.onclick = closeModal;
-        closeBtn.onclick = closeModal;
-    };
 
     // Utility Functions
     const formatDuration = (seconds) => {
@@ -153,15 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Functions
     const fetchSongs = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/song/allAcceptedSong', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/song/allAcceptedSong', {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch songs: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to fetch songs: ${response.status}`);
 
             const data = await response.json();
             songs = data.map(song => ({
@@ -193,22 +116,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
 
     const fetchArtists = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/otherArtists', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/allActiveArtists', {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch artists: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to fetch artists: ${response.status}`);
 
             const data = await response.json();
             artists = data.map(artist => ({
@@ -226,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
@@ -243,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/artistAlbums', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/albums', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -280,19 +200,19 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTable();
         } catch (error) {
             console.error('Error fetching albums:', error);
-            showNotification('Unable to load albums. Please try again later or contact support.', true);
+            showNotification('Unable to load albums. Please try again.', true);
             albumTableBody.innerHTML = `<tr><td colspan="9"><span class="no-albums">Unable to load albums. Please try again later or contact support.</span></td></tr>`;
             paginationDiv.innerHTML = '';
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         }
     };
 
     const createAlbum = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/artist/album/create', {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/album/create', {
                 method: 'POST',
                 body: formData
             });
@@ -302,62 +222,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to create album: ${response.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             throw new Error(`Failed to create album: ${error.message}`);
         }
     };
 
-    const updateAlbum = async (id, formData) => {
-        try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/album/update/${id}`, {
-                method: 'PUT',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to update album: ${response.status} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            throw new Error(`Failed to update album: ${error.message}`);
-        }
-    };
-
     const publishAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/album/upload/${id}`, {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/publish/${id}`, {
                 method: 'POST',
                 headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to publish album: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to publish album: ${response.status}`);
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             throw new Error(`Failed to publish album: ${error.message}`);
         }
     };
 
+    const declineAlbum = async (id) => {
+        try {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/decline/${id}`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Failed to decline album: ${response.status}`);
+
+            return await response.json();
+        } catch (error) {
+            throw new Error(`Failed to decline album: ${error.message}`);
+        }
+    };
+
     const deleteAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/artist/album/delete/${id}`, {
+            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/delete/${id}`, {
                 method: 'DELETE',
                 headers: { 'Accept': 'application/json' }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to delete album: ${response.status} - ${errorText}`);
-            }
+            if (!response.ok) throw new Error(`Failed to delete album: ${response.status}`);
         } catch (error) {
             throw new Error(`Failed to delete album: ${error.message}`);
         }
@@ -519,41 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (songsError) songsError.style.display = 'none';
         if (artistsError) artistsError.style.display = 'none';
         if (imageError) imageError.style.display = 'none';
-        editAlbumId = null;
-        fetchSongs();
-        fetchArtists();
-    };
-
-    const populateEditForm = (album) => {
-        if (!albumForm || !addAlbumForm) {
-            showNotification('Error: Form not found.', true);
-            return;
-        }
-        albumForm.dataset.mode = 'edit';
-        formTitle.textContent = 'Edit Album';
-        titleInput.value = album.albumName || '';
-        descriptionTextarea.value = album.description || '';
-        songSearchInput.value = '';
-        artistSearchInput.value = '';
-
-        selectedSongs = (album.songs || []).map(title => {
-            const song = songs.find(s => s.title === title);
-            return song ? song.id : null;
-        }).filter(id => id !== null);
-        selectedArtists = (album.artistNameList || []).map(name => {
-            const artist = artists.find(a => a.name === name);
-            return artist ? artist.id : null;
-        }).filter(id => id !== null);
-        imageInput.value = '';
-        imagePreview.style.display = album.imageUrl ? 'block' : 'none';
-        imagePreview.src = album.imageUrl || '';
-        currentImageDiv.textContent = album.imageUrl ? `Current image: ${album.imageUrl}` : '';
-        if (titleError) titleError.style.display = 'none';
-        if (songsError) songsError.style.display = 'none';
-        if (artistsError) artistsError.style.display = 'none';
-        if (imageError) imageError.style.display = 'none';
-        editAlbumId = album.id;
-        addAlbumForm.classList.add('active');
+        if (descriptionError) descriptionError.style.display = 'none';
         fetchSongs();
         fetchArtists();
     };
@@ -561,11 +435,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderTable = () => {
         if (!albumTableBody || !paginationDiv) return;
 
-        let filteredAlbums = currentFilterStatus !== 'all'
-            ? albums.filter(a => a.status.toLowerCase() === currentFilterStatus)
-            : albums;
+        const filteredAlbums = currentFilterStatus === 'all'
+            ? albums
+            : albums.filter(album => album.status.toLowerCase() === currentFilterStatus);
 
-        albumTableBody.innerHTML = filteredAlbums.length > 0
+        albumTableBody.innerHTML = filteredAlbums.length
             ? filteredAlbums.map(album => `
                 <tr>
                     <td class="image">
@@ -589,17 +463,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                     <td class="status ${album.status.toLowerCase()}">${album.status.charAt(0).toUpperCase() + album.status.slice(1)}</td>
                     <td>
-                        ${album.status === 'draft' || album.status === 'edited'
+                        ${album.status === 'pending'
                 ? `
                                 <button class="publish" data-id="${album.id}" title="Publish">Publish</button>
-                                <button class="edit" data-id="${album.id}" title="Edit">Edit</button>
+                                <button class="decline" data-id="${album.id}" title="Decline">Decline</button>
                                 <button class="delete" data-id="${album.id}" title="Delete">Delete</button>
                             `
-                : album.status === 'accepted' || album.status === 'declined'
-                    ? `
-                                <button class="edit" data-id="${album.id}" title="Edit">Edit</button>
-                                <button class="delete" data-id="${album.id}" title="Delete">Delete</button>
-                            `
+                : album.status === 'accepted'
+                    ? `<button class="delete" data-id="${album.id}" title="Delete">Delete</button>`
                     : 'None'
             }
                     </td>
@@ -625,8 +496,11 @@ document.addEventListener('DOMContentLoaded', () => {
         paginationDiv.appendChild(prevButton);
 
         const maxPagesToShow = 5;
-        const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
 
         if (startPage > 1) {
             const firstPage = document.createElement('span');
@@ -674,34 +548,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Event Listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            searchQuery = searchInput.value.trim();
+            currentPage = 1;
+            fetchAlbums();
+        }, 300));
+    }
+
     if (imageInput) {
         imageInput.addEventListener('change', () => {
             const file = imageInput.files[0];
-            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
             if (file) {
-                if (!allowedImageTypes.includes(file.type)) {
-                    if (imageError) {
-                        imageError.textContent = 'Only image files (JPG, PNG, GIF, WEBP, BMP, TIFF, SVG) are allowed';
-                        imageError.style.display = 'block';
-                    }
-                    imagePreview.style.display = 'none';
+                if (!validTypes.includes(file.type)) {
+                    currentImageDiv.textContent = '';
                     imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                    imageError.textContent = 'Only JPG, PNG, GIF, WEBP, BMP, TIFF, or SVG files are allowed';
+                    imageError.style.display = 'block';
                 } else if (file.size > 5 * 1024 * 1024) {
-                    if (imageError) {
-                        imageError.textContent = 'Image file size exceeds 5MB';
-                        imageError.style.display = 'block';
-                    }
-                    imagePreview.style.display = 'none';
+                    currentImageDiv.textContent = '';
                     imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                    imageError.textContent = 'Image file size exceeds 5MB';
+                    imageError.style.display = 'block';
                 } else {
+                    currentImageDiv.textContent = `Selected: ${file.name}`;
                     imagePreview.src = URL.createObjectURL(file);
                     imagePreview.style.display = 'block';
-                    if (imageError) imageError.style.display = 'none';
+                    imageError.style.display = 'none';
                 }
             } else {
-                imagePreview.style.display = 'none';
+                currentImageDiv.textContent = '';
                 imagePreview.src = '';
-                if (imageError) imageError.style.display = 'none';
+                imagePreview.style.display = 'none';
+                imageError.style.display = 'none';
             }
         });
     }
@@ -721,13 +603,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addAlbumBtn) {
         addAlbumBtn.addEventListener('click', () => {
             resetForm('add');
-            if (addAlbumForm) addAlbumForm.classList.add('active');
+            addAlbumForm.classList.add('active');
         });
     }
 
     if (cancelAddAlbumBtn) {
         cancelAddAlbumBtn.addEventListener('click', () => {
-            if (addAlbumForm) addAlbumForm.classList.remove('active');
+            addAlbumForm.classList.remove('active');
             resetForm('add');
         });
     }
@@ -749,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (rowsPerPageInput) {
-        const updateRowsPerPage = debounce(() => {
+        rowsPerPageInput.addEventListener('input', debounce(() => {
             const value = parseInt(rowsPerPageInput.value);
             if (isNaN(value) || value < 1) {
                 rowsPerPageInput.value = rowsPerPage || 10;
@@ -761,15 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 rowsPerPage = value;
             }
-            currentPage = 1;
-            fetchAlbums();
-        }, 300);
-        rowsPerPageInput.addEventListener('input', updateRowsPerPage);
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(() => {
-            searchQuery = searchInput.value.trim();
             currentPage = 1;
             fetchAlbums();
         }, 300));
@@ -784,75 +657,82 @@ document.addEventListener('DOMContentLoaded', () => {
             if (songsError) songsError.style.display = 'none';
             if (artistsError) artistsError.style.display = 'none';
             if (imageError) imageError.style.display = 'none';
+            if (descriptionError) descriptionError.style.display = 'none';
 
-            const title = titleInput?.value.trim() || '';
+            const title = titleInput.value.trim();
             if (!title) {
-                if (titleError) {
-                    titleError.textContent = 'Please enter a valid title';
-                    titleError.style.display = 'block';
-                }
+                titleError.textContent = 'Please enter a valid title';
+                titleError.style.display = 'block';
                 isValid = false;
             }
 
-            if (selectedSongs.length > 0) {
-                const invalidSongs = selectedSongs.filter(songId => {
-                    const song = songs.find(s => s.id === songId);
+            const description = descriptionTextarea.value.trim();
+            if (!description) {
+                descriptionError.textContent = 'Please enter a description';
+                descriptionError.style.display = 'block';
+                isValid = false;
+            }
+
+            if (selectedSongs.length === 0) {
+                songsError.textContent = 'Please select at least one accepted song';
+                songsError.style.display = 'block';
+                isValid = false;
+            } else {
+                const invalidSongs = selectedSongs.filter(id => {
+                    const song = songs.find(s => s.id === id);
                     return !song || song.status.toLowerCase() !== 'accepted';
                 });
-                if (invalidSongs.length) {
-                    if (songsError) {
-                        songsError.textContent = 'All selected songs must have Accepted status';
-                        songsError.style.display = 'block';
-                    }
+                if (invalidSongs.length > 0) {
+                    songsError.textContent = 'All selected songs must have Accepted status';
+                    songsError.style.display = 'block';
                     isValid = false;
                 }
             }
 
-            const image = imageInput?.files[0];
-            let imageName = editAlbumId ? (albums.find(a => a.id === editAlbumId)?.imageUrl || '') : '';
-            if (image) {
-                if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'].includes(image.type)) {
-                    if (imageError) {
-                        imageError.textContent = 'Only image files (JPG, PNG, GIF, WEBP, BMP, TIFF, SVG) are allowed';
-                        imageError.style.display = 'block';
-                    }
+            if (selectedArtists.length === 0) {
+                artistsError.textContent = 'Please select at least one artist';
+                artistsError.style.display = 'block';
+                isValid = false;
+            }
+
+            const image = imageInput.files[0];
+            if (!image) {
+                imageError.textContent = 'Please select an image file';
+                imageError.style.display = 'block';
+                isValid = false;
+            } else {
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
+                if (!validTypes.includes(image.type)) {
+                    imageError.textContent = 'Only JPG, PNG, GIF, WEBP, BMP, TIFF, or SVG files are allowed';
+                    imageError.style.display = 'block';
                     isValid = false;
                 } else if (image.size > 5 * 1024 * 1024) {
-                    if (imageError) {
-                        imageError.textContent = 'Image file size exceeds 5MB';
-                        imageError.style.display = 'block';
-                    }
+                    imageError.textContent = 'Image file size exceeds 5MB';
+                    imageError.style.display = 'block';
                     isValid = false;
-                } else {
-                    imageName = image.name;
                 }
             }
 
             if (isValid) {
                 const formData = new FormData();
                 formData.append('albumName', title);
-                formData.append('description', descriptionTextarea?.value.trim() || '');
+                formData.append('description', description);
                 selectedSongs.forEach(songId => formData.append('songIds', songId));
                 selectedArtists.forEach(artistId => formData.append('artistIds', artistId));
-                if (image) formData.append('image', image);
+                formData.append('image', image);
 
                 try {
-                    if (editAlbumId) {
-                        await updateAlbum(editAlbumId, formData);
-                        showNotification(`Album "${title}" updated successfully.`);
-                    } else {
-                        await createAlbum(formData);
-                        showNotification(`Album "${title}" created successfully.`);
-                    }
-                    if (addAlbumForm) addAlbumForm.classList.remove('active');
+                    await createAlbum(formData);
+                    showNotification(`Album "${title}" created successfully.`);
+                    addAlbumForm.classList.remove('active');
                     resetForm('add');
                     currentPage = 1;
                     await fetchAlbums();
                 } catch (error) {
-                    showNotification(`Failed to ${editAlbumId ? 'update' : 'save'} album: ${error.message}`, true);
+                    showNotification(`Failed to save album: ${error.message}`, true);
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
-                        window.location.href = '../auth/login_register.html';
+                        window.location.href = '../../../auth/login_register.html';
                     }
                 }
             }
@@ -861,17 +741,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (albumTableBody) {
         albumTableBody.addEventListener('click', async (e) => {
+            e.preventDefault();
             const id = Number(e.target.dataset.id);
             if (!id) return;
 
-            e.preventDefault();
             const album = albums.find(a => a.id === id);
             if (!album) {
                 showNotification('Error: Album not found.', true);
                 return;
             }
 
-            if (e.target.classList.contains('view-songs') && contentModal && modalContentBody && modalTitle) {
+            if (e.target.classList.contains('view-songs')) {
+                const albumSongs = songs.filter(song => album.songs.includes(song.title));
                 modalTitle.textContent = `Songs in ${album.albumName}`;
                 modalContentBody.innerHTML = `
                     <table>
@@ -884,25 +765,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             </tr>
                         </thead>
                         <tbody>
-                            ${album.songs.length
-                    ? album.songs.map(title => {
-                        const song = songs.find(s => s.title === title) || {};
-                        return `
-                                        <tr>
-                                            <td>${title}</td>
-                                            <td>${song.genreNameList?.join(', ') || 'Unknown'}</td>
-                                            <td>${song.duration || '0:00'}</td>
-                                            <td class="status ${song.status?.toLowerCase() || 'draft'}">${(song.status || 'draft').charAt(0).toUpperCase() + (song.status || 'draft').slice(1)}</td>
-                                        </tr>
-                                    `;
-                    }).join('')
-                    : '<tr><td colspan="4">No songs found.</td></tr>'
-                }
+                            ${albumSongs.length
+                    ? albumSongs.map(song => `
+                                    <tr>
+                                        <td>${song.title || 'Unknown'}</td>
+                                        <td>${song.genreNameList.join(', ') || 'Unknown'}</td>
+                                        <td>${song.duration || '0:00'}</td>
+                                        <td class="status ${song.status?.toLowerCase() || 'draft'}">${(song.status || 'draft').charAt(0).toUpperCase() + (song.status || 'draft').slice(1)}</td>
+                                    </tr>
+                                `).join('')
+                    : '<tr><td colspan="4" class="no-songs-found-modal">No songs found.</td></tr>'}
                         </tbody>
                     </table>
                 `;
                 contentModal.style.display = 'flex';
-            } else if (e.target.classList.contains('view-description') && contentModal && modalContentBody && modalTitle) {
+            } else if (e.target.classList.contains('view-description')) {
                 modalTitle.textContent = `Description of ${album.albumName}`;
                 modalContentBody.innerHTML = `
                     <textarea class="lyrics-content" readonly placeholder="No description available">${album.description || ''}</textarea>
@@ -917,13 +794,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             e.target.disabled = true;
                             e.target.textContent = 'Publishing...';
                             await publishAlbum(id);
-                            showNotification(`Album "${album.albumName}" published and status changed to Pending.`);
+                            showNotification(`Album "${album.albumName}" published successfully.`);
                             await fetchAlbums();
                         } catch (error) {
                             showNotification(`Failed to publish album: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
+                                window.location.href = '../../../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -931,8 +808,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 );
-            } else if (e.target.classList.contains('edit')) {
-                populateEditForm(album);
+            } else if (e.target.classList.contains('decline')) {
+                showConfirmModal(
+                    'Confirm Decline',
+                    `Are you sure you want to decline "${album.albumName}"?`,
+                    async () => {
+                        try {
+                            e.target.disabled = true;
+                            e.target.textContent = 'Declining...';
+                            await declineAlbum(id);
+                            showNotification(`Album "${album.albumName}" declined successfully.`);
+                            await fetchAlbums();
+                        } catch (error) {
+                            showNotification(`Failed to decline album: ${error.message}`, true);
+                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                                sessionStorage.clear();
+                                window.location.href = '../../../auth/login_register.html';
+                            }
+                        } finally {
+                            e.target.disabled = false;
+                            e.target.textContent = 'Decline';
+                        }
+                    }
+                );
             } else if (e.target.classList.contains('delete')) {
                 showConfirmModal(
                     'Confirm Delete',
@@ -948,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showNotification(`Failed to delete album: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
+                                window.location.href = '../../../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -960,14 +858,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (closeModal && contentModal && modalContentBody) {
+    if (closeModal && contentModal) {
         closeModal.addEventListener('click', () => {
             contentModal.style.display = 'none';
             modalContentBody.innerHTML = '';
         });
     }
 
-    if (contentModal && modalContentBody) {
+    if (contentModal) {
         window.addEventListener('click', (e) => {
             if (e.target === contentModal) {
                 contentModal.style.display = 'none';
@@ -977,16 +875,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize
-    Promise.all([fetchSongs(), fetchArtists(), fetchAlbums()])
+    Promise.all([fetchAlbums(), fetchSongs(), fetchArtists()])
         .then(() => {
-            if (albumForm) resetForm('add');
+            resetForm('add');
         })
         .catch(error => {
             console.error('Initialization error:', error);
             showNotification('Failed to initialize. Please try again.', true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         });
 });

@@ -1,4 +1,6 @@
-import {fetchWithRefresh} from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
+import {showConfirmModal} from "../confirmation.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // CommonStatus mapping
@@ -7,82 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DELETED: {value: -3, label: 'Deleted', cssClass: 'deleted'},
         INACTIVE: {value: -1, label: 'Inactive', cssClass: 'inactive'},
         ACTIVE: {value: 1, label: 'Active', cssClass: 'active'}
-    };
-
-    // Create notification element if not exists
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
-
-    // Create confirmation modal if not exists
-    const createConfirmModal = () => {
-        const modal = document.createElement('div');
-        modal.id = 'confirm-action-modal';
-        modal.className = 'modal';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <span class="close">×</span>
-                <h3 id="confirm-action-title">Confirm Action</h3>
-                <p id="confirm-action-message">Are you sure?</p>
-                <div class="button-group">
-                    <button id="confirm-action-btn">Confirm</button>
-                    <button class="cancel">Cancel</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        return modal;
-    };
-
-    // Show confirmation modal
-    const showConfirmModal = (title, message, onConfirm) => {
-        const confirmModal = document.getElementById('confirm-action-modal') || createConfirmModal();
-        const titleEl = confirmModal.querySelector('#confirm-action-title');
-        const messageEl = confirmModal.querySelector('#confirm-action-message');
-        const confirmBtn = confirmModal.querySelector('#confirm-action-btn');
-        const cancelBtn = confirmModal.querySelector('.cancel');
-        const closeBtn = confirmModal.querySelector('.close');
-
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        confirmModal.style.display = 'flex';
-
-        const closeModal = () => {
-            confirmModal.style.display = 'none';
-        };
-
-        confirmBtn.onclick = async () => {
-            await onConfirm();
-            closeModal();
-        };
-
-        cancelBtn.onclick = closeModal;
-        closeBtn.onclick = closeModal;
     };
 
     // DOM elements
@@ -162,8 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Failed to fetch users');
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             console.error('Error fetching users:', error);
             showNotification('Failed to load users. Please try again.', true);
@@ -419,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             addUserForm.classList.remove('show-form');
             showNotification('User created successfully!');
-            renderTable();
+            await renderTable();
         } catch (error) {
             console.error('Error creating user:', error);
             showNotification(`Failed to create user: ${error.message}`, true);
@@ -484,10 +409,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 throw new Error(errorData.message || `Failed to ${actionLabel} user`);
                             }
                         }
-
-                        const responseData = await response.json();
+                        await response.json();
                         showNotification((actionLabel === 'delete' ? 'Delete successfully' : `User ${actionLabel}d successfully!`));
-                        renderTable();
+                        await renderTable();
                     } catch (error) {
                         console.error(`Error ${actionLabel}ing user:`, error);
                         showNotification(`Failed to ${actionLabel} user: ${error.message}`, true);

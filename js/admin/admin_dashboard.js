@@ -1,4 +1,6 @@
-import {fetchWithRefresh} from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
+import {showConfirmModal} from "../confirmation.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM elements
@@ -30,82 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
         if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
         return num.toString();
-    };
-
-    // Create notification element
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
-
-    // Create confirmation modal
-    const createConfirmModal = () => {
-        const modal = document.createElement('div');
-        modal.id = 'confirm-action-modal';
-        modal.className = 'modal';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <span class="close">×</span>
-                <h3 id="confirm-action-title">Confirm Action</h3>
-                <p id="confirm-action-message">Are you sure?</p>
-                <div class="button-group">
-                    <button id="confirm-action-btn">Confirm</button>
-                    <button class="cancel">Cancel</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        return modal;
-    };
-
-    // Show confirmation modal
-    const showConfirmModal = (title, message, onConfirm) => {
-        const confirmModal = document.getElementById('confirm-action-modal') || createConfirmModal();
-        const titleEl = confirmModal.querySelector('#confirm-action-title');
-        const messageEl = confirmModal.querySelector('#confirm-action-message');
-        const confirmBtn = confirmModal.querySelector('#confirm-action-btn');
-        const cancelBtn = confirmModal.querySelector('.cancel');
-        const closeBtn = confirmModal.querySelector('.close');
-
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        confirmModal.style.display = 'flex';
-
-        const closeModal = () => {
-            confirmModal.style.display = 'none';
-        };
-
-        confirmBtn.onclick = async () => {
-            await onConfirm();
-            closeModal();
-        };
-
-        cancelBtn.onclick = closeModal;
-        closeBtn.onclick = closeModal;
     };
 
     // Fetch dashboard stats using provided APIs
@@ -261,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const releaseDate = item.releaseDate || 'Unknown';
                 const id = item.id || '';
 
-                let actionButtons = '';
+                let actionButtons;
                 if (status === 'pending') {
                     actionButtons = `
                         <button class="publish" data-type="${type.toLowerCase()}" data-id="${id}" title="Accept">Accept</button>
@@ -513,11 +439,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.message || `Failed to ${actionLabel} ${type}`);
                     }
-
-                    const responseData = await response.json().catch(() => ({}));
+                    await response.json().catch(() => ({}));
                     showNotification(`${actionLabel}ed successfully!`);
                     await fetchDashboardStats();
-                    renderTable();
+                    await renderTable();
                 } catch (error) {
                     console.error(`Error ${actionLabel}ing ${type}:`, error);
                     showNotification(`Failed to ${actionLabel} ${type}: ${error.message}`, true);

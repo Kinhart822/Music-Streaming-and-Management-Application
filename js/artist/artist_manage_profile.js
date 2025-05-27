@@ -1,4 +1,5 @@
-import { fetchWithRefresh } from '/js/api/refresh.js';
+import {fetchWithRefresh} from "../refresh.js";
+import {showNotification} from "../notification.js";
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('profile-form');
@@ -18,35 +19,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dobInput = document.getElementById('dob');
     const phoneInput = document.getElementById('phone');
     const submitButton = form.querySelector('button[type="submit"]');
-
-    // Create notification element
-    const createNotificationElement = () => {
-        const notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification';
-        notification.style.display = 'none';
-        notification.innerHTML = `
-            <span id="notification-message"></span>
-            <span class="close-notification">×</span>
-        `;
-        document.body.appendChild(notification);
-        notification.querySelector('.close-notification').addEventListener('click', () => {
-            notification.style.display = 'none';
-        });
-        return notification;
-    };
-
-    // Show notification
-    const showNotification = (message, isError = false) => {
-        const notification = document.getElementById('notification') || createNotificationElement();
-        const messageSpan = document.getElementById('notification-message');
-        messageSpan.textContent = message;
-        notification.style.background = isError ? 'var(--error-color)' : 'var(--success-color)';
-        notification.style.display = 'flex';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    };
 
     // Show spinner
     const showSpinner = () => {
@@ -111,14 +83,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             showNotification('Failed to load profile data. Please try again.', true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         } finally {
             hideSpinner(spinner);
         }
     };
 
-    // Load profile on page load
+    // Load profile on a page load
     await loadProfile();
 
     // List of allowed image MIME types
@@ -264,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             showNotification(`Failed to update profile: ${error.message || 'Please try again.'}`, true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
+                window.location.href = '../../../auth/login_register.html';
             }
         } finally {
             submitButton.disabled = false;
