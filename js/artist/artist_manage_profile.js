@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             showNotification('Failed to load profile data. Please try again.', true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../../../auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
             }
         } finally {
             hideSpinner(spinner);
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             showNotification(`Failed to update profile: ${error.message || 'Please try again.'}`, true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../../../auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
             }
         } finally {
             submitButton.disabled = false;

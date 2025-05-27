@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             paginationDiv.innerHTML = '';
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../../../auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
             }
         }
     };
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../../../auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
             }
         }
     };
@@ -826,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showNotification(`Failed to save song: ${error.message}`, true);
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
-                        window.location.href = '../../../auth/login_register.html';
+                        window.location.href = '../auth/login_register.html';
                     }
                 }
             }
@@ -870,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showNotification(`Failed to publish song: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../../../auth/login_register.html';
+                                window.location.href = '../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -893,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showNotification(`Failed to decline song: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../../../auth/login_register.html';
+                                window.location.href = '../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -916,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showNotification(`Failed to delete song: ${error.message}`, true);
                             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                                 sessionStorage.clear();
-                                window.location.href = '../../../auth/login_register.html';
+                                window.location.href = '../auth/login_register.html';
                             }
                         } finally {
                             e.target.disabled = false;
@@ -956,7 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Failed to initialize. Please try again.', true);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
-                window.location.href = '../../../auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
             }
         });
 });

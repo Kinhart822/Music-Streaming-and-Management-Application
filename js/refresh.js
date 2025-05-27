@@ -42,7 +42,7 @@ const refreshAccessToken = async (email, refreshToken) => {
         console.error('[Refresh] Token refresh error:', error);
         // Clear sessionStorage for the current user and redirect to log in
         clearCurrentUserData();
-        window.location.href = '../../auth/login_register.html';
+        window.location.href = '../auth/login_register.html';
         throw error;
     }
 };
@@ -61,7 +61,7 @@ const fetchWithRefresh = async (url, options = {}) => {
     const currentUserEmail = sessionStorage.getItem('currentUserEmail');
     if (!currentUserEmail) {
         console.error('[Fetch] No current user email found, redirecting to login');
-        window.location.href = '../../auth/login_register.html';
+        window.location.href = '../auth/login_register.html';
         throw new Error('No current user email available');
     }
 
@@ -84,7 +84,7 @@ const fetchWithRefresh = async (url, options = {}) => {
         } catch (error) {
             console.error('[Fetch] Refresh failed for missing tokens:', error);
             clearCurrentUserData();
-            window.location.href = '../../auth/login_register.html';
+            window.location.href = '../auth/login_register.html';
             throw new Error('No tokens available after refresh attempt');
         }
     } else {
@@ -132,7 +132,7 @@ const fetchWithRefresh = async (url, options = {}) => {
                 if (retryResponse.status === 401 || retryResponse.status === 403) {
                     console.error('[Fetch] Retry failed, redirecting to login');
                     clearCurrentUserData();
-                    window.location.href = '../../auth/login_register.html';
+                    window.location.href = '../auth/login_register.html';
                     throw new Error('Unauthorized after token refresh');
                 }
 
@@ -140,7 +140,7 @@ const fetchWithRefresh = async (url, options = {}) => {
             } catch (error) {
                 console.error('[Fetch] Refresh failed:', error);
                 clearCurrentUserData();
-                window.location.href = '../../auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
                 throw error;
             } finally {
                 isRefreshing = false;
