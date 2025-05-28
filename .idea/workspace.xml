@@ -5,8 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment=" Done user realtime notifications only artist left">
-      <change afterPath="$PROJECT_DIR$/src/main/resources/musicnotifications-9b666-firebase-adminsdk-fbsvc-423cd59fe5.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/config/WebSocketConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/controller/AccountController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/entities/UserNotificationsTokenDevice.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/entities/NotificationToken.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserNotificationTokenDeviceRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/NotificationTokenRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserSongCountRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/repository/UserSongCountRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/AuthServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/NotificationServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/NotificationServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,11 +69,11 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "Spring Boot.MsmaApplication.executor": "Debug",
+    "Spring Boot.MsmaApplication.executor": "Run",
     "git-widget-placeholder": "Kinhart822__Backend",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Code/MSMA/Music-Streaming-and-Management-Application/MSMA/src/main/resources",
+    "last_opened_file_path": "D:/Code/MSMA/Music-Streaming-and-Management-Application/MSMA",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -79,11 +90,14 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\resources" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\dto\request\music\user" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\entities" />
       <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\dto" />
-      <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\java\com\spring\service\impl" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Code\MSMA\Music-Streaming-and-Management-Application\MSMA\src\main\resources" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.spring.entities" />

@@ -850,7 +850,7 @@ public class SongServiceImpl implements SongService {
     public Long totalNumberOfListeners() {
         Long artistId = jwtHelper.getIdUserRequesting();
         List<Song> songs = songRepository.findByArtistId(artistId).stream()
-                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .filter(song -> song.getSongStatus() == SongStatus.ACCEPTED)
                 .toList();
         if (songs.isEmpty()) {
             return 0L;
@@ -863,7 +863,7 @@ public class SongServiceImpl implements SongService {
     public Long totalNumberOfDownloads() {
         Long artistId = jwtHelper.getIdUserRequesting();
         List<Song> songs = songRepository.findByArtistId(artistId).stream()
-                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .filter(song -> song.getSongStatus() == SongStatus.ACCEPTED)
                 .toList();
         if (songs.isEmpty()) {
             return 0L;
@@ -876,7 +876,7 @@ public class SongServiceImpl implements SongService {
     public Long totalNumberOfLikes() {
         Long artistId = jwtHelper.getIdUserRequesting();
         List<Song> songs = songRepository.findByArtistId(artistId).stream()
-                .filter(song -> !song.getSongStatus().equals(SongStatus.ACCEPTED))
+                .filter(song -> song.getSongStatus() == SongStatus.ACCEPTED)
                 .toList();
         if (songs.isEmpty()) {
             return 0L;

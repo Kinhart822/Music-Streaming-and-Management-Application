@@ -11,8 +11,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @Entity
-@Table(name = "user_notifications_token_device")
-public class UserNotificationsTokenDevice implements Serializable {
+@Table(name = "notification_tokens")
+public class NotificationToken implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

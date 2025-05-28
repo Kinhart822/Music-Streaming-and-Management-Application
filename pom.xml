@@ -142,16 +142,10 @@
         </dependency>
 
         <!-- Notifications -->
-            <!-- User -->
         <dependency>
             <groupId>com.google.firebase</groupId>
             <artifactId>firebase-admin</artifactId>
             <version>9.2.0</version>
-        </dependency>
-            <!-- Artist -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
         <!-- Postgresql -->

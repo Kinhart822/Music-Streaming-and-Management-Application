@@ -34,7 +34,11 @@ public interface UserSongCountRepository extends JpaRepository<UserSongCount, Us
     @Query("SELECT COUNT(DISTINCT usc.userSongCountId.user.id) FROM UserSongCount usc WHERE usc.userSongCountId.song.id = :songId AND usc.userSongCountId.user.userType = 'USER'")
     Long countDistinctUsersBySongId(@Param("songId") Long songId);
 
-    @Query("SELECT COUNT(DISTINCT usc.userSongCountId.user.id) FROM UserSongCount usc WHERE usc.userSongCountId.song.id IN :songIds AND usc.userSongCountId.user.userType = 'USER'")
+    @Query("SELECT COUNT(DISTINCT user.id) " +
+           "FROM UserSongCount usc " +
+           "JOIN usc.userSongCountId.user user " +
+           "JOIN usc.userSongCountId.song song " +
+           "WHERE song.id IN :songIds")
     Long countDistinctListenersBySongIds(@Param("songIds") List<Long> songIds);
 }
 

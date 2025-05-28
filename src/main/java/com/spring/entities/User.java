@@ -97,7 +97,7 @@ public class User implements Serializable, UserDetails {
     private List<Notification> notifications;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserNotificationsTokenDevice> userNotificationsTokenDevices;
+    private List<NotificationToken> notificationTokens;
 
     @OneToMany(mappedBy = "artistUserFollowId.user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArtistUserFollow> artistUserFollows;

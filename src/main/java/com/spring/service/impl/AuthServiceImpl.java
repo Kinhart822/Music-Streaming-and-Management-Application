@@ -6,7 +6,7 @@ import com.spring.dto.response.ApiResponse;
 import com.spring.entities.*;
 import com.spring.exceptions.*;
 import com.spring.repository.RefreshTokenRepository;
-import com.spring.repository.UserNotificationTokenDeviceRepository;
+import com.spring.repository.NotificationTokenRepository;
 import com.spring.security.JwtUtil;
 import com.spring.service.AuthService;
 import com.spring.service.UserService;
@@ -34,7 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final UserNotificationTokenDeviceRepository userNotificationTokenDeviceRepository;
+    private final NotificationTokenRepository notificationTokenRepository;
 
     //TODO: Sign-in AND refresh
     @Override
@@ -59,13 +59,13 @@ public class AuthServiceImpl implements AuthService {
         response.put(ACCESS_TOKEN_KEY, jwtUtil.generateAccessToken(userDetails));
 
         // Save Device Token
-        if (!userNotificationTokenDeviceRepository.existsByUserId(user.getId())) {
-            if (user.getUserType() == UserType.USER) {
-                UserNotificationsTokenDevice tokenDevice = UserNotificationsTokenDevice.builder()
+        if (!notificationTokenRepository.existsByUserId(user.getId())) {
+            if (user.getUserType() == UserType.USER || user.getUserType() == UserType.ARTIST) {
+                NotificationToken tokenDevice = NotificationToken.builder()
                         .deviceToken(signInRequest.getDeviceToken())
                         .user(user)
                         .build();
-                userNotificationTokenDeviceRepository.save(tokenDevice);
+                notificationTokenRepository.save(tokenDevice);
             }
         }
 

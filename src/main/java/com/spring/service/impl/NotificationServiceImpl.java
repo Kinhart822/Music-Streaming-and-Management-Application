@@ -9,17 +9,16 @@ import com.spring.dto.request.ArtistNotificationsDto;
 import com.spring.dto.request.UserNotificationsDto;
 import com.spring.entities.Artist;
 import com.spring.entities.User;
-import com.spring.entities.UserNotificationsTokenDevice;
+import com.spring.entities.NotificationToken;
 import com.spring.exceptions.BusinessException;
 import com.spring.repository.ArtistRepository;
 import com.spring.repository.NotificationRepository;
-import com.spring.repository.UserNotificationTokenDeviceRepository;
+import com.spring.repository.NotificationTokenRepository;
 import com.spring.repository.UserRepository;
 import com.spring.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -32,14 +31,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final ArtistRepository artistRepository;
     private final UserRepository userRepository;
-    private final UserNotificationTokenDeviceRepository userNotificationTokenDeviceRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationTokenRepository notificationTokenRepository;
     private final FirebaseMessaging firebaseMessaging;
 
     @Override
     public void notifyArtistSongAccepted(Long artistId, String songTitle) {
         String title = "Song Accepted";
-        String content = String.format("Your song '%s' was accepted. Please check your notification!", songTitle);
+        String content = String.format("Your song '%s' was accepted!", songTitle);
 
         sendArtistNotification(artistId, title, content);
     }
@@ -63,7 +61,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void notifyArtistPlaylistAccepted(Long artistId, String playlistTitle) {
         String title = "Playlist Accepted";
-        String content = String.format("Your playlist '%s' was accepted. Please check your notification!", playlistTitle);
+        String content = String.format("Your playlist '%s' was accepted!", playlistTitle);
 
         sendArtistNotification(artistId, title, content);
     }
@@ -79,7 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void notifyArtistAlbumAccepted(Long artistId, String albumTitle) {
         String title = "Album Accepted";
-        String content = String.format("Your album '%s' was accepted. Please check your notification!", albumTitle);
+        String content = String.format("Your album '%s' was accepted!", albumTitle);
 
         sendArtistNotification(artistId, title, content);
     }
@@ -134,6 +132,7 @@ public class NotificationServiceImpl implements NotificationService {
         try {
             Artist artist = artistRepository.findById(artistId)
                     .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
+            NotificationToken notificationToken = notificationTokenRepository.findByUserId(artistId);
 
             // Save to the database
             com.spring.entities.Notification notification = com.spring.entities.Notification.builder()
@@ -146,13 +145,21 @@ public class NotificationServiceImpl implements NotificationService {
 
             notificationRepository.save(notification);
 
-            // Create DTO for WebSocket
+            // Create DTO for Firebase
             ArtistNotificationsDto artistDto = new ArtistNotificationsDto();
             artistDto.setNotificationId(notification.getId());
             artistDto.setTargetArtistId(artistId);
 
-            // Send via WebSocket
-            messagingTemplate.convertAndSend("/topic/artist/" + artistId, artistDto);
+            // Send via Firebase
+            Message message = Message.builder()
+                    .setNotification(Notification.builder()
+                            .setTitle(title)
+                            .setBody(content)
+                            .build())
+                    .setToken(notificationToken.getDeviceToken())
+                    .build();
+
+            firebaseMessaging.send(message);
 
             log.info("Sent notification to artist {}: {}", artistId, content);
         } catch (Exception e) {
@@ -164,7 +171,7 @@ public class NotificationServiceImpl implements NotificationService {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND));
-            UserNotificationsTokenDevice userNotificationsTokenDevice = userNotificationTokenDeviceRepository.findByUserId(userId);
+            NotificationToken notificationToken = notificationTokenRepository.findByUserId(userId);
 
             // Save to the database
             com.spring.entities.Notification notification = com.spring.entities.Notification.builder()
@@ -189,7 +196,7 @@ public class NotificationServiceImpl implements NotificationService {
                             .setTitle(title)
                             .setBody(content)
                             .build())
-                    .setToken(userNotificationsTokenDevice.getDeviceToken())
+                    .setToken(notificationToken.getDeviceToken())
                     .build();
 
             firebaseMessaging.send(message);
