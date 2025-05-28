@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 avatarPreview.src = profileData.avatar;
                 avatarPreview.style.display = 'block';
             }
-            if (profileData.backgroundImage) {
-                backgroundPreview.src = profileData.backgroundImage;
+            if (profileData.image) {
+                backgroundPreview.src = profileData.image;
                 backgroundPreview.style.display = 'block';
             }
         } catch (error) {
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         dateOfBirth,
                         phone,
                         avatar: avatarPreview.src,
-                        backgroundImage: backgroundPreview.src
+                        image: backgroundPreview.src
                     }
                 });
                 window.dispatchEvent(profileUpdatedEvent);

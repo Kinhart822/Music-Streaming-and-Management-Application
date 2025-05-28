@@ -721,6 +721,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedArtists.forEach(artistId => formData.append('artistIds', artistId));
                 formData.append('image', image);
 
+                const saveButton = playlistForm.querySelector('button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.classList.add('loading');
+                    saveButton.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Saving...';
+                }
+
                 try {
                     await createPlaylist(formData);
                     showNotification(`Playlist "${title}" created successfully.`);
@@ -733,6 +740,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
                         window.location.href = '../auth/login_register.html';
+                    }
+                } finally {
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.classList.remove('loading');
+                        saveButton.innerHTML = 'Save';
                     }
                 }
             }
@@ -792,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Publishing...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Publishing';
                             await publishPlaylist(id);
                             showNotification(`Playlist "${playlist.playlistName}" published successfully.`);
                             await fetchPlaylists();
@@ -804,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Publish';
+                            e.target.innerHTML = 'Publish';
                         }
                     }
                 );
@@ -815,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Declining...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Declining';
                             await declinePlaylist(id);
                             showNotification(`Playlist "${playlist.playlistName}" declined successfully.`);
                             await fetchPlaylists();
@@ -827,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Decline';
+                            e.target.innerHTML = 'Decline';
                         }
                     }
                 );
@@ -838,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Deleting...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Deleting';
                             await deletePlaylist(id);
                             showNotification(`Playlist "${playlist.playlistName}" deleted successfully.`);
                             await fetchPlaylists();
@@ -850,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Delete';
+                            e.target.innerHTML = 'Delete';
                         }
                     }
                 );

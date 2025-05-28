@@ -1062,6 +1062,33 @@ html.dark .add:hover {
     background: var(--primary-hover);
 }
 
+/* Style buttons */
+.buttonload {
+    background-color: #04AA6D; /* Green background */
+    border: none; /* Remove borders */
+    color: white; /* White text */
+    padding: 12px 16px; /* Some padding */
+    font-size: 16px; /* Set a font size */
+}
+
+/* Loading state for buttons */
+.buttonload.loading {
+    opacity: 0.7; /* Slightly dim the button */
+    cursor: not-allowed; /* Indicate disabled state */
+}
+
+/* Ensure icon and text are properly spaced */
+.buttonload.loading i.fa-refresh {
+    margin-right: 8px; /* Space between icon and text */
+}
+
+/* Optional: Adjust button padding for consistency */
+.buttonload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Responsive Styles */
 @media (max-width: 900px) {
     .table-controls {

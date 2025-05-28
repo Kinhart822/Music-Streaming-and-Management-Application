@@ -68,11 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mapSortToApi = (sort) => {
         switch (sort) {
-            case 'title-asc': return { orderBy: 'title', order: 'asc' };
-            case 'title-desc': return { orderBy: 'title', order: 'desc' };
-            case 'date-asc': return { orderBy: 'releaseDate', order: 'asc' };
-            case 'date-desc': return { orderBy: 'releaseDate', order: 'desc' };
-            default: return { orderBy: 'title', order: 'asc' };
+            case 'title-asc':
+                return {orderBy: 'title', order: 'asc'};
+            case 'title-desc':
+                return {orderBy: 'title', order: 'desc'};
+            case 'date-asc':
+                return {orderBy: 'releaseDate', order: 'asc'};
+            case 'date-desc':
+                return {orderBy: 'releaseDate', order: 'desc'};
+            default:
+                return {orderBy: 'title', order: 'asc'};
         }
     };
 
@@ -81,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/song/allAcceptedSong', {
                 method: 'GET',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to fetch songs: ${response.status}`);
@@ -125,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/allActiveArtists', {
                 method: 'GET',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to fetch artists: ${response.status}`);
@@ -154,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchAlbums = async () => {
         try {
             albumTableBody.innerHTML = '<tr><td colspan="9"><div class="spinner"></div></td></tr>';
-            const { orderBy, order } = mapSortToApi(currentSort);
+            const {orderBy, order} = mapSortToApi(currentSort);
             const requestBody = {
                 page: currentPage,
                 size: rowsPerPage,
@@ -232,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/publish/${id}`, {
                 method: 'POST',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to publish album: ${response.status}`);
@@ -247,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/decline/${id}`, {
                 method: 'POST',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to decline album: ${response.status}`);
@@ -262,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/delete/${id}`, {
                 method: 'DELETE',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to delete album: ${response.status}`);
@@ -721,6 +726,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedArtists.forEach(artistId => formData.append('artistIds', artistId));
                 formData.append('image', image);
 
+                const saveButton = albumForm.querySelector('button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.classList.add('loading');
+                    saveButton.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Saving...';
+                }
+
                 try {
                     await createAlbum(formData);
                     showNotification(`Album "${title}" created successfully.`);
@@ -733,6 +745,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
                         window.location.href = '../auth/login_register.html';
+                    }
+                } finally {
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.classList.remove('loading');
+                        saveButton.innerHTML = 'Save';
                     }
                 }
             }
@@ -792,7 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Publishing...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Publishing';
                             await publishAlbum(id);
                             showNotification(`Album "${album.albumName}" published successfully.`);
                             await fetchAlbums();
@@ -804,7 +822,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Publish';
+                            e.target.innerHTML = 'Publish';
                         }
                     }
                 );
@@ -815,7 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Declining...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Declining';
                             await declineAlbum(id);
                             showNotification(`Album "${album.albumName}" declined successfully.`);
                             await fetchAlbums();
@@ -827,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Decline';
+                            e.target.innerHTML = 'Decline';
                         }
                     }
                 );
@@ -838,7 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Deleting...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Deleting';
                             await deleteAlbum(id);
                             showNotification(`Album "${album.albumName}" deleted successfully.`);
                             await fetchAlbums();
@@ -850,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Delete';
+                            e.target.innerHTML = 'Delete';
                         }
                     }
                 );

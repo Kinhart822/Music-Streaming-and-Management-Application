@@ -1,4 +1,6 @@
-// Hàm hiển thị thông báo
+import {messaging, getToken} from '../../firebase_config.js';
+
+// Hàm hiển thị thông báo (unchanged)
 function showNotification(message, type = 'error') {
     const notification = document.getElementById('notification');
     notification.textContent = message;
@@ -9,8 +11,42 @@ function showNotification(message, type = 'error') {
     }, 3000);
 }
 
-// Kiểm tra người dùng đã đăng nhập khi tải trang
+// Request notification permission and get FCM token
+const getFcmToken = async () => {
+    try {
+        const permission = await Notification.requestPermission();
+        console.log('Requesting permission...');
+        if (permission === 'granted') {
+            console.log('Notification permission granted');
+            const token = await getToken(messaging, {
+                vapidKey: 'BMDbb2Oh5DjZBGfw8FXfZ53L5f--nag4LbXPOFwgnMUKY4zbTxqg88r3OIPJUJ47UeZnueCq8HMjfqtEI9aV3LE'
+            });
+            console.log('FCM Token:', token);
+            return token;
+        } else {
+            console.log('Notification permission denied');
+            return null; // Return null if permission is denied
+        }
+    } catch (error) {
+        console.error('Error getting FCM token:', error);
+        showNotification('Failed to enable notifications.', 'error');
+        return null;
+    }
+};
+
+// Register service worker on a page load
 document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then((registration) => {
+                console.log('Service Worker registered:', registration);
+            })
+            .catch((error) => {
+                console.error('Service Worker registration failed:', error);
+            });
+    }
+
+    // Existing code: Check if user is logged in
     const currentUserEmail = sessionStorage.getItem('currentUserEmail');
     if (currentUserEmail) {
         const userType = sessionStorage.getItem(`user_${currentUserEmail}_userType`);
@@ -142,7 +178,7 @@ signUpForm.addEventListener('submit', async (e) => {
             throw new Error(errorData.message || 'Failed to create artist account');
         }
 
-        const data = await response.json();
+        await response.json();
         signUpError.style.color = 'green';
         signUpError.textContent = 'Artist account created successfully! Please sign in.';
         signUpError.style.display = 'block';
@@ -175,13 +211,22 @@ signInForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('sign-in-password').value.trim();
 
     try {
+        const deviceToken = await getFcmToken();
+        if (!deviceToken) {
+            signInError.textContent = 'You must allow notifications to sign in.';
+            signInError.style.display = 'block';
+            showNotification('You must allow notifications to sign in.', 'error');
+            return;
+        }
+
+        // Send sign-in request with FCM token
         const response = await fetch('http://localhost:8080/api/v1/auth/sign-in', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, deviceToken }) 
         });
 
         if (!response.ok) {
@@ -202,7 +247,7 @@ signInForm.addEventListener('submit', async (e) => {
             throw new Error('Invalid response: userType missing');
         }
 
-        // Lưu thông tin người dùng
+        // Save user info
         handleLoginSuccess(userEmail, userType, accessToken, refreshToken);
 
         showNotification('Login successful!', 'success');
@@ -223,6 +268,7 @@ signInForm.addEventListener('submit', async (e) => {
         signInError.textContent = error.message || 'Unable to connect to the server. Please try again later.';
         signInError.style.display = 'block';
         showNotification(error.message || 'Unable to connect to the server.', 'error');
+        // Do not save anything if error
     }
 });
 

@@ -267,6 +267,14 @@ html.dark .bell {
     border-radius: 50%;
 }
 
+.bell.has-unread i {
+    color: #ffd100 !important;
+}
+
+html.dark .bell.has-unread i {
+    color: #FFD600 !important;
+}
+
 .notification-dropdown {
     position: absolute;
     top: 50px;

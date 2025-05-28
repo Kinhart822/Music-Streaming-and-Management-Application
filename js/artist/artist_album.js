@@ -759,6 +759,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedArtists.forEach(artistId => formData.append('artistIds', artistId));
                 if (image) formData.append('image', image);
 
+                const saveButton = albumForm.querySelector('button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.classList.add('loading');
+                    saveButton.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Saving...';
+                }
+
                 try {
                     if (editAlbumId) {
                         await updateAlbum(editAlbumId, formData);
@@ -776,6 +783,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
                         window.location.href = '../auth/login_register.html';
+                    }
+                } finally {
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.classList.remove('loading');
+                        saveButton.innerHTML = 'Save';
                     }
                 }
             }
@@ -838,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Publishing...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Publishing';
                             await publishAlbum(id);
                             showNotification(`Album "${album.albumName}" published and status changed to Pending.`);
                             await fetchAlbums();
@@ -850,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Publish';
+                            e.target.innerHTML = 'Publish';
                         }
                     }
                 );
@@ -863,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Deleting...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Deleting';
                             await deleteAlbum(id);
                             showNotification(`Album "${album.albumName}" deleted successfully.`);
                             await fetchAlbums();
@@ -875,7 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Delete';
+                            e.target.innerHTML = 'Delete';
                         }
                     }
                 );

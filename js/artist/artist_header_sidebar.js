@@ -1,5 +1,6 @@
 import {fetchWithRefresh} from "../refresh.js";
 import {showNotification} from "../notification.js";
+import { messaging, onMessage } from '../../firebase_config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const menu = document.querySelector('.menu');
@@ -38,18 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`sidebarCollapsed_${email}`, isCollapsed);
     };
 
-    // Get cached notifications
-    const getCachedNotifications = () => {
-        const email = getCurrentUserEmail();
-        return JSON.parse(localStorage.getItem(`notifications_${email}`)) || { notifications: [], lastRead: null };
-    };
-
-    // Set cached notifications
-    const setCachedNotifications = (notifications, lastRead) => {
-        const email = getCurrentUserEmail();
-        localStorage.setItem(`notifications_${email}`, JSON.stringify({ notifications, lastRead }));
-    };
-
     // Update notification dropdown
     const updateNotificationDropdown = (notifications) => {
         if (!notificationList) return;
@@ -61,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bell.classList.remove('active');
             return;
         }
-        notifications.forEach((notification, index) => {
+        notifications.forEach((notification) => {
             const li = document.createElement('li');
             li.innerHTML = `
                 <i class="ri-notification-3-line"></i>
@@ -70,10 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             notificationList.appendChild(li);
         });
-        // Update bell icon based on unread notifications
-        const cached = getCachedNotifications();
-        const hasUnread = notifications.some(n => !cached.lastRead || new Date(n.createdDate) > new Date(cached.lastRead));
-        bell.classList.toggle('active', hasUnread);
     };
 
     // Format date for display
@@ -127,21 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update dropdown
             updateNotificationDropdown(notifications);
-
-            // Cache notifications
-            const cached = getCachedNotifications();
-            setCachedNotifications(notifications, cached.lastRead);
-
-            // Show a toast notification for the latest notification
-            if (notifications.length > 0) {
-                const latestNotification = notifications[0];
-                showNotification(`${latestNotification.title}: ${latestNotification.content}`);
-            }
         } catch (error) {
             console.error('Error fetching notifications:', error);
             showNotification('Failed to load notifications. Using cached data.', true);
-            const cached = getCachedNotifications();
-            updateNotificationDropdown(cached.notifications);
             if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                 sessionStorage.clear();
                 window.location.href = '../auth/login_register.html';
@@ -149,16 +122,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Get user profile from localStorage
-    const getCachedProfile = () => {
-        const email = getCurrentUserEmail();
-        return JSON.parse(localStorage.getItem(`userProfile_${email}`)) || {};
-    };
+    // Fetch profile data from API
+    const loadProfile = async () => {
+        try {
+            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/profile/artist', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
 
-    // Set user profile to localStorage
-    const setCachedProfile = (profileData) => {
-        const email = getCurrentUserEmail();
-        localStorage.setItem(`userProfile_${email}`, JSON.stringify(profileData));
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to fetch profile data: ${response.status} - ${errorText}`);
+            }
+
+            const profileData = await response.json();
+            console.log('Fetched profile data:', profileData);
+
+            // Map backend fields to modal expectations
+            const mappedProfileData = {
+                firstName: profileData.firstName,
+                lastName: profileData.lastName,
+                description: profileData.description,
+                gender: profileData.gender,
+                dob: profileData.birthDay,
+                phone: profileData.phone,
+                avatar: profileData.avatar,
+                background: profileData.image
+            };
+
+            // Update modal
+            updateProfileModal(mappedProfileData);
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            showNotification('Failed to load profile data. Using cached data.', true);
+            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
+                sessionStorage.clear();
+                window.location.href = '../auth/login_register.html';
+            }
+        }
     };
 
     // Update profile modal
@@ -207,70 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Fetch profile data from API
-    const loadProfile = async () => {
-        try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/profile/artist', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to fetch profile data: ${response.status} - ${errorText}`);
-            }
-
-            const profileData = await response.json();
-            console.log('Fetched profile data:', profileData);
-
-            // Map backend fields to modal expectations
-            const mappedProfileData = {
-                firstName: profileData.firstName,
-                lastName: profileData.lastName,
-                description: profileData.description,
-                gender: profileData.gender,
-                dob: profileData.birthDay,
-                phone: profileData.phone,
-                avatar: profileData.avatar,
-                background: profileData.backgroundImage
-            };
-
-            // Update modal
-            updateProfileModal(mappedProfileData);
-
-            // Cache in localStorage
-            setCachedProfile(mappedProfileData);
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-            showNotification('Failed to load profile data. Using cached data.', true);
-            const savedProfile = getCachedProfile();
-            updateProfileModal(savedProfile);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
-        }
-    };
-
-    // Handle notificationsUpdate event
-    window.addEventListener('notificationsUpdate', (event) => {
-        console.log('Received notificationsUpdate event:', event.detail);
-        const newNotification = event.detail;
-        const cached = getCachedNotifications();
-        // Add new notification to the top of the list
-        cached.notifications.unshift(newNotification);
-        // Sort notifications by createdDate (descending)
-        cached.notifications = cached.notifications.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
-        // Update cache
-        setCachedNotifications(cached.notifications, cached.lastRead);
-        // Update dropdown
-        updateNotificationDropdown(cached.notifications);
-        // Show toast notification
-        showNotification(`${newNotification.title}: ${newNotification.content}`);
-    });
-
     // Listen for profile updates
     window.addEventListener('profileUpdated', (event) => {
         console.log('Received profileUpdated event:', event.detail);
@@ -282,13 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
             dob: event.detail.dateOfBirth,
             phone: event.detail.phone,
             avatar: event.detail.avatar,
-            background: event.detail.backgroundImage
+            background: event.detail.image
         };
         updateProfileModal(mappedProfileData);
-        setCachedProfile(mappedProfileData);
     });
 
-    // Load profile and notifications on page load
+    // Load profile and notifications on a page load
     loadProfile();
     loadNotifications();
 
@@ -309,21 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    if (bell) {
-        bell.onclick = (event) => {
-            notificationDropdown?.classList.toggle('active');
-            profileModal?.classList.remove('active');
-            event.stopPropagation();
-            // Mark notifications as read
-            const cached = getCachedNotifications();
-            if (cached.notifications.length > 0) {
-                const lastNotificationDate = cached.notifications[0].createdDate; // Assuming sorted by date descending
-                setCachedNotifications(cached.notifications, lastNotificationDate);
-                bell.classList.remove('active');
-            }
-        };
-    }
-
     if (profile) {
         profile.onclick = (event) => {
             console.log('Profile icon clicked, toggling modal');
@@ -340,14 +263,37 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    document.addEventListener('click', (event) => {
-        if (bell && notificationDropdown && !bell.contains(event.target) && !notificationDropdown.contains(event.target)) {
-            notificationDropdown.classList.remove('active');
-        }
-        if (profile && profileModal && !profile.contains(event.target) && !profileModal.contains(event.target)) {
-            profileModal.classList.remove('active');
+    // Khi nhận thông báo foreground từ Firebase
+    onMessage(messaging, (payload) => {
+        console.log('Received foreground message:', payload);
+        const bell = document.querySelector('.bell');
+        if (bell) {
+            bell.classList.add('has-unread');
+            bell.innerHTML = `<i class="bx bxs-bell-ring bx-tada" />`;
+            showNotification('Heads up! You have a new notification waiting.', false);
+            // Đánh dấu có thông báo chưa đọc
+            localStorage.setItem('hasUnreadNotification', 'true');
         }
     });
+
+    if (bell && notificationDropdown) {
+        loadNotifications();
+        bell.onclick = (event) => {
+            notificationDropdown.classList.toggle('active');
+            profileModal?.classList.remove('active');
+            // Nếu đang có thông báo chưa đọc thì đổi icon và trạng thái
+            if (bell.classList.contains('has-unread')) {
+                bell.classList.remove('has-unread');
+                const icon = bell.querySelector('i');
+                if (icon) {
+                    icon.className = 'bx bx-bell';
+                    icon.classList.remove('bxs-bell-ring', 'bx-tada');
+                }
+                localStorage.setItem('hasUnreadNotification', 'false');
+            }
+            event.stopPropagation();
+        };
+    }
 
     // Initialize sidebar state
     const isSidebarCollapsed = getSidebarCollapsedState();
@@ -355,5 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebar?.classList.add('active');
         mainContent?.classList.add('active');
         document.documentElement.classList.add('sidebar-collapsed');
+    }
+
+    // Khôi phục trạng thái bell
+    if (bell && localStorage.getItem('hasUnreadNotification') === 'true') {
+        bell.classList.add('has-unread');
+        bell.innerHTML = `<i class="bx bxs-bell-ring bx-tada" />`;
     }
 });

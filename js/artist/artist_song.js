@@ -855,10 +855,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const downloadPermission = downloadPermissionSelect?.value || '';
 
             if (isValid) {
-                const saveButton = songForm.querySelector('button[type="submit"]');
-                saveButton.disabled = true;
-                saveButton.textContent = 'Saving...';
-
                 const formData = new FormData();
                 formData.append('title', title);
                 selectedGenres.forEach(genreId => formData.append('genreIds', genreId));
@@ -868,6 +864,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (songFile) formData.append('file', songFile);
                 if (image) formData.append('image', image);
                 if (downloadPermission) formData.append('downloadPermission', downloadPermission === 'Yes');
+
+                const saveButton = songForm.querySelector('button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.classList.add('loading');
+                    saveButton.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Saving...';
+                }
 
                 try {
                     if (editSongId) {
@@ -888,8 +891,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.location.href = '../auth/login_register.html';
                     }
                 } finally {
-                    saveButton.disabled = false;
-                    saveButton.textContent = 'Save';
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.classList.remove('loading');
+                        saveButton.innerHTML = 'Save';
+                    }
                 }
             }
         });
@@ -924,7 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Publishing...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Publishing';
                             await publishSong(id);
                             showNotification(`Song "${song.title}" published and status changed to Processing.`);
                             await fetchSongs();
@@ -936,7 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Publish';
+                            e.target.innerHTML = 'Publish';
                         }
                     }
                 );
@@ -949,7 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Deleting...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Deleting';
                             await deleteSong(id);
                             showNotification(`Song "${song.title}" deleted successfully.`);
                             await fetchSongs();
@@ -961,7 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Delete';
+                            e.target.innerHTML = 'Delete';
                         }
                     }
                 );

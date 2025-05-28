@@ -461,6 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('fullDescription', fullDescription);
                 if (image) formData.append('image', image);
 
+                const saveButton = genreForm.querySelector('button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.classList.add('loading');
+                    saveButton.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Saving...';
+                }
+
                 try {
                     if (genreForm.dataset.mode === 'edit' && editId) {
                         await updateGenre(editId, formData);
@@ -478,6 +485,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
                         sessionStorage.clear();
                         window.location.href = '../auth/login_register.html';
+                    }
+                } finally {
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.classList.remove('loading');
+                        saveButton.innerHTML = 'Save';
                     }
                 }
             }
@@ -517,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     async () => {
                         try {
                             e.target.disabled = true;
-                            e.target.textContent = 'Deleting...';
+                            e.target.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Deleting';
                             await deleteGenre(Number(id));
                             showNotification(`Genre "${genre.name}" deleted successfully.`);
                             currentPage = 1;
@@ -530,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } finally {
                             e.target.disabled = false;
-                            e.target.textContent = 'Delete';
+                            e.target.innerHTML = 'Delete';
                         }
                     }
                 );

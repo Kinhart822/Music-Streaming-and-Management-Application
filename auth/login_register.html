@@ -59,9 +59,8 @@
     </div>
 </div>
 <script src="https://kit.fontawesome.com/9e5ba2e3f5.js" crossorigin="anonymous"></script>
-<script src="../js/account/login-register.js"></script>
 <script>
-    // JavaScript để xử lý toggle hiển thị/ẩn mật khẩu
+    // JavaScript to handle password toggle
     document.querySelectorAll('.toggle-password').forEach(toggle => {
         toggle.addEventListener('click', function () {
             const inputId = this.getAttribute('data-target');
@@ -80,5 +79,6 @@
         });
     });
 </script>
+<script type="module" src="../js/account/login-register.js"></script>
 </body>
 </html>
