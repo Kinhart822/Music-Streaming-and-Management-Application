@@ -45,7 +45,4 @@ _Coming soon..._
 
 ### **Future Works**  
 I am currently learning:
-+ Firebase and WebSocket, and how to integrate with the backend server for the purpose of making real-time notifications for both cases, Artist and User.
-+ Docker and deployment techniques to move the application from a local development environment to a publicly accessible hosting environment (e.g., cloud server or container platform). This will enable anyone to access and test the application without a local setup.
-
-
++ Firebase and how to integrate with the backend server for the purpose of making real-time notifications for both cases, Artist and User. --DONE--
