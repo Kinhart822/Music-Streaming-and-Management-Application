@@ -96,7 +96,7 @@ const checkEmailExistence = async (email) => {
             throw new Error('Email is empty');
         }
         const encodedEmail = encodeURIComponent(email);
-        const url = `http://localhost:8080/api/v1/account/user/sign-up/check-email-existence?query=${encodedEmail}`;
+        const url = `http://spring-music-container:8080/api/v1/account/user/sign-up/check-email-existence?query=${encodedEmail}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -159,7 +159,7 @@ signUpForm.addEventListener('submit', async (e) => {
     const password = signUpPassword.value.trim();
 
     try {
-        const response = await fetch('http://localhost:8080/api/v1/account/signUpArtist', {
+        const response = await fetch('http://spring-music-container:8080/api/v1/account/signUpArtist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ signInForm.addEventListener('submit', async (e) => {
         }
 
         // Send sign-in request with FCM token
-        const response = await fetch('http://localhost:8080/api/v1/auth/sign-in', {
+        const response = await fetch('http://spring-music-container:8080/api/v1/auth/sign-in', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -15,7 +15,7 @@ const handleLogout = async () => {
         }
 
         const accessToken = sessionStorage.getItem(`user_${currentUserEmail}_accessToken`);
-        const response = await fetchWithRefresh('http://localhost:8080/api/v1/auth/sign-out', {
+        const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/auth/sign-out', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

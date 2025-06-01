@@ -67,20 +67,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mapSortToApi = (sort) => {
         switch (sort) {
-            case 'title-asc': return { orderBy: 'title', order: 'asc' };
-            case 'title-desc': return { orderBy: 'title', order: 'desc' };
-            case 'date-asc': return { orderBy: 'releaseDate', order: 'asc' };
-            case 'date-desc': return { orderBy: 'releaseDate', order: 'desc' };
-            default: return { orderBy: 'title', order: 'asc' };
+            case 'title-asc':
+                return {orderBy: 'title', order: 'asc'};
+            case 'title-desc':
+                return {orderBy: 'title', order: 'desc'};
+            case 'date-asc':
+                return {orderBy: 'releaseDate', order: 'asc'};
+            case 'date-desc':
+                return {orderBy: 'releaseDate', order: 'desc'};
+            default:
+                return {orderBy: 'title', order: 'asc'};
         }
     };
 
     // API Functions
     const fetchSongs = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/song/allAcceptedSong', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/song/allAcceptedSong', {
                 method: 'GET',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to fetch songs: ${response.status}`);
@@ -113,18 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (songsContainer) {
                 songsContainer.innerHTML = '<div class="no-songs-text">Failed to load songs.</div>';
             }
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     const fetchArtists = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/allActiveArtists', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/allActiveArtists', {
                 method: 'GET',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to fetch artists: ${response.status}`);
@@ -143,17 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (artistsContainer) {
                 artistsContainer.innerHTML = '<div class="no-artists-text">Failed to load artists.</div>';
             }
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     const fetchPlaylists = async () => {
         try {
             playlistTableBody.innerHTML = '<tr><td colspan="9"><div class="spinner"></div></td></tr>';
-            const { orderBy, order } = mapSortToApi(currentSort);
+            const {orderBy, order} = mapSortToApi(currentSort);
             const requestBody = {
                 page: currentPage,
                 size: rowsPerPage,
@@ -162,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/playlists', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/playlists', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -202,16 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Unable to load playlists. Please try again.', true);
             playlistTableBody.innerHTML = `<tr><td colspan="9"><span class="no-playlists">Unable to load playlists. Please try again later or contact support.</span></td></tr>`;
             paginationDiv.innerHTML = '';
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     const createPlaylist = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/playlist/create', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/playlist/create', {
                 method: 'POST',
                 body: formData
             });
@@ -229,9 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const publishPlaylist = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/playlist/publish/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/playlist/publish/${id}`, {
                 method: 'POST',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to publish playlist: ${response.status}`);
@@ -244,9 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const declinePlaylist = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/playlist/decline/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/playlist/decline/${id}`, {
                 method: 'POST',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to decline playlist: ${response.status}`);
@@ -259,9 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deletePlaylist = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/playlist/delete/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/playlist/delete/${id}`, {
                 method: 'DELETE',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) throw new Error(`Failed to delete playlist: ${response.status}`);
@@ -737,10 +730,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     await fetchPlaylists();
                 } catch (error) {
                     showNotification(`Failed to save playlist: ${error.message}`, true);
-                    if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                        sessionStorage.clear();
-                        window.location.href = '../auth/login_register.html';
-                    }
                 } finally {
                     if (saveButton) {
                         saveButton.disabled = false;
@@ -811,10 +800,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchPlaylists();
                         } catch (error) {
                             showNotification(`Failed to publish playlist: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Publish';
@@ -834,10 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchPlaylists();
                         } catch (error) {
                             showNotification(`Failed to decline playlist: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Decline';
@@ -857,10 +838,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchPlaylists();
                         } catch (error) {
                             showNotification(`Failed to delete playlist: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Delete';
@@ -895,9 +872,5 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
             console.error('Initialization error:', error);
             showNotification('Failed to initialize. Please try again.', true);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         });
 });

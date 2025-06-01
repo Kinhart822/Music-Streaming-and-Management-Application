@@ -50,11 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mapSortToApi = (sort) => {
         switch (sort) {
-            case 'name-asc': return { orderBy: 'genresName', order: 'asc' };
-            case 'name-desc': return { orderBy: 'genresName', order: 'desc' };
-            case 'date-asc': return { orderBy: 'createdDate', order: 'asc' };
-            case 'date-desc': return { orderBy: 'createdDate', order: 'desc' };
-            default: return { orderBy: 'genresName', order: 'asc' };
+            case 'name-asc':
+                return {orderBy: 'genresName', order: 'asc'};
+            case 'name-desc':
+                return {orderBy: 'genresName', order: 'desc'};
+            case 'date-asc':
+                return {orderBy: 'createdDate', order: 'asc'};
+            case 'date-desc':
+                return {orderBy: 'createdDate', order: 'desc'};
+            default:
+                return {orderBy: 'genresName', order: 'asc'};
         }
     };
 
@@ -62,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchGenres = async () => {
         try {
             genreTableBody.innerHTML = '<tr><td colspan="6"><div class="spinner"></div></td></tr>';
-            const { orderBy, order } = mapSortToApi(currentSort);
+            const {orderBy, order} = mapSortToApi(currentSort);
             const requestBody = {
                 page: currentPage,
                 size: rowsPerPage,
@@ -71,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/genres', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/genres', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -108,16 +113,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Failed to load genres. Please try again.', true);
             genreTableBody.innerHTML = `<tr><td colspan="6"><span class="no-genres">Unable to load genres. Please try again later or contact support.</span></td></tr>`;
             paginationDiv.innerHTML = '';
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     const createGenre = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/genre/create', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/genre/create', {
                 method: 'POST',
                 body: formData
             });
@@ -135,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateGenre = async (id, formData) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/genre/update/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/genre/update/${id}`, {
                 method: 'PUT',
                 body: formData
             });
@@ -153,9 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteGenre = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/genre/delete/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/genre/delete/${id}`, {
                 method: 'DELETE',
-                headers: { 'Accept': 'application/json' }
+                headers: {'Accept': 'application/json'}
             });
 
             if (!response.ok) {
@@ -482,10 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     await fetchGenres();
                 } catch (error) {
                     showNotification(`Failed to ${genreForm.dataset.mode === 'edit' ? 'update' : 'create'} genre: ${error.message}`, true);
-                    if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                        sessionStorage.clear();
-                        window.location.href = '../auth/login_register.html';
-                    }
                 } finally {
                     if (saveButton) {
                         saveButton.disabled = false;
@@ -537,10 +534,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchGenres();
                         } catch (error) {
                             showNotification(`Failed to delete genre: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Delete';
@@ -571,9 +564,5 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchGenres().catch(error => {
         console.error('Initialization error:', error);
         showNotification('Failed to initialize. Please try again.', true);
-        if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-            sessionStorage.clear();
-            window.location.href = '../auth/login_register.html';
-        }
     });
 });

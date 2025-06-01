@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loadProfile = async () => {
         const spinner = showSpinner();
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/profile/artist', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/profile/artist', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -81,10 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Error loading profile:', error);
             showNotification('Failed to load profile data. Please try again.', true);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
+            
         } finally {
             hideSpinner(spinner);
         }
@@ -193,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             submitButton.disabled = true;
             submitButton.textContent = 'Updating...';
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/updateArtist', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/updateArtist', {
                 method: 'PUT',
                 body: formData
             });
@@ -234,10 +231,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Error updating profile:', error);
             showNotification(`Failed to update profile: ${error.message || 'Please try again.'}`, true);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Update Profile';

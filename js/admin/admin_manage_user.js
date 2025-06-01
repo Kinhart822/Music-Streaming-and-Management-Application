@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 order: order
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/accounts', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/accounts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -306,13 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let apiEndpoint;
         switch (role) {
             case 'USER':
-                apiEndpoint = 'http://localhost:8080/api/v1/admin/manage/createUser';
+                apiEndpoint = 'http://spring-music-container:8080/api/v1/admin/manage/createUser';
                 break;
             case 'ADMIN':
-                apiEndpoint = 'http://localhost:8080/api/v1/admin/manage/createAdmin';
+                apiEndpoint = 'http://spring-music-container:8080/api/v1/admin/manage/createAdmin';
                 break;
             case 'ARTIST':
-                apiEndpoint = 'http://localhost:8080/api/v1/admin/manage/createArtist';
+                apiEndpoint = 'http://spring-music-container:8080/api/v1/admin/manage/createArtist';
                 break;
             default:
                 showNotification('Invalid role selected', true);
@@ -368,16 +368,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.classList.contains('accept')) {
                 action = 'ACCEPTED';
                 actionLabel = 'accept';
-                apiUrl = `http://localhost:8080/api/v1/admin/manage/processingDeleteRequest/${userId}?manageProcess=${action}`;
+                apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/processingDeleteRequest/${userId}?manageProcess=${action}`;
                 method = 'POST';
             } else if (e.target.classList.contains('revoke')) {
                 action = 'REVOKED';
                 actionLabel = 'revoke';
-                apiUrl = `http://localhost:8080/api/v1/admin/manage/processingDeleteRequest/${userId}?manageProcess=${action}`;
+                apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/processingDeleteRequest/${userId}?manageProcess=${action}`;
                 method = 'POST';
             } else {
                 actionLabel = 'delete';
-                apiUrl = `http://localhost:8080/api/v1/admin/manage/adminDeleteUser/${userId}`;
+                apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/adminDeleteUser/${userId}`;
                 method = 'DELETE';
             }
 

@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Functions
     const fetchSongs = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/song/allAcceptedSong', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/song/allAcceptedSong', {
                 method: 'GET',
                 headers: {'Accept': 'application/json'}
             });
@@ -119,16 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (songsContainer) {
                 songsContainer.innerHTML = '<div class="no-songs-text">Failed to load songs.</div>';
             }
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     const fetchArtists = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/allActiveArtists', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/allActiveArtists', {
                 method: 'GET',
                 headers: {'Accept': 'application/json'}
             });
@@ -149,10 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (artistsContainer) {
                 artistsContainer.innerHTML = '<div class="no-artists-text">Failed to load artists.</div>';
             }
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
@@ -168,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/albums', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/albums', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,16 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Unable to load albums. Please try again.', true);
             albumTableBody.innerHTML = `<tr><td colspan="9"><span class="no-albums">Unable to load albums. Please try again later or contact support.</span></td></tr>`;
             paginationDiv.innerHTML = '';
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     const createAlbum = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/admin/manage/album/create', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/album/create', {
                 method: 'POST',
                 body: formData
             });
@@ -235,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const publishAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/publish/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/album/publish/${id}`, {
                 method: 'POST',
                 headers: {'Accept': 'application/json'}
             });
@@ -250,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const declineAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/decline/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/album/decline/${id}`, {
                 method: 'POST',
                 headers: {'Accept': 'application/json'}
             });
@@ -265,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://localhost:8080/api/v1/admin/manage/album/delete/${id}`, {
+            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/album/delete/${id}`, {
                 method: 'DELETE',
                 headers: {'Accept': 'application/json'}
             });
@@ -742,10 +730,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     await fetchAlbums();
                 } catch (error) {
                     showNotification(`Failed to save album: ${error.message}`, true);
-                    if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                        sessionStorage.clear();
-                        window.location.href = '../auth/login_register.html';
-                    }
                 } finally {
                     if (saveButton) {
                         saveButton.disabled = false;
@@ -816,10 +800,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchAlbums();
                         } catch (error) {
                             showNotification(`Failed to publish album: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Publish';
@@ -839,10 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchAlbums();
                         } catch (error) {
                             showNotification(`Failed to decline album: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Decline';
@@ -862,10 +838,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchAlbums();
                         } catch (error) {
                             showNotification(`Failed to delete album: ${error.message}`, true);
-                            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                                sessionStorage.clear();
-                                window.location.href = '../auth/login_register.html';
-                            }
                         } finally {
                             e.target.disabled = false;
                             e.target.innerHTML = 'Delete';
@@ -900,9 +872,5 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
             console.error('Initialization error:', error);
             showNotification('Failed to initialize. Please try again.', true);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         });
 });

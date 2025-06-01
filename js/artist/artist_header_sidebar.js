@@ -1,6 +1,6 @@
 import {fetchWithRefresh} from "../refresh.js";
 import {showNotification} from "../notification.js";
-import { messaging, onMessage } from '../../firebase_config.js';
+import {messaging, onMessage} from '../../firebase_config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const menu = document.querySelector('.menu');
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch notifications from API
     const loadNotifications = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/notification', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/notification', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -115,17 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error fetching notifications:', error);
             showNotification('Failed to load notifications. Using cached data.', true);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 
     // Fetch profile data from API
     const loadProfile = async () => {
         try {
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/account/profile/artist', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/profile/artist', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -157,10 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error fetching profile:', error);
             showNotification('Failed to load profile data. Using cached data.', true);
-            if (error.message.includes('No tokens') || error.message.includes('Invalid refresh token') || error.message.includes('Invalid access token')) {
-                sessionStorage.clear();
-                window.location.href = '../auth/login_register.html';
-            }
         }
     };
 

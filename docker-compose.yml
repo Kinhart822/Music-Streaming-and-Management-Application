@@ -1,0 +1,16 @@
+services:
+  frontend-service:
+    container_name: frontend-container
+    image: staticwebapp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - springnet
+
+
+networks:
+  springnet:
+    external: true

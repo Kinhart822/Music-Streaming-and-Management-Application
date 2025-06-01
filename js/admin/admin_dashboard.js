@@ -39,38 +39,38 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const apiEndpoints = [
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countUser',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countUser',
                     card: totalListenersCard,
                     key: 'totalUsers'
                 },
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countArtist',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countArtist',
                     card: totalArtistsCard,
                     key: 'totalArtists'
                 },
-                {url: 'http://localhost:8080/api/v1/admin/manage/countSong', card: totalSongsCard, key: 'totalSongs'},
+                {url: 'http://spring-music-container:8080/api/v1/admin/manage/countSong', card: totalSongsCard, key: 'totalSongs'},
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countPlaylist',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countPlaylist',
                     card: totalPlaylistsCard,
                     key: 'totalPlaylists'
                 },
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countAlbum',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countAlbum',
                     card: totalAlbumsCard,
                     key: 'totalAlbums'
                 },
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countPendingSong',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countPendingSong',
                     card: pendingSongsCard,
                     key: 'pendingSongs'
                 },
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countPendingPlaylist',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countPendingPlaylist',
                     card: pendingPlaylistsCard,
                     key: 'pendingPlaylists'
                 },
                 {
-                    url: 'http://localhost:8080/api/v1/admin/manage/countPendingAlbum',
+                    url: 'http://spring-music-container:8080/api/v1/admin/manage/countPendingAlbum',
                     card: pendingAlbumsCard,
                     key: 'pendingAlbums'
                 }
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 order: order.toUpperCase()
             };
 
-            const response = await fetchWithRefresh('http://localhost:8080/api/v1/search/recentContents', {
+            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/recentContents', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -370,45 +370,45 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (type) {
             case 'song':
                 if (button.classList.contains('publish')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/song/publish/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/song/publish/${id}`;
                     method = 'POST';
                     actionLabel = 'publish';
                 } else if (button.classList.contains('decline')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/song/decline/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/song/decline/${id}`;
                     method = 'POST';
                     actionLabel = 'decline';
                 } else if (button.classList.contains('delete')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/song/delete/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/song/delete/${id}`;
                     method = 'DELETE';
                     actionLabel = 'delete';
                 }
                 break;
             case 'playlist':
                 if (button.classList.contains('publish')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/playlist/publish/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/playlist/publish/${id}`;
                     method = 'POST';
                     actionLabel = 'publish';
                 } else if (button.classList.contains('decline')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/playlist/decline/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/playlist/decline/${id}`;
                     method = 'POST';
                     actionLabel = 'decline';
                 } else if (button.classList.contains('delete')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/playlist/delete/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/playlist/delete/${id}`;
                     method = 'DELETE';
                     actionLabel = 'delete';
                 }
                 break;
             case 'album':
                 if (button.classList.contains('publish')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/album/publish/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/album/publish/${id}`;
                     method = 'POST';
                     actionLabel = 'publish';
                 } else if (button.classList.contains('decline')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/album/decline/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/album/decline/${id}`;
                     method = 'POST';
                     actionLabel = 'decline';
                 } else if (button.classList.contains('delete')) {
-                    apiUrl = `http://localhost:8080/api/v1/admin/manage/album/delete/${id}`;
+                    apiUrl = `http://spring-music-container:8080/api/v1/admin/manage/album/delete/${id}`;
                     method = 'DELETE';
                     actionLabel = 'delete';
                 }

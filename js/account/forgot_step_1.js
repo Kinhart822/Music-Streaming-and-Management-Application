@@ -18,7 +18,7 @@ form.addEventListener('submit', async (e) => {
     try {
         const sessionId = crypto.randomUUID();
         console.log('Sending forgot password request for:', { email, sessionId });
-        const response = await fetch('http://localhost:8080/api/v1/account/user/forgot-password/begin', {
+        const response = await fetch('http://spring-music-container:8080/api/v1/account/user/forgot-password/begin', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

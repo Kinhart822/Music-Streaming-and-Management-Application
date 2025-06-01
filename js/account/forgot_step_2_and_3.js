@@ -60,7 +60,7 @@ if (otpForm) {
 
         try {
             console.log('Sending OTP check request:', { sessionId, otp });
-            const response = await fetch('http://localhost:8080/api/v1/account/user/forgot-password/check-otp', {
+            const response = await fetch('http://spring-music-container:8080/api/v1/account/user/forgot-password/check-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ if (resetForm) {
 
         try {
             console.log('Sending password reset request:', { sessionId, password });
-            const response = await fetch('http://localhost:8080/api/v1/account/user/forgot-password/finish', {
+            const response = await fetch('http://spring-music-container:8080/api/v1/account/user/forgot-password/finish', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
