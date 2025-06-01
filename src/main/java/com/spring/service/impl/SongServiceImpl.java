@@ -452,6 +452,8 @@ public class SongServiceImpl implements SongService {
             log.info("✅ {}", message);
         } catch (Exception ex) {
             message = "Song [" + song.getId() + "] failed with error: " + ex.getMessage();
+            song.setSongStatus(SongStatus.DECLINED);
+            songRepository.save(song);
             log.error("❗ {}", message, ex);
         } finally {
             // Ensure file deletion

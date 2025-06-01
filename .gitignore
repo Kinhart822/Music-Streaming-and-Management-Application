@@ -33,5 +33,5 @@ build/
 .vscode/
 
 # Environment variables
-musicnotifications-9b666-firebase-adminsdk-fbsvc-423cd59fe5.json
+!**/src/main/resources/musicnotifications-9b666-firebase-adminsdk-fbsvc-423cd59fe5.json
 .env

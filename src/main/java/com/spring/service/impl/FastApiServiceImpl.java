@@ -30,7 +30,9 @@ import java.util.stream.Collectors;
 public class FastApiServiceImpl implements FastApiService {
     private final GenreRepository genreRepository;
     private final GenreSongRepository genreSongRepository;
-    private static final String BASE_URL = "http://localhost:8000";
+    private static final String BASE_URL = "http://fastapi-container:8000";
+//    private static final String BASE_URL = "http://host.docker.internal:8000";
+
 
     private FastApiResponse extractResponseFromJson(String responseBody) {
         try {

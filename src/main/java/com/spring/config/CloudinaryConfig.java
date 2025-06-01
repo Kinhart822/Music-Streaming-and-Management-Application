@@ -1,6 +1,7 @@
 package com.spring.config;
 
 import com.cloudinary.Cloudinary;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,9 +10,18 @@ import java.util.Map;
 
 @Configuration
 public class CloudinaryConfig {
-    private static final String CLOUDINARY_CLOUD_NAME = EnvConfig.get("CLOUDINARY_CLOUD_NAME");
-    private static final String CLOUDINARY_API_KEY = EnvConfig.get("CLOUDINARY_API_KEY");
-    private static final String CLOUDINARY_API_SECRET = EnvConfig.get("CLOUDINARY_API_SECRET");
+//    private static final String CLOUDINARY_CLOUD_NAME = EnvConfig.get("CLOUDINARY_CLOUD_NAME");
+//    private static final String CLOUDINARY_API_KEY = EnvConfig.get("CLOUDINARY_API_KEY");
+//    private static final String CLOUDINARY_API_SECRET = EnvConfig.get("CLOUDINARY_API_SECRET");
+
+    @Value("${cloudinary.cloud-name}")
+    private String CLOUDINARY_CLOUD_NAME;
+
+    @Value("${cloudinary.api-key}")
+    private String CLOUDINARY_API_KEY;
+
+    @Value("${cloudinary.api-secret}")
+    private String CLOUDINARY_API_SECRET;
 
     @Bean
     public Cloudinary cloudinary() {
