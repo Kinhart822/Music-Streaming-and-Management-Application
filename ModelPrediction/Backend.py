@@ -4,6 +4,7 @@ import subprocess
 import hashlib
 import logging
 import re
+import time
 from uuid import uuid4
 import contractions
 import inflect
@@ -13,11 +14,11 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from collections import defaultdict
 from lingua import Language, LanguageDetectorBuilder
-import whisper
+# import whisper
 import os
 import shutil
 import joblib
-import uvicorn
+# import uvicorn
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
@@ -32,7 +33,9 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 # PostgreSQL
-DATABASE_URL = "postgresql://postgres:kinhart822@localhost:5432/msma_database"
+# DATABASE_URL = "postgresql://postgres:kinhart822@localhost:5432/msma_database"
+DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = "postgresql://postgres:kinhart822@host.docker.internal:5433/msma_database"
 engine = create_engine(DATABASE_URL)
 
 # Paths
@@ -46,7 +49,7 @@ vectorizer_tfidf_similarity = TfidfVectorizer(use_idf=True)
 tfidf_matrix = None
 lyrics_hash = None
 process_pool = None  # ProcessPoolExecutor
-whisper_model = None  # Global Whisper model
+# whisper_model = None  # Global Whisper model
 
 # Load spaCy English model
 nlp = spacy.load('en_core_web_sm')
@@ -62,7 +65,7 @@ logging.basicConfig(level=logging.INFO)
 # Lifespan event handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global vectorizer_tfidf, rf_model_train, tfidf_matrix, lyrics_hash, process_pool, whisper_model
+    global vectorizer_tfidf, rf_model_train, tfidf_matrix, lyrics_hash, process_pool
     logging.info("Starting up: Loading models and TF-IDF matrix...")
     # Log ffmpeg version
     try:
@@ -85,26 +88,8 @@ async def lifespan(app: FastAPI):
     except FileNotFoundError:
         lyrics_hash = None
 
-    # Load Whisper model
-    try:
-        logging.info("Loading Whisper model 'medium.en'...")
-        whisper_model = whisper.load_model("medium.en")
-        logging.info("Whisper model loaded successfully.")
-    except RuntimeError as e:
-        if "checksum does not match" in str(e):
-            logging.warning("Whisper model checksum mismatch. Clearing cache and retrying...")
-            cache_dir = os.path.expanduser("~/.cache/whisper")
-            if os.path.exists(cache_dir):
-                shutil.rmtree(cache_dir, ignore_errors=True)
-                logging.info(f"Cleared Whisper cache at {cache_dir}")
-            whisper_model = whisper.load_model("medium.en")
-            logging.info("Whisper model loaded successfully after cache clear.")
-        else:
-            logging.error(f"Failed to load Whisper model: {e}")
-            raise e
-
     # Initialize ProcessPoolExecutor
-    max_workers = multiprocessing.cpu_count()  # Use the number of CPU cores
+    max_workers = min(2, multiprocessing.cpu_count())
     process_pool = ProcessPoolExecutor(max_workers=max_workers)
     logging.info(f"Initialized ProcessPoolExecutor with {max_workers} workers")
 
@@ -151,36 +136,68 @@ def safe_decode(output_bytes):
 
 # Define module-level functions for ProcessPoolExecutor
 def run_whisper_transcription(audio_path):
-    """Run Whisper transcription in a separate process using a global model or load if necessary."""
-    global whisper_model
+    """Run Whisper transcription in a separate process (load model inside process)."""
     try:
-        # Check if the model is available; if not, load it (for a new worker process)
-        if whisper_model is None:
-            logging.info("Whisper model not found in process. Loading 'medium.en'...")
-            try:
-                whisper_model = whisper.load_model("medium.en")
-                logging.info("Whisper model loaded successfully in process.")
-            except RuntimeError as e:
-                if "checksum does not match" in str(e):
-                    logging.warning("Whisper model checksum mismatch. Clearing cache and retrying...")
-                    cache_dir = os.path.expanduser("~/.cache/whisper")
-                    if os.path.exists(cache_dir):
-                        shutil.rmtree(cache_dir, ignore_errors=True)
-                        logging.info(f"Cleared Whisper cache at {cache_dir}")
-                    whisper_model = whisper.load_model("medium.en")
-                    logging.info("Whisper model loaded successfully after cache clear.")
-                else:
-                    raise e
-        result = whisper_model.transcribe(audio_path, fp16=False)
+        import whisper
+
+        logging.info("Loading Whisper model 'small.en' inside subprocess...")
+        start_time = time.time()
+        logging.info("Loading Whisper model 'small.en'...")
+        model = whisper.load_model("small.en")
+        logging.info("Whisper model loaded successfully.")
+        logging.info(f"Whisper model loaded in {time.time() - start_time:.2f} seconds")
+
+        logging.info(f"Starting transcription for {audio_path}")
+        result = model.transcribe(audio_path, fp16=False)
         lyrics = result["text"]
+
         if not lyrics.strip():
             logging.warning(f"Transcription produced empty lyrics: {audio_path}")
             return None
-        logging.info(f"Transcription successful for {audio_path}")
+
+        logging.info(f"Transcription successful for {audio_path}, lyrics length: {len(lyrics)} characters")
         return lyrics
+
     except Exception as e:
         logging.error(f"Whisper transcription error: {type(e).__name__}: {str(e)}")
         return None
+
+# def run_whisper_transcription(audio_path):
+#     """Run Whisper transcription in a separate process using a global model or load if necessary."""
+#     global whisper_model
+#     try:
+#         # Check if the model is available; if not, load it (for a new worker process)
+#         if whisper_model is None:
+#             logging.info("Whisper model not found in process. Loading 'base.en'...")
+#             start_time = time.time()
+#             try:
+#                 whisper_model = whisper.load_model("base.en")
+#                 logging.info(f"Whisper model loaded successfully in {time.time() - start_time:.2f} seconds")
+#             except RuntimeError as e:
+#                 if "checksum does not match" in str(e):
+#                     logging.warning("Whisper model checksum mismatch. Clearing cache and retrying...")
+#                     # cache_dir = os.path.expanduser("~/.cache/whisper")
+#                     # if os.path.exists(cache_dir):
+#                     #     shutil.rmtree(cache_dir, ignore_errors=True)
+#                     #     logging.info(f"Cleared Whisper cache at {cache_dir}")
+#                     start_time = time.time()
+#                     whisper_model = whisper.load_model("base.en")
+#                     logging.info(f"Whisper model loaded successfully after cache clear in {time.time() - start_time:.2f} seconds")
+#                 else:
+#                     raise e
+#         logging.info(f"Starting transcription for {audio_path}")
+#         start_time = time.time()
+#         result = whisper_model.transcribe(audio_path, fp16=False)
+#         logging.info(f"Transcription completed in {time.time() - start_time:.2f} seconds")
+#         lyrics = result["text"]
+#         if not lyrics.strip():
+#             logging.warning(f"Transcription produced empty lyrics: {audio_path}")
+#             return None
+#         logging.info(f"Transcription successful for {audio_path}, lyrics length: {len(lyrics)} characters")
+#         return lyrics
+#     except Exception as e:
+#         logging.error(f"Whisper transcription error: {type(e).__name__}: {str(e)}")
+#         return None
 
 
 def run_demucs_separation(input_file, output_folder, filename):
@@ -316,12 +333,21 @@ async def transcribe_lyric_by_whisper(audio_path):
             return None
         logging.info(f"Transcribing audio: {audio_path}")
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(process_pool, run_whisper_transcription, audio_path)
-        if result is None:
-            logging.warning(f"Transcription failed for {audio_path}")
+        try:
+            start_time = time.time()
+            result = await asyncio.wait_for(
+                loop.run_in_executor(process_pool, run_whisper_transcription, audio_path),
+                timeout=600  # 10-minute timeout
+            )
+            logging.info(f"Total transcription process took {time.time() - start_time:.2f} seconds")
+            if result is None:
+                logging.warning(f"Transcription failed for {audio_path}")
+                return None
+            logging.info("Lyrics transcribed successfully.")
+            return result
+        except asyncio.TimeoutError:
+            logging.error(f"Transcription timed out after 10 minutes for {audio_path}")
             return None
-        logging.info("Lyrics transcribed successfully.")
-        return result
     except Exception as e:
         logging.error(f"Error transcribing lyrics: {type(e).__name__}: {str(e)}", exc_info=True)
         return None
@@ -616,6 +642,11 @@ def predict_genre(model_prediction, tfidf_vector):
     return predicted_genre
 
 
+@app.get("/")
+async def root():
+    return {"message": "FastAPI is running"}
+
+
 @app.post("/check-similarity")
 async def similarity_api(lyrics: str = Form(None), audio_file: UploadFile = None):
     async with REQUEST_SEMAPHORE:
@@ -628,12 +659,14 @@ async def similarity_api(lyrics: str = Form(None), audio_file: UploadFile = None
                 request_id, temp_dir, audio = result
                 logging.info(f"Finished handling audio upload: {audio}")
                 if not audio:
+                    shutil.rmtree(temp_dir, ignore_errors=True)
                     return JSONResponse(status_code=400,
                                         content={"error": "Audio processing failed. Check logs for details."})
                 logging.info("Starting transcription")
                 lyrics_transcribe = await transcribe_lyric_by_whisper(audio)
                 logging.info(f"Transcription result: {lyrics_transcribe}")
                 if not lyrics_transcribe:
+                    shutil.rmtree(temp_dir, ignore_errors=True)
                     return JSONResponse(status_code=400,
                                         content={"error": "Lyrics transcription failed. Check audio file."})
                 lyrics_file = f"{temp_dir}/lyrics_transcribe.pkl"
@@ -675,6 +708,7 @@ async def similarity_api(lyrics: str = Form(None), audio_file: UploadFile = None
                     content={"error": "Bạn phải cung cấp audio hoặc lyrics."}
                 )
         except Exception as e:
+            shutil.rmtree(temp_dir, ignore_errors=True)
             logging.error(f"Error in similarity_api: {type(e).__name__}: {str(e)}", exc_info=True)
             return JSONResponse(status_code=500, content={"error": f"Server error: {str(e)}"})
 
@@ -689,6 +723,7 @@ async def predict_genre_api(request_id: str = Form(None), lyrics: str = Form(Non
                     temp_dir = f"temp/{request_id}"
                     lyrics_file = f"{temp_dir}/lyrics_transcribe.pkl"
                     if not os.path.exists(lyrics_file):
+                        shutil.rmtree(temp_dir, ignore_errors=True)
                         return JSONResponse(status_code=400, content={"error": "Lyrics file not found."})
                     loop = asyncio.get_running_loop()
                     lyrics_transcribe = await loop.run_in_executor(None, lambda: joblib.load(lyrics_file))
@@ -713,6 +748,7 @@ async def predict_genre_api(request_id: str = Form(None), lyrics: str = Form(Non
                     content={"error": "Bạn phải cung cấp audio hoặc lyrics."}
                 )
         except Exception as e:
+            shutil.rmtree(temp_dir, ignore_errors=True)
             logging.error(f"Error in predict_genre_api: {type(e).__name__}: {str(e)}", exc_info=True)
             return JSONResponse(status_code=500, content={"error": f"Server error: {str(e)}"})
 
@@ -726,11 +762,13 @@ async def transcribe_lyrics(audio_file: UploadFile = None):
                 request_id, temp_dir, audio = await handle_audio_upload(audio_file)
                 logging.info(f"Finished handling audio upload: {audio}")
                 if not audio:
+                    shutil.rmtree(temp_dir, ignore_errors=True)
                     return JSONResponse(status_code=400,
                                         content={"error": "Audio processing failed. Check logs for details."})
                 lyrics_transcribe = await transcribe_lyric_by_whisper(audio)
                 logging.info("Finished transcribing lyrics")
                 if not lyrics_transcribe:
+                    shutil.rmtree(temp_dir, ignore_errors=True)
                     return JSONResponse(status_code=400,
                                         content={"error": "Lyrics transcription failed. Check audio file."})
                 lyrics_file = f"{temp_dir}/lyrics_transcribe.pkl"
@@ -750,6 +788,7 @@ async def transcribe_lyrics(audio_file: UploadFile = None):
                     content={"error": "Bạn phải cung cấp audio hoặc lyrics."}
                 )
         except Exception as e:
+            shutil.rmtree(temp_dir, ignore_errors=True)
             logging.error(f"Error in transcribe_lyrics: {type(e).__name__}: {str(e)}", exc_info=True)
             return JSONResponse(status_code=500, content={"error": f"Server error: {str(e)}"})
 
@@ -787,6 +826,5 @@ async def check_similar_api(lyrics: str = Form(None), lyrics_audio: str = Form(N
             logging.error(f"Error in check_similar_api: {type(e).__name__}: {str(e)}", exc_info=True)
             return JSONResponse(status_code=500, content={"error": f"Server error: {str(e)}"})
 
-
-if __name__ == "__main__":
-    uvicorn.run("Backend:app", host="0.0.0.0", port=8000, reload=True)
+# if __name__ == "__main__":
+#     uvicorn.run("Backend:app", host="0.0.0.0", port=8000, reload=True)

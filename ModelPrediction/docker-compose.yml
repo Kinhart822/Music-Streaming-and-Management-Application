@@ -1,0 +1,17 @@
+services:
+  fastapi-service:
+    container_name: fastapi-container
+    image: prediction-features
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - springnet
+    environment:
+      - DATABASE_URL=postgresql://postgres:kinhart822@postgres-container:5432/msma_database
+
+networks:
+  springnet:
+    external: true
