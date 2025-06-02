@@ -1,5 +1,6 @@
 package com.spring.service.impl;
 
+import com.spring.config.EnvConfig;
 import com.spring.dto.response.Otp;
 import com.spring.entities.User;
 import com.spring.service.EmailService;
@@ -16,6 +17,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendSimpleMailMessage(String toEmail, String subject, String body) {
+        String fromEmail = EnvConfig.get("EMAIL_USERNAME");
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject(subject);
