@@ -10,7 +10,7 @@ const handleLogout = async () => {
         const currentUserEmail = sessionStorage.getItem('currentUserEmail');
         if (!currentUserEmail) {
             console.warn('No user is currently logged in');
-            window.location.href = '../auth/login_register.html';
+            window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
             return;
         }
 
@@ -44,12 +44,12 @@ const handleLogout = async () => {
         console.log('sessionStorage cleared for user:', currentUserEmail);
 
         // Redirect to login page
-        window.location.href = '../auth/login_register.html';
+        window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
     } catch (error) {
         console.error('Logout error:', error);
         // Clear sessionStorage and redirect even on error to ensure logout
         clearCurrentUserData();
-        window.location.href = '../auth/login_register.html';
+        window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
     }
 };
 

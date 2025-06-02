@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 window.dispatchEvent(profileUpdatedEvent);
                 setTimeout(() => {
-                    window.location.href = 'artist_dashboard.html';
+                    window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/artist/artist_dashboard.html';
                 }, 1000);
             } else {
                 throw new Error(data.message || 'Unexpected response format');

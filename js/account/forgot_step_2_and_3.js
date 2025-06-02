@@ -158,7 +158,7 @@ if (resetForm) {
             resetError.textContent = 'Password reset successfully! Redirecting to login...';
             resetError.style.display = 'block';
             setTimeout(() => {
-                window.location.href = 'login_register.html';
+                window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
             }, 2000);
         } catch (error) {
             console.error('Password reset error:', error);

@@ -51,9 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentUserEmail) {
         const userType = sessionStorage.getItem(`user_${currentUserEmail}_userType`);
         if (userType === 'ARTIST') {
-            window.location.href = '../artist/artist_dashboard.html';
+            window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/artist/artist_dashboard.html';
         } else if (userType === 'ADMIN') {
-            window.location.href = '../admin/admin_dashboard.html';
+            window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/admin/admin_dashboard.html';
         }
     }
 });
@@ -254,9 +254,9 @@ signInForm.addEventListener('submit', async (e) => {
 
         // Redirect based on userType
         if (userType === 'ARTIST') {
-            window.location.href = '../artist/artist_dashboard.html';
+            window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/artist/artist_dashboard.html';
         } else if (userType === 'ADMIN') {
-            window.location.href = '../admin/admin_dashboard.html';
+            window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/admin/admin_dashboard.html';
         } else if (userType === 'USER') {
             signInError.textContent = 'Invalid user type';
             signInError.style.display = 'block';
