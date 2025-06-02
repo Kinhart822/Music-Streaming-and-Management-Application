@@ -76,24 +76,29 @@ public class FirebaseConfig {
             }
 
             // Reconstruct JSON for ServiceAccountCredentials
+            String fixedPrivateKey = privateKey
+                    .replace("\\n", "\n") // Nếu giá trị lấy từ env là \\n thì chuyển thành \n thật
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n");
+
             String json = String.format(
                     "{"
                     + "\"type\": \"%s\","
                     + "\"project_id\": \"%s\","
-                    + "\"private_key_id\": \"%s\", "
-                    + "\"private_key\": \"%s\", "
-                    + "\"client_email\": \"%s\", "
-                    + "\"client_id\": \"%s\", "
-                    + "\"auth_uri\": \"%s\", "
-                    + "\"token_uri\": \"%s\", "
-                    + "\"auth_provider_x509_cert_url\": \"%s\", "
-                    + "\"client_x509_cert_url\": \"%s\", "
+                    + "\"private_key_id\": \"%s\","
+                    + "\"private_key\": \"%s\","
+                    + "\"client_email\": \"%s\","
+                    + "\"client_id\": \"%s\","
+                    + "\"auth_uri\": \"%s\","
+                    + "\"token_uri\": \"%s\","
+                    + "\"auth_provider_x509_cert_url\": \"%s\","
+                    + "\"client_x509_cert_url\": \"%s\","
                     + "\"universe_domain\": \"%s\""
                     + "}",
                     type,
                     projectId,
                     privateKeyId,
-                    privateKey.replace("\\n", "\n"),
+                    fixedPrivateKey,
                     clientEmail,
                     clientId,
                     authUri,
