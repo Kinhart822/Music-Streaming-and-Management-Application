@@ -47,7 +47,7 @@ form.addEventListener('submit', async (e) => {
         localStorage.setItem('forgotPasswordEmail', email);
 
         // Redirect to otp_reset.html
-        window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/otp_reset.html';
+        window.location.href = '../auth/otp_reset.html';
     } catch (error) {
         console.error('Forgot password error:', error);
         errorMessage.textContent = error.message || 'Unable to send OTP. Please try again.';

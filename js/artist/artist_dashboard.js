@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 );
             } else if (e.target.classList.contains('edit')) {
-                window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/artist/artist_manage_song.html';
+                window.location.href = '../artist/artist_manage_song.html';
             } else if (e.target.classList.contains('delete')) {
                 showConfirmModal(
                     'Confirm Delete',

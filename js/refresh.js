@@ -41,7 +41,7 @@ const refreshAccessToken = async (email, refreshToken) => {
         console.error('[Refresh] Token refresh error:', error);
         // Clear sessionStorage for the current user and redirect to log in
         clearCurrentUserData();
-        window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
+        window.location.href = '../auth/login_register.html';
         throw error;
     }
 };
@@ -56,7 +56,7 @@ const fetchWithRefresh = async (url, options = {}) => {
     const currentUserEmail = sessionStorage.getItem('currentUserEmail');
     if (!currentUserEmail) {
         console.error('[Fetch] No current user email, redirecting to login');
-        window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
+        window.location.href = '../auth/login_register.html';
         throw new Error('No current user email available');
     }
 
@@ -96,7 +96,7 @@ const fetchWithRefresh = async (url, options = {}) => {
                 console.error('[Fetch] No refresh token available');
                 clearCurrentUserData();
                 showSessionExpiredAlert();
-                window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
                 throw new Error('No refresh token available');
             }
 
@@ -105,7 +105,7 @@ const fetchWithRefresh = async (url, options = {}) => {
                 console.error('[Fetch] Refresh failed, redirecting to login');
                 clearCurrentUserData();
                 showSessionExpiredAlert();
-                window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
+                window.location.href = '../auth/login_register.html';
                 throw new Error('Token refresh failed');
             }
 
@@ -123,7 +123,7 @@ const fetchWithRefresh = async (url, options = {}) => {
                     console.error('[Fetch] Response body:', errorText);
                     clearCurrentUserData();
                     showSessionExpiredAlert();
-                    window.location.href = 'https://683dafb14818b60008040e18--msma-system.netlify.app/auth/login_register.html';
+                    window.location.href = '../auth/login_register.html';
                     throw new Error('Unauthorized after token refresh: ' + errorText);
                 } catch (err) {
                     console.error('[Fetch] Error reading response body:', err);
