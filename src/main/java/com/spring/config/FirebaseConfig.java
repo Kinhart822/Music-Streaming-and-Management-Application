@@ -77,7 +77,7 @@ public class FirebaseConfig {
 
             // Reconstruct JSON for ServiceAccountCredentials
             String json = String.format(
-                "{"
+                    "{"
                     + "\"type\": \"%s\","
                     + "\"project_id\": \"%s\","
                     + "\"private_key_id\": \"%s\", "
@@ -89,38 +89,35 @@ public class FirebaseConfig {
                     + "\"auth_provider_x509_cert_url\": \"%s\", "
                     + "\"client_x509_cert_url\": \"%s\", "
                     + "\"universe_domain\": \"%s\""
-                + "}",
-                type,
-                projectId,
-                privateKeyId,
-                privateKey.replace("\\n", "\n"),
-                clientEmail,
-                clientId,
-                authUri,
-                tokenUri,
-                authProviderX509CertUrl,
-                clientX509CertUrl,
-                universeDomain
+                    + "}",
+                    type,
+                    projectId,
+                    privateKeyId,
+                    privateKey.replace("\\n", "\n"),
+                    clientEmail,
+                    clientId,
+                    authUri,
+                    tokenUri,
+                    authProviderX509CertUrl,
+                    clientX509CertUrl,
+                    universeDomain
             );
 
             log.info("Constructed Firebase credentials JSON (first 50 chars): {}", json.substring(0, Math.min(50, json.length())));
 
             GoogleCredentials credentials = ServiceAccountCredentials.fromStream(
-                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))
+                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))
             ).createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"));
 
             FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(credentials)
-                .build();
+                    .setCredentials(credentials)
+                    .build();
 
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                log.info("FirebaseApp initialized successfully");
-            } else {
-                log.info("FirebaseApp already initialized");
             }
         } catch (IOException e) {
-            log.error("Failed to initialize FirebaseApp", e);
+            log.error("Create FirebaseApp Error", e);
             throw new RuntimeException("Failed to initialize FirebaseApp", e);
         }
     }

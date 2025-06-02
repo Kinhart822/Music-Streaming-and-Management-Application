@@ -26,8 +26,8 @@ services:
     image: spring-music-app
     ports:
       - '8080:8080'
-#    networks:
-#      - springnet
+    networks:
+      - springnet
     build:
       context: ./
       dockerfile: Dockerfile
@@ -39,6 +39,6 @@ services:
 #volumes:
 #  db_data:
 
-#networks:
-#  springnet:
-#    external: true
+networks:
+  springnet:
+    external: true
