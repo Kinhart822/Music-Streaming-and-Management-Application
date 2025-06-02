@@ -1,6 +1,7 @@
 package com.spring.security;
 
 //import com.spring.config.EnvConfig;
+import com.spring.config.EnvConfig;
 import com.spring.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -14,31 +15,33 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-//import java.util.Objects;
+import java.util.Objects;
 
 @Component
 public class JwtUtil {
-    @Value("${security.jwt.secret-key}")
-    private String JWT_SECRET_KEY;
+//    @Value("${security.jwt.secret-key}")
+//    private String JWT_SECRET_KEY;
+//
+//    @Value("${security.jwt.access-expiration-time}")
+//    private String ACCESS_EXPIRATION_TIME;
+//
+//    @Value("${security.jwt.refresh-expiration-time}")
+//    private String REFRESH_EXPIRATION_TIME;
 
-    @Value("${security.jwt.access-expiration-time}")
-    private String ACCESS_EXPIRATION_TIME;
-
-    @Value("${security.jwt.refresh-expiration-time}")
-    private String REFRESH_EXPIRATION_TIME;
-
-//    private static final String JWT_SECRET_KEY = EnvConfig.get("JWT_SECRET_KEY");
-//    private static final long ACCESS_EXPIRATION_TIME = Long.parseLong(Objects.requireNonNull(EnvConfig.get("ACCESS_EXPIRATION_TIME")));
-//    private static final long REFRESH_EXPIRATION_TIME = Long.parseLong(Objects.requireNonNull(EnvConfig.get("REFRESH_EXPIRATION_TIME")));
+    private static final String JWT_SECRET_KEY = EnvConfig.get("JWT_SECRET_KEY");
+    private static final long ACCESS_EXPIRATION_TIME = Long.parseLong(Objects.requireNonNull(EnvConfig.get("ACCESS_EXPIRATION_TIME")));
+    private static final long REFRESH_EXPIRATION_TIME = Long.parseLong(Objects.requireNonNull(EnvConfig.get("REFRESH_EXPIRATION_TIME")));
     private static final String USER_ID_CLAIM = "userId";
     private static final String ROLES_CLAIM = "role";
 
     public String generateAccessToken(UserDetails userDetails) {
-        return buildToken(userDetails, Long.parseLong(ACCESS_EXPIRATION_TIME));
+//        return buildToken(userDetails, Long.parseLong(ACCESS_EXPIRATION_TIME));
+        return buildToken(userDetails, (ACCESS_EXPIRATION_TIME));
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(userDetails, Long.parseLong(REFRESH_EXPIRATION_TIME));
+//        return buildToken(userDetails, Long.parseLong(REFRESH_EXPIRATION_TIME));
+        return buildToken(userDetails, (REFRESH_EXPIRATION_TIME));
     }
 
     private String buildToken(UserDetails userDetails, long expirationTime) {
