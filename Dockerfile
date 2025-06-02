@@ -7,7 +7,7 @@ RUN mvn clean package -DskipTests
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
-VOLUME /tmp
+#VOLUME /tmp
 ARG JAR_FILE=target/MSMA-0.0.1-SNAPSHOT.jar
 COPY --from=build /app/${JAR_FILE} app.jar
 COPY .env ./
