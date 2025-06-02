@@ -11,4 +11,4 @@ FROM openjdk:17-jdk-slim
 ARG JAR_FILE=target/MSMA-0.0.1-SNAPSHOT.jar
 COPY --from=build /app/${JAR_FILE} app.jar
 COPY .env ./
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["sh", "-c", "java -jar /app.jar --server.port=8080"]
