@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loadProfile = async () => {
         const spinner = showSpinner();
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/profile/artist', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/account/profile/artist', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             submitButton.disabled = true;
             submitButton.textContent = 'Updating...';
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/updateArtist', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/account/updateArtist', {
                 method: 'PUT',
                 body: formData
             });

@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // API Functions
     const fetchSongs = async () => {
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/song/allAcceptedSong', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/admin/manage/song/allAcceptedSong', {
                 method: 'GET',
                 headers: {'Accept': 'application/json'}
             });
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchArtists = async () => {
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/allActiveArtists', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/admin/manage/allActiveArtists', {
                 method: 'GET',
                 headers: {'Accept': 'application/json'}
             });
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/albums', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/search/albums', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const createAlbum = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/manage/album/create', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/admin/manage/album/create', {
                 method: 'POST',
                 body: formData
             });
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const publishAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/album/publish/${id}`, {
+            const response = await fetchWithRefresh(`https://music-streaming-and-management.onrender.com/api/v1/admin/manage/album/publish/${id}`, {
                 method: 'POST',
                 headers: {'Accept': 'application/json'}
             });
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const declineAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/album/decline/${id}`, {
+            const response = await fetchWithRefresh(`https://music-streaming-and-management.onrender.com/api/v1/admin/manage/album/decline/${id}`, {
                 method: 'POST',
                 headers: {'Accept': 'application/json'}
             });
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteAlbum = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/manage/album/delete/${id}`, {
+            const response = await fetchWithRefresh(`https://music-streaming-and-management.onrender.com/api/v1/admin/manage/album/delete/${id}`, {
                 method: 'DELETE',
                 headers: {'Accept': 'application/json'}
             });

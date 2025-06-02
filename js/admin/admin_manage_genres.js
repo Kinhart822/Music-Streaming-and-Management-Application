@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: searchQuery
             };
 
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/search/genres', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/search/genres', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const createGenre = async (formData) => {
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/admin/genre/create', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/admin/genre/create', {
                 method: 'POST',
                 body: formData
             });
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateGenre = async (id, formData) => {
         try {
-            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/genre/update/${id}`, {
+            const response = await fetchWithRefresh(`https://music-streaming-and-management.onrender.com/api/v1/admin/genre/update/${id}`, {
                 method: 'PUT',
                 body: formData
             });
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteGenre = async (id) => {
         try {
-            const response = await fetchWithRefresh(`http://spring-music-container:8080/api/v1/admin/genre/delete/${id}`, {
+            const response = await fetchWithRefresh(`https://music-streaming-and-management.onrender.com/api/v1/admin/genre/delete/${id}`, {
                 method: 'DELETE',
                 headers: {'Accept': 'application/json'}
             });

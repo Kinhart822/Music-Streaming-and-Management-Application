@@ -7,7 +7,7 @@
 const refreshAccessToken = async (email, refreshToken) => {
     try {
         console.log('[Refresh] Refreshing token for:', email);
-        const response = await fetch('http://spring-music-container:8080/api/v1/auth/refresh', {
+        const response = await fetch('https://music-streaming-and-management.onrender.com/api/v1/auth/refresh', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

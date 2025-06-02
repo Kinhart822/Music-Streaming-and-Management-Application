@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch notifications from API
     const loadNotifications = async () => {
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/notification', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/account/notification', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch profile data from API
     const loadProfile = async () => {
         try {
-            const response = await fetchWithRefresh('http://spring-music-container:8080/api/v1/account/profile/artist', {
+            const response = await fetchWithRefresh('https://music-streaming-and-management.onrender.com/api/v1/account/profile/artist', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
