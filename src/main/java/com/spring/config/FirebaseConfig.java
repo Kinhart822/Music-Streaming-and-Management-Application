@@ -17,9 +17,7 @@ import java.io.IOException;
 @Configuration
 public class FirebaseConfig {
     private static final Logger log = LoggerFactory.getLogger(SongServiceImpl.class);
-
-    @Value("${app.firebase-config}")
-    private String firebaseConfig;
+    private static final String firebaseConfig = EnvConfig.get("FIREBASE_CONFIG");
 
     @PostConstruct
     private void initialize() {
