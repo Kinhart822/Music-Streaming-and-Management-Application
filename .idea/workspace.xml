@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="Update Code with Docker">
+    <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="Update Code to Deploy">
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -214,6 +214,7 @@
       <workItem from="1748615191511" duration="7434000" />
       <workItem from="1748626881032" duration="22162000" />
       <workItem from="1748806435836" duration="260000" />
+      <workItem from="1748831612369" duration="9872000" />
     </task>
     <task id="LOCAL-00001" summary=" Done user realtime notifications only artist left">
       <option name="closed" value="true" />
@@ -239,7 +240,31 @@
       <option name="project" value="LOCAL" />
       <updated>1748806660970</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Update Code to deploy">
+      <option name="closed" value="true" />
+      <created>1748841867665</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1748841867665</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Update Code to Deploy">
+      <option name="closed" value="true" />
+      <created>1748842208861</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1748842208861</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Update Code to Deploy">
+      <option name="closed" value="true" />
+      <created>1748844024001</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1748844024001</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -260,7 +285,9 @@
     <MESSAGE value=" Done user realtime notifications only artist left" />
     <MESSAGE value=" Done artist realtime notifications" />
     <MESSAGE value="Update Code with Docker" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update Code with Docker" />
+    <MESSAGE value="Update Code to deploy" />
+    <MESSAGE value="Update Code to Deploy" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update Code to Deploy" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
