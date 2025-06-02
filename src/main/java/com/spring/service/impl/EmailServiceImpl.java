@@ -14,9 +14,6 @@ import org.springframework.stereotype.Service;
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender javaMailSender;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
-
     @Override
     public void sendSimpleMailMessage(String toEmail, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();

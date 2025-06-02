@@ -22,7 +22,6 @@ public class MailConfig {
             throw new NullPointerException("EMAIL_PASSWORD is missing in .env file");
         }
 
-
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(587);
