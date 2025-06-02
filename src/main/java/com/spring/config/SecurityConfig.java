@@ -57,7 +57,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:63342", "http://localhost:5500", "http://localhost:80", "http://localhost",
-                "https://683dafb14818b60008040e18--msma-system.netlify.app"
+                "https://683db540b92954000835aaee--msma-system.netlify.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
