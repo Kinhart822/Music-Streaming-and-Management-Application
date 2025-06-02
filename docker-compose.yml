@@ -1,44 +1,44 @@
 services:
-  db:
-    image: postgres:16
-    container_name: postgres-container
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: kinhart822
-      POSTGRES_DB: msma_database
-    ports:
-      - "5433:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
-    networks:
-      - springnet
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+#  db:
+#    image: postgres:16
+#    container_name: postgres-container
+#    restart: always
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: kinhart822
+#      POSTGRES_DB: msma_database
+#    ports:
+#      - "5433:5432"
+#    volumes:
+#      - db_data:/var/lib/postgresql/data
+#      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
+#    networks:
+#      - springnet
+#    healthcheck:
+#      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#      start_period: 20s
 
   spring-music-app-service:
     container_name: spring-music-container
     image: spring-music-app
     ports:
       - '8080:8080'
-    networks:
-      - springnet
+#    networks:
+#      - springnet
     build:
       context: ./
       dockerfile: Dockerfile
     env_file:
       - .env
-    depends_on:
-      - db
+#    depends_on:
+#      - db
+#
+#volumes:
+#  db_data:
 
-volumes:
-  db_data:
-
-networks:
-  springnet:
-    driver: bridge
+#networks:
+#  springnet:
+#    external: true

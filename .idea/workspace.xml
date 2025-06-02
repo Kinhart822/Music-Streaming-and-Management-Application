@@ -4,20 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment=" Done artist realtime notifications">
+    <list default="true" id="e29b4099-7a45-455c-8187-cb90befcfb1b" name="Changes" comment="Update Code with Docker">
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/MsmaApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/MsmaApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/config/CloudinaryConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/config/CloudinaryConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/dto/request/account/UpdatePasswordRequest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/security/JwtUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/FastApiServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/SongServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/spring/service/impl/UserServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -225,6 +213,7 @@
       <workItem from="1748520103529" duration="12850000" />
       <workItem from="1748615191511" duration="7434000" />
       <workItem from="1748626881032" duration="22162000" />
+      <workItem from="1748806435836" duration="260000" />
     </task>
     <task id="LOCAL-00001" summary=" Done user realtime notifications only artist left">
       <option name="closed" value="true" />
@@ -242,7 +231,15 @@
       <option name="project" value="LOCAL" />
       <updated>1748458847514</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Update Code with Docker">
+      <option name="closed" value="true" />
+      <created>1748806660970</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1748806660970</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -262,7 +259,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value=" Done user realtime notifications only artist left" />
     <MESSAGE value=" Done artist realtime notifications" />
-    <option name="LAST_COMMIT_MESSAGE" value=" Done artist realtime notifications" />
+    <MESSAGE value="Update Code with Docker" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update Code with Docker" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
