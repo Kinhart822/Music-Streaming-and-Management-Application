@@ -12,7 +12,7 @@ contractions==0.1.73
 inflect==7.5.0
 lingua-language-detector==2.0.2
 pydub==0.25.1
-torch==2.5.0
+torch==2.7.0
 torchaudio==2.5.0
 numpy==1.26.4
 demucs==4.0.1
