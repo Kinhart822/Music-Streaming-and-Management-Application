@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/home_structure.css">
+    <link rel="stylesheet" href="../css/management.css">
+    <link rel="stylesheet" href="../css/admin/user_structure.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Manage Users</title>
+    <script>
+        // Immediately apply dark mode and sidebar state based on localStorage
+        (function () {
+            // Get current user email from sessionStorage
+            const getCurrentUserEmail = () => {
+                return sessionStorage.getItem('currentUserEmail');
+            };
+
+            // Get dark mode state
+            const getDarkModeState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`darkMode_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('darkMode_default') === 'true';
+                }
+            };
+
+            // Get sidebar collapsed state
+            const getSidebarCollapsedState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`sidebarCollapsed_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('sidebarCollapsed_default') === 'true';
+                }
+            };
+
+            // Apply dark mode
+            const isDarkMode = getDarkModeState();
+            document.documentElement.classList.toggle('dark', isDarkMode);
+
+            // Apply sidebar collapsed state
+            const isSidebarCollapsed = getSidebarCollapsedState();
+            document.documentElement.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+        })();
+    </script>
+</head>
+<body>
+<!-- Notification -->
+<div class="notification" id="notification" style="display: none;">
+    <span id="notification-message"></span>
+    <span class="close-notification">×</span>
+</div>
+
+<section class="header">
+    <div class="logo">
+        <i class="ri-menu-line icon icon-0 menu"></i>
+        <img id="logo-img" src="/imgs/logo.png" alt="logo">
+    </div>
+    <div class="search--notification--profile">
+        <div class="search">
+            <label for="search-user"></label>
+            <input type="text" id="search-user" placeholder="Search Users...">
+            <button><i class='bx bx-search-alt-2'></i></button>
+        </div>
+        <div class="notification--profile">
+            <div class="picon profile">
+                <img id="profile-icon-img" src="https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg" alt="Profile Picture" class="profile-icon-image">
+            </div>
+            <div class="profile-modal">
+                <div class="profile-modal-content">
+                    <span class="close-modal">×</span>
+                    <div class="profile-details">
+                        <img id="profile-background-img" class="profile-background" alt="Background Image">
+                        <img id="profile-modal-img" class="profile-avatar" alt="Profile Picture">
+                        <h3 id="profile-fullname"></h3>
+                        <p id="profile-description"></p>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="main">
+    <div class="sidebar">
+        <div class="menu-bar">
+            <div class="menu">
+                <ul class="menu-links">
+                    <li class="nav-link">
+                        <a href="../admin/admin_dashboard.html">
+                            <i class='bx bx-home-alt'></i>
+                            <span class="text nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="admin_manage_users.html">
+                            <i class='bx bx-user'></i>
+                            <span class="text nav-text">Manage Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_songs.html">
+                            <i class='bx bx-music'></i>
+                            <span class="text nav-text">Manage Songs</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_playlists.html">
+                            <i class='bx bx-list-ul'></i>
+                            <span class="text nav-text">Manage Playlists</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_albums.html">
+                            <i class='bx bx-album'></i>
+                            <span class="text nav-text">Manage Albums</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_genres.html">
+                            <i class='bx bx-category'></i>
+                            <span class="text nav-text">Manage Genres</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="bottom-content">
+            <ul class="menu-links">
+                <li class="nav-link">
+                    <a class="logout">
+                        <i class='bx bx-log-out icon'></i>
+                        <span class="text nav-text">Logout</span>
+                    </a>
+                </li>
+                <li class="nav-link mode">
+                    <div class="mode-toggle" id="darkModeToggle">
+                        <div class="moon-sun">
+                            <i class='bx bx-moon icon moon-icon'></i>
+                            <i class='bx bx-sun icon sun-icon' style="display: none;"></i>
+                        </div>
+                        <span class="mode-text text nav-text">Dark Mode</span>
+                        <div class="toggle-switch">
+                            <span class="switch"></span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main--content">
+        <div class="users">
+            <div class="title">
+                <h2 class="section--title">Manage Users</h2>
+                <button class="add" id="add-user-btn"><i class="ri-add-line"></i>Add User</button>
+            </div>
+            <div class="add-user-form" id="add-user-form">
+                <form id="user-form">
+                    <div class="form-group">
+                        <label for="user-email">Email *</label>
+                        <input type="email" id="user-email" required>
+                        <div class="error" id="email-error">Please enter a valid email</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">Password *</label>
+                        <input type="password" id="user-password" required>
+                        <div class="error" id="password-error">Password must be at least 6 characters</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">Role *</label>
+                        <select id="user-role" required>
+                            <option value="USER">User</option>
+                            <option value="ARTIST">Artist</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group button-group">
+                        <button type="submit">Add User</button>
+                        <button type="button" class="cancel" id="cancel-add-user">Cancel</button>
+                    </div>
+                </form>
+            </div>
+            <div class="table-controls">
+                <div>
+                    <label for="filter-role">Filter by Role:</label>
+                    <select id="filter-role">
+                        <option value="all">All</option>
+                        <option value="USER">User</option>
+                        <option value="ARTIST">Artist</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-status">Filter by Status:</label>
+                    <select id="filter-status">
+                        <option value="all">All</option>
+                        <option value="-4">Locked</option>
+                        <option value="-3">Deleted</option>
+                        <option value="-1">Inactive</option>
+                        <option value="1">Active</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rows-per-page">Rows per page:</label>
+                    <input type="number" id="rows-per-page" value="10" min="1">
+                </div>
+            </div>
+            <div class="table-container">
+                <div class="table">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                        <!-- JavaScript will populate users -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination"></div>
+            <!-- Modal for viewing user details -->
+            <div class="modal" id="user-details-modal">
+                <div class="modal-content">
+                    <span class="close">×</span>
+                    <h3>User Details</h3>
+                    <div class="user-details-content">
+                        <img id="user-avatar" class="user-avatar" alt="Avatar" style="display: none; max-width: 100px; border-radius: 8px; margin: 0 auto 16px;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody id="user-details-table">
+                            <!-- JavaScript will populate table rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="../js/dark_mode.js"></script>
+<script type="module" src="../js/admin/admin_header_siderbar.js"></script>
+<script type="module" src="../js/account/logout.js"></script>
+<script type="module" src="../js/admin/admin_manage_user.js"></script>
+</body>
+</html>

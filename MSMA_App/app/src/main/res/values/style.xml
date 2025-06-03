@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Existing styles -->
+
+    <!-- Custom theme for DatePickerDialog with sea blue accent -->
+    <style name="DatePickerDialogTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">#4682B4</item>
+    </style>
+</resources>

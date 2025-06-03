@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/home_structure.css">
+    <link rel="stylesheet" href="../css/management.css">
+    <link rel="stylesheet" href="../css/admin/dashboard_structure.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Admin Dashboard</title>
+    <script>
+        // Immediately apply dark mode and sidebar state based on localStorage
+        (function () {
+            // Get current user email from sessionStorage
+            const getCurrentUserEmail = () => {
+                return sessionStorage.getItem('currentUserEmail');
+            };
+
+            // Get dark mode state
+            const getDarkModeState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`darkMode_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('darkMode_default') === 'true';
+                }
+            };
+
+            // Get sidebar collapsed state
+            const getSidebarCollapsedState = () => {
+                const email = getCurrentUserEmail();
+                if (email) {
+                    return localStorage.getItem(`sidebarCollapsed_${email}`) === 'true';
+                } else {
+                    return localStorage.getItem('sidebarCollapsed_default') === 'true';
+                }
+            };
+
+            // Apply dark mode
+            const isDarkMode = getDarkModeState();
+            document.documentElement.classList.toggle('dark', isDarkMode);
+
+            // Apply sidebar collapsed state
+            const isSidebarCollapsed = getSidebarCollapsedState();
+            document.documentElement.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+        })();
+    </script>
+</head>
+<body>
+<section class="header">
+    <div class="logo">
+        <i class="ri-menu-line icon icon-0 menu"></i>
+        <img id="logo-img" src="../imgs/logo.png" alt="logo">
+    </div>
+    <div class="search--notification--profile">
+        <div class="search">
+            <label for="search-content">
+                <input type="text" id="search-content" placeholder="Search Content...">
+            </label>
+            <button><i class='bx bx-search-alt-2'></i></button>
+        </div>
+        <div class="notification--profile">
+            <div class="picon profile">
+                <img id="profile-icon-img" src="https://static.vecteezy.com/system/resources/previews/008/442/086/non_2x/illustration-of-human-icon-user-symbol-icon-modern-design-on-blank-background-free-vector.jpg" alt="Profile Picture" class="profile-icon-image">
+            </div>
+            <div class="profile-modal">
+                <div class="profile-modal-content">
+                    <span class="close-modal">×</span>
+                    <div class="profile-details">
+                        <img id="profile-background-img" class="profile-background" alt="Background Image">
+                        <img id="profile-modal-img" class="profile-avatar" alt="Profile Picture">
+                        <h3 id="profile-fullname"></h3>
+                        <p id="profile-description"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="main">
+    <div class="sidebar">
+        <div class="menu-bar">
+            <div class="menu">
+                <ul class="menu-links">
+                    <li class="nav-link">
+                        <a href="admin_dashboard.html">
+                            <i class='bx bx-home-alt'></i>
+                            <span class="text nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_users.html">
+                            <i class='bx bx-user'></i>
+                            <span class="text nav-text">Manage Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_songs.html">
+                            <i class='bx bx-music'></i>
+                            <span class="text nav-text">Manage Songs</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_playlists.html">
+                            <i class='bx bx-list-ul'></i>
+                            <span class="text nav-text">Manage Playlists</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_albums.html">
+                            <i class='bx bx-album'></i>
+                            <span class="text nav-text">Manage Albums</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="../admin/admin_manage_genres.html">
+                            <i class='bx bx-category'></i>
+                            <span class="text nav-text">Manage Genres</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="bottom-content">
+            <ul class="menu-links">
+                <li class="nav-link">
+                    <a class="logout">
+                        <i class='bx bx-log-out icon'></i>
+                        <span class="text nav-text">Logout</span>
+                    </a>
+                </li>
+                <li class="nav-link mode">
+                    <div class="mode-toggle" id="darkModeToggle">
+                        <div class="moon-sun">
+                            <i class='bx bx-moon icon moon-icon'></i>
+                            <i class='bx bx-sun icon sun-icon' style="display: none;"></i>
+                        </div>
+                        <span class="mode-text text nav-text">Dark Mode</span>
+                        <div class="toggle-switch">
+                            <span class="switch"></span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main--content">
+        <div class="overview">
+            <div class="title">
+                <h2 class="section--title">System Overview</h2>
+            </div>
+            <div class="cards">
+                <div class="card card-1">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Total Users</h5>
+                            <h1 id="total-listeners">0</h1>
+                        </div>
+                        <i class="ri-user-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-2">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Total Artists</h5>
+                            <h1 id="total-artists">0</h1>
+                        </div>
+                        <i class="ri-user-star-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-3">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Total Songs</h5>
+                            <h1 id="total-songs">0</h1>
+                        </div>
+                        <i class="ri-music-2-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-4">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Total Playlists</h5>
+                            <h1 id="total-playlists">0</h1>
+                        </div>
+                        <i class="ri-play-list-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-5">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Total Albums</h5>
+                            <h1 id="total-albums">0</h1>
+                        </div>
+                        <i class="ri-album-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-6">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Pending Songs</h5>
+                            <h1 id="pending-songs">0</h1>
+                        </div>
+                        <i class="ri-music-2-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-7">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Pending Playlists</h5>
+                            <h1 id="pending-playlists">0</h1>
+                        </div>
+                        <i class="ri-play-list-line card--icon--lg"></i>
+                    </div>
+                </div>
+                <div class="card card-8">
+                    <div class="card--data">
+                        <div class="card--content">
+                            <h5 class="card--title">Pending Albums</h5>
+                            <h1 id="pending-albums">0</h1>
+                        </div>
+                        <i class="ri-album-line card--icon--lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pending-content">
+            <div class="title">
+                <h2 class="section--title">Recent Contents</h2>
+            </div>
+            <div class="table-controls">
+                <div class="control-group">
+                    <label for="filter-status">Filter by Status:</label>
+                    <select id="filter-status">
+                        <option value="all">All</option>
+                        <option value="draft">Draft</option>
+                        <option value="processing">Processing</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="declined">Declined</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="sort-by">Sort by:</label>
+                    <select id="sort-by">
+                        <option value="title-asc">Title A-Z</option>
+                        <option value="title-desc">Title Z-A</option>
+                        <option value="date-asc">Upload Date (Oldest)</option>
+                        <option value="date-desc">Upload Date (Newest)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <div class="table">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Upload Date</th>
+                            <th>Description</th>
+                            <th>Duration</th>
+                            <th>Artist(s)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="pending-table-body">
+                        <!-- JavaScript will populate pending content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination"></div>
+        </div>
+    </div>
+</section>
+<div class="modal" id="description-modal">
+    <div class="modal-content">
+        <span class="close" id="close-modal">×</span>
+        <h3 id="modal-title">Content Description</h3>
+        <label for="modal-description-content"></label>
+        <textarea class="lyrics-content" id="modal-description-content" readonly placeholder="No description available"></textarea>
+    </div>
+</div>
+<script src="../js/dark_mode.js"></script>
+<script type="module" src="../js/admin/admin_header_siderbar.js"></script>
+<script type="module" src="../js/account/logout.js"></script>
+<script type="module" src="../js/admin/admin_dashboard.js"></script>
+</body>
+</html>

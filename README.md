@@ -39,6 +39,3 @@ _Coming soon..._
 
 ### **Demo**  
 _Coming soon..._
-
-### **Installation & Setup**  
-_Coming soon..._

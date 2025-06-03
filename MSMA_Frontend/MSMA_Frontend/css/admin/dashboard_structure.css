@@ -1,0 +1,758 @@
+/* Common Variables */
+:root {
+    --primary-color: #409eff;
+    --primary-hover: #66b1ff;
+    --error-color: #f56c6c;
+    --error-hover: #d45b5b;
+    --success-color: #67c23a;
+    --success-dark: #55a532;
+    --warning-color: #e6a23c;
+    --warning-dark: #d48d2a;
+    --neutral-color: #b6b9be;
+    --cancel-bg: #909399;
+    --cancel-hover: #a0a6ab;
+    --text-color: #303133;
+    --text-light: #606266;
+    --bg-light: #ffffff;
+    --bg-hover: #f5f7fa;
+    --bg-selected: #e6f1ff;
+    --border-color: #dcdfe6;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --scrollbar-bg: #dcdfe6;
+    --scrollbar-thumb: #909399;
+    --scrollbar-thumb-hover: #409eff;
+}
+
+html.dark {
+    --primary-color: #409eff;
+    --primary-hover: #66b1ff;
+    --error-color: #d45b5b;
+    --error-hover: #c14f4f;
+    --success-color: #55a532;
+    --success-dark: #4a8f2b;
+    --warning-color: #d48d2a;
+    --warning-dark: #bf7d25;
+    --neutral-color: #b6b9be;
+    --cancel-bg: #6c757d;
+    --cancel-hover: #5a6268;
+    --text-color: #e4e7ed;
+    --text-light: #dcdcdc;
+    --bg-light: #303133;
+    --bg-hover: #494b4e;
+    --bg-selected: #2a3f65;
+    --border-color: #555555;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --scrollbar-bg: #555555;
+    --scrollbar-thumb: #6c757d;
+    --scrollbar-thumb-hover: #66b1ff;
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: var(--bg-light);
+    color: var(--text-color);
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: var(--shadow);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification .close-notification {
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.notification .close-notification:hover {
+    color: var(--text-light);
+}
+
+/* Table Controls */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 24px 0;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.table-controls div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.table-controls label {
+    font-weight: 500;
+    font-size: 1em;
+    color: var(--text-color);
+}
+
+.table-controls select,
+.table-controls input[type="text"] {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+    background: var(--bg-light);
+    min-width: 140px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.table-controls select:focus,
+.table-controls input[type="text"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    outline: none;
+}
+
+html.dark .table-controls select,
+html.dark .table-controls input[type="text"] {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--text-light);
+}
+
+/* Table Container */
+.table-container {
+    overflow-x: auto;
+    width: 100%;
+    border-radius: 12px;
+    background: var(--bg-light);
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: auto;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+}
+
+.table-container::-webkit-scrollbar {
+    height: 12px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg);
+    border-radius: 8px;
+    margin: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+    border: 2px solid var(--scrollbar-bg);
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+html.dark .table-container {
+    background: var(--bg-light);
+}
+
+html.dark .table-container::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg);
+}
+
+html.dark .table-container::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+}
+
+html.dark .table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Table Styles */
+.table {
+    width: 100%;
+    min-width: 1200px;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-color);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+html.dark .table th {
+    background: #494b4e;
+    color: var(--text-light);
+}
+
+.table td {
+    color: var(--text-light);
+}
+
+.table td.truncate {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table td.status.pending {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+.table td.status.published {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.table td.status.declined {
+    color: var(--error-color);
+    font-weight: 500;
+}
+
+.table td.status.draft {
+    color: var(--neutral-color);
+    font-weight: 500;
+}
+
+html.dark .table td.status.pending {
+    color: var(--warning-dark);
+}
+
+html.dark .table td.status.published {
+    color: var(--success-dark);
+}
+
+html.dark .table td.status.declined {
+    color: var(--error-color);
+}
+
+html.dark .table td.status.draft {
+    color: var(--neutral-color);
+}
+
+.table button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #fff;
+    transition: background 0.2s, transform 0.1s;
+    margin: 0 4px;
+}
+
+.table button.publish {
+    background: var(--success-color);
+}
+
+.table button.publish:hover {
+    background: var(--success-dark);
+    transform: translateY(-1px);
+}
+
+.table button.decline {
+    background: var(--warning-color);
+}
+
+.table button.decline:hover {
+    background: var(--warning-dark);
+    transform: translateY(-1px);
+}
+
+.table button.delete {
+    background: var(--error-color);
+}
+
+.table button.delete:hover {
+    background: var(--error-hover);
+    transform: translateY(-1px);
+}
+
+.table button:disabled {
+    background: var(--cancel-bg);
+    cursor: not-allowed;
+    transform: none;
+}
+
+html.dark .table button.publish {
+    background: var(--success-dark);
+}
+
+.html.dark .table button.publish:hover {
+    background: var(--success-color);
+}
+
+html.dark .table button.decline {
+    background: var(--warning-dark);
+}
+
+html.dark .table button.decline:hover {
+    background: var(--warning-color);
+}
+
+html.dark .table button.delete {
+    background: var(--error-color);
+}
+
+html.dark .table button.delete:hover {
+    background: var(--error-hover);
+}
+
+html.dark .table button:disabled {
+    background: var(--cancel-hover);
+}
+
+.table td[colspan="9"] {
+    text-align: center;
+    padding: 24px;
+    font-size: 14px;
+    color: var(--text-light);
+}
+
+.no-contents {
+    color: var(--text-light);
+    font-size: 14px;
+    display: block;
+    text-align: center;
+}
+
+html.dark .no-contents {
+    color: var(--text-light);
+}
+
+.table a.view-description {
+    color: black;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.table a.view-description:hover {
+    color: var(--primary-hover);
+}
+
+html.dark .table a.view-lyrics,
+html.dark .table a.view-description {
+    color: #fff;
+    text-decoration: underline;
+}
+
+html.dark .table a.view-description:hover {
+    color: var(--primary-color);
+}
+
+html.dark .table a.view-description:hover {
+    color: var(--primary-color);
+}
+
+.table td.image {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.table img {
+    max-width: 50px;
+    max-height: 50px;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+}
+
+.table td.image span {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.3s;
+}
+
+.modal-content {
+    background: var(--bg-light);
+    padding: 24px;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: var(--shadow);
+    color: var(--text-color);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h3 {
+    margin: 0 0 20px;
+    font-size: 1.5em;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.modal-content .lyrics-content {
+    white-space: pre-wrap;
+    font-size: 14px;
+    color: var(--text-light);
+    max-height: 60vh;
+    overflow-y: auto;
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: vertical;
+    background: var(--bg-light);
+}
+
+.modal-content .close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-light);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.modal-content .close:hover {
+    color: var(--primary-color);
+    transform: rotate(90deg);
+}
+
+html.dark .modal-content {
+    background: var(--bg-light);
+}
+
+html.dark .modal-content h3,
+html.dark .modal-content .lyrics-content {
+    color: var(--text-light);
+}
+
+html.dark .modal-content .lyrics-content {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+}
+
+html.dark .modal-content .close {
+    color: var(--text-light);
+}
+
+html.dark .modal-content .close:hover {
+    color: var(--primary-hover);
+}
+
+/* Confirmation Modal Specific Styles */
+#confirm-action-modal .modal-content {
+    max-width: 450px;
+    padding: 20px;
+}
+
+#confirm-action-modal h3 {
+    font-size: 1.4em;
+    color: var(--text-color);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+#confirm-action-modal p {
+    font-size: 1.1em;
+    color: var(--text-light);
+    margin: 0 0 24px;
+    text-align: center;
+    line-height: 1.5;
+}
+
+#confirm-action-modal .button-group {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+#confirm-action-modal .button-group button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #fff;
+    transition: background 0.2s, transform 0.1s;
+}
+
+#confirm-action-modal .button-group button#confirm-action-btn {
+    background: var(--primary-color);
+}
+
+#confirm-action-modal .button-group button#confirm-action-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+#confirm-action-modal .button-group button.cancel {
+    background: var(--cancel-bg);
+}
+
+#confirm-action-modal .button-group button.cancel:hover {
+    background: var(--cancel-hover);
+    transform: translateY(-1px);
+}
+
+html.dark #confirm-action-modal .modal-content {
+    background: var(--bg-light);
+}
+
+html.dark #confirm-action-modal h3,
+html.dark #confirm-action-modal p {
+    color: var(--text-light);
+}
+
+html.dark #confirm-action-modal .button-group button#confirm-action-btn {
+    background: var(--primary-color);
+}
+
+.html.dark #confirm-action-modal .button-group button#confirm-action-btn:hover {
+    background: var(--primary-hover);
+}
+
+html.dark #confirm-action-modal .button-group button.cancel {
+    background: var(--cancel-bg);
+}
+
+html.dark #confirm-action-modal .button-group button.cancel:hover {
+    background: var(--cancel-hover);
+}
+
+/* Spinner for Loading */
+.spinner {
+    border: 4px solid var(--bg-hover);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+html.dark .spinner {
+    border: 4px solid var(--bg-hover);
+    border-top: 4px solid var(--primary-hover);
+}
+
+/* Pagination */
+.pagination {
+    margin: 24px 0;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pagination button,
+.pagination span {
+    padding: 10px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-light);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-color);
+    transition: all 0.2s;
+}
+
+.pagination button:hover,
+.pagination span:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.pagination button:disabled {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--cancel-bg);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pagination span.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+html.dark .pagination button,
+html.dark .pagination span {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--text-light);
+}
+
+html.dark .pagination button:hover,
+html.dark .pagination span:hover {
+    background: var(--bg-selected);
+    border-color: var(--primary-hover);
+}
+
+html.dark .pagination button:disabled {
+    background: var(--bg-hover);
+    color: var(--cancel-hover);
+}
+
+html.dark .pagination span.active {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Responsive Styles */
+@media (max-width: 900px) {
+    .table-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .table-controls div {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .table-controls select,
+    .table-controls input[type="text"] {
+        flex: 1;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 16px;
+    }
+
+    .table-container::-webkit-scrollbar {
+        height: 14px;
+    }
+}
+
+@media (max-width: 600px) {
+    .table th,
+    .table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .table button {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin: 2px;
+    }
+
+    .table td.truncate {
+        max-width: 120px;
+    }
+
+    .modal-content h3 {
+        font-size: 1.3em;
+    }
+
+    .modal-content .lyrics-content {
+        font-size: 13px;
+    }
+
+    .modal-content .close {
+        top: 12px;
+        right: 12px;
+        font-size: 20px;
+    }
+
+    .modal-content .button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modal-content .button-group button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .pagination {
+        gap: 8px;
+    }
+
+    .pagination button,
+    .pagination span {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .notification {
+        top: 10px;
+        right: 10px;
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .table td:last-child {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .table-container::-webkit-scrollbar {
+        height: 16px;
+    }
+}

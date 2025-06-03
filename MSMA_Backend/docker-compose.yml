@@ -1,0 +1,44 @@
+services:
+  db-service:
+    image: postgres:16
+    container_name: postgres-container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: kinhart822
+      POSTGRES_DB: msma_database
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
+    networks:
+      - msma_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  spring-service:
+    container_name: spring-music-container
+    image: spring-music-app
+    ports:
+      - '8080:8080'
+    networks:
+      - msma_network
+    env_file:
+      - .env
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    depends_on:
+      - db-service
+
+volumes:
+  db_data:
+
+networks:
+  msma_network:
+    driver: bridge

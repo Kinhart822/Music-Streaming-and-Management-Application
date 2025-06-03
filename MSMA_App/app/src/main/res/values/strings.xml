@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">MSMA</string>
+    <string name="title_activity_notification">NotificationActivity</string>
+    <string name="title_activity_edit_update_account_info">Edit_Update_Account_Info_Activity
+    </string>
+    <string name="title_activity_view_profile">ViewProfileActivity</string>
+    <string name="title_activity_change_password">ChangePasswordActivity</string>
+    <string name="title_activity_view_history_listen">ViewHistoryListenActivity</string>
+    <string name="title_activity_genre">GenreActivity</string>
+    <string name="title_activity_song_details">SongDetailsActivity</string>
+</resources>

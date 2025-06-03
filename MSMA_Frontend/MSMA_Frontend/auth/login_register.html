@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="../css/login_register_forgot.css">
+    <title>Signin & Sign up</title>
+</head>
+<body>
+<section class="header">
+    <div class="logo">
+        <img id="logo-img" src="/imgs/logo.png" alt="logo">
+    </div>
+</section>
+<div class="wrapper">
+    <div class="notification" id="notification" style="display: none;"></div>
+    <div class="form-container sign-up">
+        <form id="sign-up-form">
+            <h2>Sign Up</h2>
+            <div class="form-group">
+                <input type="email" id="sign-up-email" autocomplete="email" placeholder="Email" required>
+            </div>
+            <div class="form-group password-container">
+                <input type="password" id="sign-up-password" autocomplete="new-password" placeholder="Password" required>
+                <span class="toggle-password" data-target="sign-up-password">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+            <div class="error-message" id="sign-up-error"></div>
+            <button type="submit" id="sign-up-button" class="btn" disabled>Sign Up</button>
+            <div class="link">
+                <p>Already have an account? <a href="#" class="signin-link">Sign In</a></p>
+            </div>
+        </form>
+    </div>
+    <div class="form-container sign-in">
+        <form id="sign-in-form">
+            <h2>Login</h2>
+            <div class="form-group">
+                <input type="email" id="sign-in-email" autocomplete="email" placeholder="Email" required>
+            </div>
+            <div class="form-group password-container">
+                <input type="password" id="sign-in-password" autocomplete="current-password" placeholder="Password" required>
+                <span class="toggle-password" data-target="sign-in-password">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+            <div class="error-message" id="sign-in-error"></div>
+            <div class="forgot-pass">
+                <a href="../auth/forgot_password.html">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn">Login</button>
+            <div class="link">
+                <p>Don't have an account? <a href="#" class="signup-link">Sign Up</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="https://kit.fontawesome.com/9e5ba2e3f5.js" crossorigin="anonymous"></script>
+<script>
+    // JavaScript to handle password toggle
+    document.querySelectorAll('.toggle-password').forEach(toggle => {
+        toggle.addEventListener('click', function () {
+            const inputId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(inputId);
+            const icon = this.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
+<script type="module" src="../js/account/login-register.js"></script>
+</body>
+</html>
