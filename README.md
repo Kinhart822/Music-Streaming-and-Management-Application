@@ -42,9 +42,3 @@ _Coming soon..._
 
 ### **Installation & Setup**  
 _Coming soon..._
-
-### **Future Works**  
-I am currently learning:
-+ Firebase and how to integrate with the backend server for the purpose of making real-time notifications for both cases, Artist and User. (DONE)
-+ Learn how to use Docker. (DONE)
-+ Deploy project to a Hosting
