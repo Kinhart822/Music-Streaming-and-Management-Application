@@ -35,7 +35,7 @@ The structure of the data is:
 **1. Data Pre-processing**
 
 
-The dataset was not initially structured to meet our requirements. Some songs lacked genre labels, while others had missing lyrics. Therefore, preprocessing was necessary before fitting the data into any classification model.  
+The dataset was not initially structured to meet my requirements. Some songs lacked genre labels, while others had missing lyrics. Therefore, preprocessing was necessary before fitting the data into any classification model.  
 
 To refine the dataset, I removed irrelevant information, unnecessary syntax, and metadata such as artist names and song release years, leaving only lyrics and genre mappings. This made the dataset more compact and accessible.  
 
