@@ -63,7 +63,7 @@ After preprocessing the data, I visualized and analyzed it to identify key featu
 ![Image](https://github.com/user-attachments/assets/42943495-a8c1-4563-aa4b-432341890945)
 ![Image](https://github.com/user-attachments/assets/9b978a0c-5dd3-4dbb-9275-53bde7ab7f7c)
 
-As shown in Figure 1, we evaluated the average length of lyrics across each genre. A interesting observation was that Hip-Hop songs tended to be longer than those in other genres, while the remaining genres had similar average lengths. Following this, we calculated the average number of unique words in the lyrics for each genre. Once again, Hip-Hop stood out, featuring a higher number of unique words compared to the other genres. Finally, we analyzed the most common words used in each genre, as shown in Figure 2. This analysis helped identify potential correlations between the vocabulary choices in the lyrics and their corresponding genres.
+As shown in Figure 1, I evaluated the average length of lyrics across each genre. A interesting observation was that Hip-Hop songs tended to be longer than those in other genres, while the remaining genres had similar average lengths. Following this, I calculated the average number of unique words in the lyrics for each genre. Once again, Hip-Hop stood out, featuring a higher number of unique words compared to the other genres. Finally, I analyzed the most common words used in each genre, as shown in Figure 2. This analysis helped identify potential correlations between the vocabulary choices in the lyrics and their corresponding genres.
 
 ## Training Model
 
@@ -99,7 +99,7 @@ TF-IDF is an improved version of BoW that assigns different weights to words bas
 
 By using this method, it will reduce the importance of common words (e.g., "the", "is", "and") while giving more weight to rare but meaningful words that help differentiate between classes.
 
-However, TF-IDF does not consider word order or semantic meaning. It treats words independently, without recognizing synonyms or relationships between words. To address this, we use Word Embeddings.
+However, TF-IDF does not consider word order or semantic meaning. It treats words independently, without recognizing synonyms or relationships between words. To address this, I use Word Embeddings.
 
 **b) Word Embeddings (Word2Vec)**
 
@@ -137,13 +137,13 @@ Cosine Similarity calculates the cosine of the angle between two vectors in a mu
 
 ### 3. Models
 
-With our preprocessed dataset, I proceeded to train a classification model by feeding in the extracted features and corresponding labels. To ensure a smooth evaluation, we split the dataset into **80% for training** and **20% for testing**.
+With our preprocessed dataset, I proceeded to train a classification model by feeding in the extracted features and corresponding labels. To ensure a smooth evaluation, I split the dataset into **80% for training** and **20% for testing**.
 
-For model implementation, we utilized Python’s Scikit-Learn library, which provides efficient machine learning algorithms for text classification. I also applied Grid Search to fine-tune hyperparameters for optimal performance, which it explores different parameter combinations to find the best configuration for each model. We experimented with multiple classification techniques to compare their performance:
+For model implementation, I utilized Python’s Scikit-Learn library, which provides efficient machine learning algorithms for text classification. I also applied Grid Search to fine-tune hyperparameters for optimal performance, which it explores different parameter combinations to find the best configuration for each model. I experimented with multiple classification techniques to compare their performance:
 
 * Multinomial Naïve Bayes: A probabilistic algorithm suitable for text classification tasks, particularly effective when using Bag-of-Words or TF-IDF representations.
 * Support Vector Machine (SVM): Applied in the TF-IDF case, this algorithm constructs a hyperplane in a high-dimensional space to separate different genres efficiently.
-* Logistic Regression: A model used to predict the probability of a song belonging to a specific genre based on textual features. To enhance performance in a multi-class setting, we use a One-vs-Rest (OvR) strategy, where a separate logistic regression model is trained for each genre.
+* Logistic Regression: A model used to predict the probability of a song belonging to a specific genre based on textual features. To enhance performance in a multi-class setting, I use a One-vs-Rest (OvR) strategy, where a separate logistic regression model is trained for each genre.
 * Decision Tree: A rule-based classifier that splits data into hierarchical decisions, making it interpretable but prone to overfitting.
 * Random Forest: An ensemble learning method that combines multiple decision trees to improve accuracy and reduce overfitting.
 
@@ -172,7 +172,7 @@ Finally, I used `from sklearn.metrics import classification_report` to generate 
 
 ## Conclusion
 
-From the models that we developed and the experiments that we conducted we can say that the **Random Forest Model** performed significantly well compared to the other models. However, one major drawback of **Random Forest** is its high training time. Similarly, **SVM** also performed well but required a significant amount of training time, making it less efficient for large-scale applications. Additionally, as observed in the confusion matrix, while **Hip-Hop** was classified accurately, other genres were occasionally mislabeled due to similarities in lyrical content.
+From the models that I developed and the experiments that I conducted I can say that the **Random Forest Model** performed significantly well compared to the other models. However, one major drawback of **Random Forest** is its high training time. Similarly, **SVM** also performed well but required a significant amount of training time, making it less efficient for large-scale applications. Additionally, as observed in the confusion matrix, while **Hip-Hop** was classified accurately, other genres were occasionally mislabeled due to similarities in lyrical content.
 
 Due to time constraints, I was only able to experiment with basic word embeddings such as **TF-IDF** and **Word2Vec** for music genre classification based on lyrics. However, there are several areas for improvement, such as:
 
