@@ -63,7 +63,7 @@ After preprocessing the data, I visualized and analyzed it to identify key featu
 ![Image](https://github.com/user-attachments/assets/42943495-a8c1-4563-aa4b-432341890945)
 ![Image](https://github.com/user-attachments/assets/9b978a0c-5dd3-4dbb-9275-53bde7ab7f7c)
 
-As shown in Figure 1, we evaluated the average length of lyrics across each genre. A interesting observation was that Hip-Hop songs tended to be longer than those in other genres, while the remaining genres had similar average lengths. Following this, we calculated the average number of unique words in the lyrics for each genre. Once again, Hip-Hop stood out, featuring a higher number of unique words compared to the other genres. Finally, we analyzed the most common words used in each genre, as shown in Figure 2. This analysis helped us identify potential correlations between the vocabulary choices in the lyrics and their corresponding genres.
+As shown in Figure 1, we evaluated the average length of lyrics across each genre. A interesting observation was that Hip-Hop songs tended to be longer than those in other genres, while the remaining genres had similar average lengths. Following this, we calculated the average number of unique words in the lyrics for each genre. Once again, Hip-Hop stood out, featuring a higher number of unique words compared to the other genres. Finally, we analyzed the most common words used in each genre, as shown in Figure 2. This analysis helped identify potential correlations between the vocabulary choices in the lyrics and their corresponding genres.
 
 ## Training Model
 
