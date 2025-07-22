@@ -26,7 +26,7 @@ The Music Streaming and Management Application is a robust, full-featured platfo
 ---
 
 ### **System Architecture** 
-![Image](https://github.com/user-attachments/assets/52931ea3-aa2f-44d4-b683-b234735bf0fd)
+<img width="2038" height="1917" alt="Image" src="https://github.com/user-attachments/assets/a61e361e-926d-4dcf-9472-1b24929c6881" />
 
 ### **Tech Stack**  
 
