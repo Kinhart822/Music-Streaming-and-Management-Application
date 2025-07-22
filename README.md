@@ -38,4 +38,4 @@ The Music Streaming and Management Application is a robust, full-featured platfo
 ---
 
 ### **Demo**  
-_Coming soon..._
+(https://drive.google.com/drive/folders/1z6KgQgd_eARIe2gF5ygXLNVGbE3FNoFM?usp=drive_link)
